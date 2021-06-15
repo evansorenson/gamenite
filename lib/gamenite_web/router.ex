@@ -24,6 +24,7 @@ defmodule GameniteWeb.Router do
       live "/:slug", Room.ShowLive, :show
     end
 
+    resources "/users", UserController, only: [:index, :show, :new, :create]
   end
 
   # Other scopes may use custom stacks.

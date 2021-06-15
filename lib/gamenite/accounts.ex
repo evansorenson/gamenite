@@ -1,4 +1,4 @@
-defmodule Gamenite.Account do
+defmodule Gamenite.Accounts do
   @moduledoc """
   The Account context.
   """
@@ -6,7 +6,7 @@ defmodule Gamenite.Account do
   import Ecto.Query, warn: false
   alias Gamenite.Repo
 
-  alias Gamenite.Account.User
+  alias Gamenite.Accounts.User
 
   @doc """
   Returns the list of users.
@@ -19,6 +19,10 @@ defmodule Gamenite.Account do
   """
   def list_users do
     Repo.all(User)
+  end
+
+  def get_user(id) do
+    Repo.get(User, id)
   end
 
   @doc """
@@ -36,6 +40,10 @@ defmodule Gamenite.Account do
 
   """
   def get_user!(id), do: Repo.get!(User, id)
+
+  def get_user_by(params) do
+    Repo.get_by(User, params)
+  end
 
   @doc """
   Creates a user.
@@ -100,5 +108,16 @@ defmodule Gamenite.Account do
   """
   def change_user(%User{} = user, attrs \\ %{}) do
     User.changeset(user, attrs)
+  end
+
+
+  def change_registration(%User{} = user, params) do
+    User.registration_changeset(user, params)
+  end
+
+  def register_user(attrs \\ %{}) do
+    %User{}
+    |> User.registration_changeset(attrs)
+    |> Repo.insert()
   end
 end
