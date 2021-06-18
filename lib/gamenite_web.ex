@@ -23,6 +23,7 @@ defmodule GameniteWeb do
 
       import Plug.Conn
       import GameniteWeb.Gettext
+      import GameniteWeb.Auth, only: [authenticate_user: 2]
       alias GameniteWeb.Router.Helpers, as: Routes
     end
   end
@@ -65,6 +66,7 @@ defmodule GameniteWeb do
 
       import Plug.Conn
       import Phoenix.Controller
+      import GameniteWeb.Auth, only: [authenticate_user: 2, authenticate_user_or_create_guest: 2]
       import Phoenix.LiveView.Router
     end
   end

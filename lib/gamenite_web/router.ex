@@ -8,6 +8,7 @@ defmodule GameniteWeb.Router do
     plug :put_root_layout, {GameniteWeb.LayoutView, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug GameniteWeb.Auth
   end
 
   pipeline :api do
@@ -16,15 +17,21 @@ defmodule GameniteWeb.Router do
 
   scope "/", GameniteWeb do
     pipe_through :browser
+    # plug :put_root_layout, {GameniteWeb.LayoutView, :root}
 
     live "/", PageLive, :index
 
-    scope "/room" do
+    scope "/room", as: :room do
       live "/new", Room.NewLive, :new
       live "/:slug", Room.ShowLive, :show
     end
 
     resources "/users", UserController, only: [:index, :show, :new, :create]
+    resources "/sessions", SessionController, only: [:new, :create, :delete]
+    resources "/games", GameController
+    # scope "/games/:title/" do
+      #put rooms in here
+    # end
   end
 
   # Other scopes may use custom stacks.

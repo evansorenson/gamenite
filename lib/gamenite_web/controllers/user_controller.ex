@@ -3,6 +3,7 @@ defmodule GameniteWeb.UserController do
 
   alias Gamenite.Accounts
   alias Gamenite.Accounts.User
+  plug :authenticate_user when action in [:index, :show]
 
   def index(conn, _params) do
     users = Accounts.list_users()
@@ -18,10 +19,16 @@ defmodule GameniteWeb.UserController do
     case Accounts.register_user(user_params) do
       {:ok, user} ->
         conn
+        |> GameniteWeb.Auth.login(user)
         |> put_flash(:info, "#{user.username} created!")
         |> redirect(to: Routes.user_path(conn, :show))
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
     end
+  end
+
+  @spec show(Plug.Conn.t(), any) :: Plug.Conn.t()
+  def show(conn, _params) do
+    render(conn, "show.html", user: conn.assigns.current_user)
   end
 end

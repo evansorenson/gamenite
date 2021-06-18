@@ -2,6 +2,7 @@
 // The MiniCssExtractPlugin is used to separate it out into
 // its own CSS file.
 import "../css/app.scss"
+import 'regenerator-runtime/runtime'
 
 // webpack automatically bundles all modules in your
 // entry points. Those entry points can be configured
@@ -18,7 +19,27 @@ import topbar from "topbar"
 import {LiveSocket} from "phoenix_live_view"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
-let liveSocket = new LiveSocket("/live", Socket, {params: {_csrf_token: csrfToken}})
+var localStream
+
+async function initStream() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true, video: true, width: "1280"})
+    localStream = stream;
+    document.getElementById("local-video").srcObject = stream
+  } catch (e) {
+    console.log(e)
+  }
+}
+
+let Hooks = {}
+Hooks.JoinCall = {
+  mounted () {
+    initStream()
+  }
+}
+
+let liveSocket = new LiveSocket("/live", Socket, {hooks: Hooks, params: {_csrf_token: csrfToken}})
+
 
 // Show progress bar on live navigation and form submits
 topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
@@ -33,4 +54,3 @@ liveSocket.connect()
 // >> liveSocket.enableLatencySim(1000)  // enabled for duration of browser session
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
-

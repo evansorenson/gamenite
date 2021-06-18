@@ -1,0 +1,7 @@
+<h1>User Profile</h1>
+<div>
+  <%= @user.username %>
+</div>
+<div>
+  <%= @user.email %>
+</div>

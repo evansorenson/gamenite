@@ -40,7 +40,7 @@ defmodule GameniteWeb.Room.NewLive do
       {:ok, room} ->
         {:noreply,
           socket
-          |> push_redirect(to: Routes.show_path(socket, :show, room.slug))
+          |> push_redirect(to: Routes.room_show_path(socket, :show, room.slug))
         }
       {:error, changeset} ->
         {:noreply,

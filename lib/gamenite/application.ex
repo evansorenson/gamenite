@@ -13,6 +13,8 @@ defmodule Gamenite.Application do
       GameniteWeb.Telemetry,
       # Start the PubSub system
       {Phoenix.PubSub, name: Gamenite.PubSub},
+      # Start our Presence module.
+      GameniteWeb.Presence,
       # Start the Endpoint (http/https)
       GameniteWeb.Endpoint
       # Start a worker by calling: Gamenite.Worker.start_link(arg)
