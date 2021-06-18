@@ -4,6 +4,7 @@ defmodule Gamenite.Cards.Deck do
 
   schema "decks" do
     field :title, :string
+    has_many :cards
 
     timestamps()
   end

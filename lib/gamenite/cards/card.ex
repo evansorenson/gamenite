@@ -3,8 +3,13 @@ defmodule Gamenite.Cards.Card do
   import Ecto.Changeset
 
   schema "cards" do
-    field :front, :string
+    field :face, :string
+    field :back, :string
+    field :face_image, :string
+    field :back_image, :string
+    field :is_face_up, :boolean, default: false, virtual: true
     belongs_to :deck, Gamenite.Cards.Deck
+
 
     timestamps()
   end

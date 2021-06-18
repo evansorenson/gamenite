@@ -102,10 +102,6 @@ defmodule Gamenite.Cards do
     Deck.changeset(deck, attrs)
   end
 
-  def add_card_to_deck(%Deck{} = deck, card) do
-    deck ++ card
-  end
-
   alias Gamenite.Cards.Card
 
   @doc """
@@ -200,5 +196,29 @@ defmodule Gamenite.Cards do
   """
   def change_card(%Card{} = card, attrs \\ %{}) do
     Card.changeset(card, attrs)
+  end
+
+  # Flipping cards logic
+  def flip_card(%Card{} = card) do
+    Card.changeset(card, %{is_face_up: !card.is_face_up})
+  end
+  def flip_card(%Card{} = card, is_face_up) do
+    Card.changeset(card, %{is_face_up: is_face_up})
+  end
+
+  # Draw cards
+  # handle case when not enough cards in deck, need to reshuffle discard pile
+  def draw(deck, num \\ 1, is_face_up \\ true)
+  def draw(deck, num, _) when num >= Kernel.length(deck) do
+    {:error, "Not enough cards in deck."}
+  end
+  def draw(deck, num, is_face_up) do
+    {cards, remaining_deck} = Enum.split(deck.cards, num)
+    {Enum.map(cards, &(flip_card(&1, is_face_up))), remaining_deck}
+  end
+
+  def draw_into_hand(deck, hand, num \\ 1, is_face_up \\ true) do
+    {deck, cards} = draw(deck, num, is_face_up)
+    {deck, hand ++ cards}
   end
 end
