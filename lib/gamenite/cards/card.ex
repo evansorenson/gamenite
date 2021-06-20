@@ -10,7 +10,6 @@ defmodule Gamenite.Cards.Card do
     field :is_face_up, :boolean, default: false, virtual: true
     belongs_to :deck, Gamenite.Cards.Deck
 
-
     timestamps()
   end
 
