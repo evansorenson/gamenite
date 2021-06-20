@@ -16,9 +16,12 @@ defmodule Gamenite.Application do
       # Start our Presence module.
       GameniteWeb.Presence,
       # Start the Endpoint (http/https)
-      GameniteWeb.Endpoint
+      GameniteWeb.Endpoint,
+      # Start the STUN server
+      GameniteWeb.Stun
       # Start a worker by calling: Gamenite.Worker.start_link(arg)
       # {Gamenite.Worker, arg}
+
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
