@@ -22,12 +22,19 @@ defmodule GameniteWeb.Room.ShowLive do
       <% end %>
     </ul>
 
-    <video id="local-video" playsinline autoplay muted width="500"></video>
-    <button class="button" phx-hook="JoinCall" phx-click="join_call">Join Call</button>
+    <div class="streams">
+      <video id="local-video" playsinline autoplay muted width="600"></video>
+
+      <%= for username <- @connected_users do %>
+        <video id="video-remote-<%= username %>" data-username="<%= username %>" playsinline autoplay phx-hook="InitUser"></video>
+      <% end %>
+    </div>
+
+    <button class="button" phx-hook="JoinCall" id="join-call-button" phx-click="join_call">Join Call</button>
 
     <div id="offer-requests">
       <%= for request <- @offer_requests do %>
-        <span phx-hook="HandleOfferRequest" data-from-username="<%= request.from_user.username %>"></span>
+        <span phx-hook="HandleOfferRequest" id="offer-request" data-from-username="<%= request.from_user.username %>"></span>
       <% end %>
     </div>
 

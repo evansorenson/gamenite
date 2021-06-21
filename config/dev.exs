@@ -3,7 +3,7 @@ use Mix.Config
 # Configure your database
 config :gamenite, Gamenite.Repo,
   username: "postgres",
-  password: "soccalife19",
+  password: "unitthird15",
   database: "gamenite_dev",
   hostname: "localhost",
   show_sensitive_data_on_connection_error: true,

@@ -40,17 +40,17 @@ Hooks.JoinCall = {
 
 Hooks.InitUser = {
   mounted () {
-    addUserConnection(this.el.dataset.userUuid)
+    addUserConnection(this.el.dataset.username)
   },
 
   destroyed () {
-    removeUserConnection(this.el.dataset.userUuid)
+    removeUserConnection(this.el.dataset.username)
   }
 }
 
 Hooks.HandleOfferRequest = {
   mounted() {
-    let fromUser = this.el.dataset.fromUserUsername
+    let fromUser = this.el.dataset.fromUsername
     console.log("new offer request from", fromUser)
     createPeerConnection(this, fromUser)
   }
@@ -59,7 +59,7 @@ Hooks.HandleOfferRequest = {
 Hooks.HandleIceCandidateOffer = {
   mounted () {
     let data = this.el.dataset
-    let fromUser = data.fromUserUuid
+    let fromUser = data.fromUsername
     let iceCandidate = JSON.parse(data.iceCandidate)
     let peerConnection = users[fromUser].peerConnection
 
@@ -72,11 +72,11 @@ Hooks.HandleIceCandidateOffer = {
 Hooks.HandleSdpOffer = {
   mounted () {
     let data = this.el.dataset
-    let fromUser = data.fromUserUuid
+    let fromUser = data.fromUsername
     let sdp = data.sdp
 
     if (sdp != "") {
-      console.log("new sdp OFFER from", data.fromUserUuid, data.sdp)
+      console.log("new sdp OFFER from", data.fromUsername, data.sdp)
 
       createPeerConnection(this, fromUser, sdp)
     }
@@ -86,7 +86,7 @@ Hooks.HandleSdpOffer = {
 Hooks.HandleAnswer = {
   mounted () {
     let data = this.el.dataset
-    let fromUser = data.fromUserUuid
+    let fromUser = data.fromUsername
     let sdp = data.sdp
     let peerConnection = users[fromUser].peerConnection
 
@@ -105,7 +105,7 @@ function addUserConnection(username) {
       peerConnection: null
     }
   }
-
+  
   return users
 }
 
@@ -127,6 +127,8 @@ function createPeerConnection(lv, fromUser, offer) {
     ]
   })
 
+  console.log(fromUser)
+  console.log(users)
   // Add this new peer connection to our `users` object.
   users[fromUser].peerConnection = newPeerConnection;
 
