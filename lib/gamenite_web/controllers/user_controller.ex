@@ -26,8 +26,6 @@ defmodule GameniteWeb.UserController do
         render(conn, "new.html", changeset: changeset)
     end
   end
-
-  @spec show(Plug.Conn.t(), any) :: Plug.Conn.t()
   def show(conn, _params) do
     render(conn, "show.html", user: conn.assigns.current_user)
   end
