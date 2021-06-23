@@ -14,23 +14,59 @@ defmodule GameniteWeb.Room.ShowLive do
   @impl true
   def render(assigns) do
     ~L"""
-    <h1><%= @room.title %></h1>
-    <h3>Connected Users:</h3>
-    <ul>
-      <%= for username <- @connected_users do %>
-        <li><%= username %></li>
-      <% end %>
-    </ul>
+    <style>
+    .dot {
+      height: 25px;
+      width: 25px;
+      background-color: #bbb;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    </style>
 
+    <h1><%= "Room: #{@room.title}" %></h1>
+
+    <!--
     <div class="streams">
-      <video id="local-video" playsinline autoplay muted width="600"></video>
+      <div class="video-container video-container--current">
+        <video id="local-video" playsinline autoplay muted></video>
+        <div class="video-container__controls">
+
+          <button id="join-call" phx-click="join_call" phx-hook="JoinCall" class="video-container__control">Join Call<i class="fas fa-fw fa-phone"></i></button>
+          <%= link to: Routes.room_new_path(@socket, :new), id: "leave-call", class: "video-container__control" do %>
+            <i class="fas fa-fw fa-phone-slash"></i>
+          <% end %>
+      </div>
 
       <%= for username <- @connected_users do %>
-        <video id="video-remote-<%= username %>" data-username="<%= username %>" playsinline autoplay phx-hook="InitUser"></video>
+        <div class="video-container">
+          <video id="video-remote-<%= username %>" username="<%= username %>" playsinline autoplay phx-hook="InitUser"></video>
+        </div>
+        <% end %>
+    </div>
+    </div>
+     -->
+
+    <h1>Users</h1>
+    <div class="row">
+      <%= for i <- 0..8 do %>
+        <div class="column">
+          <%= case Enum.fetch(@connected_users, i) do %>
+            <% {:ok, user} -> %>
+              <div style="margin:0">
+                <span class="dot" background-color="#www"></span>
+              </div>
+              <div>
+                <%= user %>
+              </div>
+            <% _ -> %>
+              <div style="margin:0">
+                <span class="dot" background-color="#www"></span>
+              </div>
+           <% end %>
+        </div>
       <% end %>
     </div>
-
-    <button class="button" phx-hook="JoinCall" id="join-call-button" phx-click="join_call">Join Call</button>
 
     <div id="offer-requests">
       <%= for request <- @offer_requests do %>
@@ -40,19 +76,19 @@ defmodule GameniteWeb.Room.ShowLive do
 
     <div id="sdp-offers">
       <%= for sdp_offer <- @sdp_offers do %>
-        <span phx-hook="HandleSdpOffer" data-from-user-uuid="<%= sdp_offer["from_user"] %>" data-sdp="<%= sdp_offer["description"]["sdp"] %>"></span>
+        <span phx-hook="HandleSdpOffer" data-from-username="<%= sdp_offer["from_user"] %>" data-sdp="<%= sdp_offer["description"]["sdp"] %>"></span>
       <% end %>
     </div>
 
     <div id="sdp-answers">
       <%= for answer <- @answers do %>
-        <span phx-hook="HandleAnswer" data-from-user-uuid="<%= answer["from_user"] %>" data-sdp="<%= answer["description"]["sdp"] %>"></span>
+        <span phx-hook="HandleAnswer" data-from-username="<%= answer["from_user"] %>" data-sdp="<%= answer["description"]["sdp"] %>"></span>
       <% end %>
     </div>
 
     <div id="ice-candidates">
       <%= for ice_candidate_offer <- @ice_candidate_offers do %>
-        <span phx-hook="HandleIceCandidateOffer" data-from-user-uuid="<%= ice_candidate_offer["from_user"] %>" data-ice-candidate="<%= Jason.encode!(ice_candidate_offer["candidate"]) %>"></span>
+        <span phx-hook="HandleIceCandidateOffer" data-from-username="<%= ice_candidate_offer["from_user"] %>" data-ice-candidate="<%= Jason.encode!(ice_candidate_offer["candidate"]) %>"></span>
       <% end %>
     </div>
     """
@@ -150,7 +186,7 @@ defmodule GameniteWeb.Room.ShowLive do
 
   @impl true
   def handle_event("new_ice_candidate", payload, socket) do
-    payload = Map.merge(payload, %{"from_user" => socket.assigns.user.uuid})
+    payload = Map.merge(payload, %{"from_user" => socket.assigns.user.username})
 
     send_direct_message(socket.assigns.slug, payload["toUser"], "new_ice_candidate", payload)
     {:noreply, socket}
@@ -158,7 +194,7 @@ defmodule GameniteWeb.Room.ShowLive do
 
   @impl true
   def handle_event("new_sdp_offer", payload, socket) do
-    payload = Map.merge(payload, %{"from_user" => socket.assigns.user.uuid})
+    payload = Map.merge(payload, %{"from_user" => socket.assigns.user.username})
 
     send_direct_message(socket.assigns.slug, payload["toUser"], "new_sdp_offer", payload)
     {:noreply, socket}
@@ -166,7 +202,7 @@ defmodule GameniteWeb.Room.ShowLive do
 
   @impl true
   def handle_event("new_answer", payload, socket) do
-    payload = Map.merge(payload, %{"from_user" => socket.assigns.user.uuid})
+    payload = Map.merge(payload, %{"from_user" => socket.assigns.user.username})
 
     send_direct_message(socket.assigns.slug, payload["toUser"], "new_answer", payload)
     {:noreply, socket}
