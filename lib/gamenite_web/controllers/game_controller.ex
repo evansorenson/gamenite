@@ -1,12 +1,13 @@
 defmodule GameniteWeb.GameController do
   use GameniteWeb, :controller
+  import Phoenix.LiveView.Controller
 
   alias Gamenite.Gaming
   alias Gamenite.Gaming.Game
+  alias GameniteWeb.Game.IndexLive
 
   def index(conn, _params) do
-    games = Gaming.list_games()
-    render(conn, "index.html", games: games)
+    live_render(conn, IndexLive)
   end
 
   def new(conn, _params) do

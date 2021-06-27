@@ -1,0 +1,16 @@
+<h1>Games</h1>
+
+
+<form phx-change="search" class="search-form">
+  <%= text_input :search_field, :query, placeholder: "Search for games", autofocus: true, "phx-debounce": "300" %>
+</form>
+
+<%= for game <- @games do %>
+  <h2><%= game.title %></h2>
+  <p><%= game.description %></p>
+  <%= "Plays: #{game.play_count}" %>
+  <button phx-click="host_game"	phx-value-game="<%= game.id %>">Host Game</button>
+<% end %>
+
+  </tbody>
+</table>
