@@ -15,14 +15,4 @@ defmodule Gamenite.Organizer.Room do
     |> cast(attrs, [:title, :slug])
     |> validate_required([:title, :slug])
   end
-
-  defp format_slug(%Ecto.Changeset{changes: %{slug: _}} = changeset) do
-    changeset
-    |> update_change(:slug, fn slug ->
-      slug
-      |> String.downcase()
-      |> String.replace(" ", "-")
-    end)
-  end
-  defp format_slug(changeset), do: changeset
 end

@@ -21,17 +21,15 @@ defmodule GameniteWeb.Router do
 
     live "/", PageLive, :index
 
-    scope "/room", as: :room do
+    resources "/users", UserController, only: [:index, :show, :new, :create]
+    resources "/sessions", SessionController, only: [:new, :create, :delete]
+
+    resources "/games", GameController, only: [:index, :create]
+
+    scope "/rooms", as: :room do
       live "/new", Room.NewLive, :new
       live "/:slug", Room.ShowLive, :show
     end
-
-    resources "/users", UserController, only: [:index, :show, :new, :create]
-    resources "/sessions", SessionController, only: [:new, :create, :delete]
-    resources "/games", GameController
-    # scope "/games/:title/" do
-      #put rooms in here
-    # end
   end
 
   # Other scopes may use custom stacks.

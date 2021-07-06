@@ -108,4 +108,32 @@ defmodule Gamenite.Organizer do
   def change_room(%Room{} = room, attrs \\ %{}) do
     Room.changeset(room, attrs)
   end
+
+  def create_room_with_random_slug(game) do
+    slug = generate_slug()
+    %Room{}
+    |> Room.changeset(%{"title" => "Test", "slug" => slug})
+    |> Repo.insert()
+  end
+
+  def generate_slug do
+    slug = _generate_slug()
+    IO.puts slug
+    case slug_exists?(slug) do
+      true -> generate_slug()
+      false -> slug
+    end
+  end
+
+  defp _generate_slug() do
+    :random.seed(:erlang.now)
+    alphabet = Enum.map(Enum.to_list(?A..?Z), fn(n) -> <<n>> end)
+    letters = Enum.take_random(alphabet, 6)
+    Enum.join(letters, "")
+  end
+
+  defp slug_exists?(slug) do
+    query = from room in Room, where: room.slug == ^slug
+    Repo.exists?(query)
+  end
 end

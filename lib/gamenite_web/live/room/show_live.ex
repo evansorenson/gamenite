@@ -12,95 +12,11 @@ defmodule GameniteWeb.Room.ShowLive do
   alias Phoenix.Socket.Broadcast
 
 
-@player_colors ['F2F3F4', '222222', 'F3C300', '875692', 'F38400', 'A1CAF1', 'BE0032', 'C2B280', '848482', '008856', 'E68FAC', '0067A5', 'F99379', '604E97', 'F6A600', 'B3446C', 'DCD300', '882D17', '8DB600', '654522', 'E25822', '2B3D26']
+  @player_colors ['F2F3F4', '222222', 'F3C300', '875692', 'F38400', 'A1CAF1', 'BE0032', 'C2B280', '848482', '008856', 'E68FAC', '0067A5', 'F99379', '604E97', 'F6A600', 'B3446C', 'DCD300', '882D17', '8DB600', '654522', 'E25822', '2B3D26']
 
   @impl true
-  def render(assigns) do
-    ~L"""
-    <style>
-    .dot {
-      height: 25px;
-      width: 25px;
-      background-color: #bbb;
-      border-radius: 50%;
-      display: inline-block;
-    }
-    </style>
-
-    <h1><%= "Room: #{@room.title}" %></h1>
-
-    <!--
-    <div class="streams">
-      <div class="video-container video-container--current">
-        <video id="local-video" playsinline autoplay muted></video>
-        <div class="video-container__controls">
-
-          <button id="join-call" phx-click="join_call" phx-hook="JoinCall" class="video-container__control">Join Call<i class="fas fa-fw fa-phone"></i></button>
-          <%= link to: Routes.room_new_path(@socket, :new), id: "leave-call", class: "video-container__control" do %>
-            <i class="fas fa-fw fa-phone-slash"></i>
-          <% end %>
-      </div>
-
-      <%= for username <- @connected_users do %>
-        <div class="video-container">
-          <video id="video-remote-<%= username %>" username="<%= username %>" playsinline autoplay phx-hook="InitUser"></video>
-        </div>
-        <% end %>
-    </div>
-    </div>
-     -->
-
-    <h1>Users</h1>
-    <div class="row">
-      <%= for i <- 0..8 do %>
-        <div class="column">
-          <%= case Enum.fetch(@connected_users, i) do %>
-            <% {:ok, user} -> %>
-              <div style="margin:0">
-                <span class="dot" background-color="#www"></span>
-              </div>
-              <div>
-                <%= user %>
-              </div>
-            <% _ -> %>
-              <div style="margin:0">
-                <span class="dot" background-color="#www"></span>
-              </div>
-           <% end %>
-        </div>
-      <% end %>
-    </div>
-
-    <div id="offer-requests">
-      <%= for request <- @offer_requests do %>
-        <span phx-hook="HandleOfferRequest" id="offer-request" data-from-username="<%= request.from_user.username %>"></span>
-      <% end %>
-    </div>
-
-    <div id="sdp-offers">
-      <%= for sdp_offer <- @sdp_offers do %>
-        <span phx-hook="HandleSdpOffer" data-from-username="<%= sdp_offer["from_user"] %>" data-sdp="<%= sdp_offer["description"]["sdp"] %>"></span>
-      <% end %>
-    </div>
-
-    <div id="sdp-answers">
-      <%= for answer <- @answers do %>
-        <span phx-hook="HandleAnswer" data-from-username="<%= answer["from_user"] %>" data-sdp="<%= answer["description"]["sdp"] %>"></span>
-      <% end %>
-    </div>
-
-    <div id="ice-candidates">
-      <%= for ice_candidate_offer <- @ice_candidate_offers do %>
-        <span phx-hook="HandleIceCandidateOffer" data-from-username="<%= ice_candidate_offer["from_user"] %>" data-ice-candidate="<%= Jason.encode!(ice_candidate_offer["candidate"]) %>"></span>
-      <% end %>
-    </div>
-    """
-  end
-
-  @impl true
-  def mount(%{"slug" => slug}, session, socket) do
+  def mount(%{"slug" => slug}, _session, socket) do
     user = %User{username: "Guest#{:rand.uniform(1000000)}"}
-    IO.puts session
 
     # This PubSub subscription will also handle other events from the users.
     Phoenix.PubSub.subscribe(Gamenite.PubSub, "room:" <> slug)
@@ -117,7 +33,7 @@ defmodule GameniteWeb.Room.ShowLive do
         {:ok,
           socket
           |> put_flash(:error, "That room does not exist.")
-          |> push_redirect(to: Routes.room_new_path(socket, :new))
+          |> push_redirect(to: Routes.game_path(socket, :index))
         }
       room ->
         {:ok,
