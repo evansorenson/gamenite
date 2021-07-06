@@ -120,4 +120,35 @@ defmodule Gamenite.CardsTest do
       assert %Ecto.Changeset{} = Cards.change_card(card)
     end
   end
+
+  describe "drawing" do
+    test "draw/1 draw -5 cards" do
+      deck = deck_fixture()
+      assert {:error, "Must draw a positive integer of cards."} == Cards.draw(deck, -5)
+    end
+    test "draw/1 draw 0 cards" do
+      deck = deck_fixture()
+      assert {:error, "Must draw a positive integer of cards."} == Cards.draw(deck, 0)
+    end
+    test "draw/1 draw 1 card" do
+      deck = deck_fixture()
+      {cards, remaining_deck} = Cards.draw(deck)
+    end
+    test "draw/1 draw 5 cards" do
+      deck = deck_fixture()
+      {cards, remaining_deck} = Cards.draw(deck, 5)
+    end
+    test "draw/1 draw 10 cards" do
+      deck = deck_fixture()
+      {cards, remaining_deck} = Cards.draw(deck, 10)
+    end
+    test "draw more cards than left in deck" do
+      deck = deck_fixture()
+      Cards.draw(deck)
+    end
+
+    test "draw_into_hand/2 "
+  end
+
+
 end

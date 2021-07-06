@@ -212,10 +212,14 @@ defmodule Gamenite.Cards do
   def draw(deck, num, _) when num >= Kernel.length(deck) do
     {:error, "Not enough cards in deck."}
   end
+  def draw(_, num, _) when not is_integer(num) or num < 1 do
+    {:error, "Must draw a positive integer of cards."}
+  end
   def draw(deck, num, is_face_up) do
     {cards, remaining_deck} = Enum.split(deck.cards, num)
     {Enum.map(cards, &(flip_card(&1, is_face_up))), remaining_deck}
   end
+
 
   def draw_into_hand(deck, hand, num \\ 1, is_face_up \\ true) do
     {deck, cards} = draw(deck, num, is_face_up)
