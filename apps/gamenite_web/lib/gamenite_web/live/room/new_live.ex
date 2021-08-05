@@ -10,6 +10,9 @@ defmodule GameniteWeb.Room.NewLive do
   alias GameniteWeb.Presence
   alias Phoenix.Socket.Broadcast
 
+
+  @player_colors ['F2F3F4', '222222', 'F3C300', '875692', 'F38400', 'A1CAF1', 'BE0032', 'C2B280', '848482', '008856', 'E68FAC', '0067A5', 'F99379', '604E97', 'F6A600', 'B3446C', 'DCD300', '882D17', '8DB600', '654522', 'E25822', '2B3D26']
+
   @impl true
   def mount(_params, session, socket) do
 

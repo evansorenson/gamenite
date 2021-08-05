@@ -206,7 +206,6 @@ defmodule Gamenite.Cards do
    %{ card | is_face_up: is_face_up }
   end
 
-
   @doc """
   Returns {cards, remaining_deck}.
   """
