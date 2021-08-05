@@ -1,22 +1,29 @@
-# This file is responsible for configuring your application
-# and its dependencies with the aid of the Mix.Config module.
+# This file is responsible for configuring your umbrella
+# and **all applications** and their dependencies with the
+# help of Mix.Config.
 #
-# This configuration file is loaded before any dependency and
-# is restricted to this project.
-
-# General application configuration
+# Note that all applications in your umbrella share the
+# same configuration and dependencies, which is why they
+# all use the same configuration file. If you want different
+# configurations or dependencies per app, it is best to
+# move said applications out of the umbrella.
 use Mix.Config
 
+# Configure Mix tasks and generators
 config :gamenite,
   ecto_repos: [Gamenite.Repo]
 
+config :gamenite_web,
+  ecto_repos: [Gamenite.Repo],
+  generators: [context_app: :gamenite]
+
 # Configures the endpoint
-config :gamenite, GameniteWeb.Endpoint,
+config :gamenite_web, GameniteWeb.Endpoint,
   url: [host: "localhost"],
-  secret_key_base: "2t/siVNamhb9dmrWyjS3I/OEhZbZWnUo7TBYUkmNEbEjPDjgPeBm53Ivbz2KvZ3Q",
+  secret_key_base: "vFT8eI8mCdkGpDxyOYEbX9SuSnpErddv6arV79NL6QUbonYft/otBfYzm5p9D1dJ",
   render_errors: [view: GameniteWeb.ErrorView, accepts: ~w(html json), layout: false],
   pubsub_server: Gamenite.PubSub,
-  live_view: [signing_salt: "wSHwlEkX"]
+  live_view: [signing_salt: "Ku8IXljo"]
 
 # Configures Elixir's Logger
 config :logger, :console,

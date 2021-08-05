@@ -7,16 +7,18 @@ use Mix.Config
 # Run `mix help test` for more information.
 config :gamenite, Gamenite.Repo,
   username: "postgres",
-  password: "postgres",
-  database: "gamenite_test#{System.get_env("MIX_TEST_PARTITION")}",
+  password: "unitthird15",
+  database: "gamenite_dev",
   hostname: "localhost",
   pool: Ecto.Adapters.SQL.Sandbox
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
-config :gamenite, GameniteWeb.Endpoint,
+config :gamenite_web, GameniteWeb.Endpoint,
   http: [port: 4002],
   server: false
 
 # Print only warnings and errors during test
 config :logger, level: :warn
+
+config :pbkdf2_elixir, :rounds, 1
