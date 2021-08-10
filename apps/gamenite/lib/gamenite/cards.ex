@@ -7,6 +7,7 @@ defmodule Gamenite.Cards do
   alias Gamenite.Repo
 
   alias Gamenite.Cards.Deck
+  alias Gamenite.Cards.Hand
 
   @doc """
   Returns the list of decks.
@@ -207,7 +208,7 @@ defmodule Gamenite.Cards do
   end
 
   @doc """
-  Returns {cards, remaining_deck}.
+  Returns { drawn_cards, remaining_deck}.
   """
   def draw(deck, num, is_face_up \\ true)
   def draw(_, num, _) when num < 1 or not is_integer(num), do: {:error, "Number of cards drawn must be positive integer."}
@@ -215,12 +216,12 @@ defmodule Gamenite.Cards do
   def draw(deck, num, is_face_up) do
     {drawn_cards, remaining_deck} = Enum.split(deck, num)
 
-    flipped_cards = Enum.map(drawn_cards, &(flip_card(&1, is_face_up)))
-    { flipped_cards, remaining_deck }
+    drawn_fillped_cards = Enum.map(drawn_cards, &(flip_card(&1, is_face_up)))
+    { drawn_fillped_cards, remaining_deck }
   end
 
   @doc """
-  Like shuffle returns {cards, remaining_deck}. If num > length of deck remaining, then will
+  Like draw returns { drawn_cards, remaining_deck}. If num > length of deck remaining, then will
   shuffle discard pile and draw remaining cards from there.
   """
   def draw_with_reshuffle(deck, discard_pile, num, is_face_up \\ true)
@@ -246,7 +247,17 @@ defmodule Gamenite.Cards do
 
 
   def draw_into_hand(deck, hand, num \\ 1) do
-    { cards, remaining_deck} = draw(deck, num)
-    { hand ++ cards, remaining_deck }
+    { drawn_cards, remaining_deck} = draw(deck, num)
+    { hand
+    |> update_in(hand.cards, fn cards -> [drawn_cards | cards] end),
+    remaining_deck }
+  end
+
+  def shuffle(deck), do: Enum.shuffle(deck)
+
+  def discard(card, hand, discard_pile) do
+    { hand
+    |> update_in(hand.cards, fn cards -> List.delete(cards, card) end),
+    [ discard_pile | card]}
   end
 end

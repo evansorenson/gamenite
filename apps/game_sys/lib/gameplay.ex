@@ -14,16 +14,21 @@ defmodule GameSys.Gameplay do
   end
 
   # add player to team with lowest number of players, with score as tiebreaker
-  def add_player( teams = [ %Team | _tail], player) do
+  def add_player( teams = [ %Team{} | _tail ], player) do
     teams
-    |> Enum.sort_by()
+    |> Enum.sort_by(&length(&1), :asc)
+    |> List.first()
+    |> Map.get_and_update!(:players, fn players -> [ player | players ] end)
+  end
+  def add_player( players, player) do
+    [ player | players ]
   end
 
   def next_list_element(list, element) do
     index = Enum.find_index(list, &(&1 == element))
     next_index = _next_list_index(list, index)
     next_element = Enum.fetch!(list, next_index)
-    { next_element, next_index}
+    { next_element, next_index }
   end
 
   defp _next_list_index(list, index) when index >= 0 and index < Kernel.length(list), do: rem(index + 1, length(list))

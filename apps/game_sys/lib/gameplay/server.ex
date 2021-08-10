@@ -1,7 +1,5 @@
-defmodule GameSys.GameplayServer do
+defmodule Gameplay.GameplayServer do
   use GenServer
-
-  alias GameSys.Gameplay
 
   @impl true
   def init(game_map) do

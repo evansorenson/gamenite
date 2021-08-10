@@ -1,4 +1,4 @@
-defmodule GameSys.GameplayAPI do
+defmodule GameSys.API do
   @server GameSys.CharadesServer
 
   def start_link(game, uuid) do
