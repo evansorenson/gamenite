@@ -47,7 +47,7 @@ defmodule GameniteWeb.MixProject do
       {:telemetry_poller, "~> 0.4"},
       {:gettext, "~> 0.11"},
       {:gamenite, in_umbrella: true},
-      {:game_sys, in_umbrella: true},
+      {:game, in_umbrella: true},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:stun, "~> 1.0"},

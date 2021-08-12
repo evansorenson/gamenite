@@ -1,4 +1,4 @@
-defmodule GameSys.Application do
+defmodule Game.Application do
   # See https://hexdocs.pm/elixir/Application.html
   # for more information on OTP Applications
   @moduledoc false

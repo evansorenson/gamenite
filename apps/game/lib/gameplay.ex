@@ -1,10 +1,10 @@
-defmodule GameSys.Gameplay do
-  alias GameSys.Team
-  alias GameSys.Player
+defmodule Gameplay do
+  alias Gameplay.Team
+  alias Gameplay.Player
 
   def next_player( teams = [ %Team{} | _tail], current_team) do
     { next_team, next_team_index } = next_list_element(teams, current_team)
-    {_, next_team_updated} = Map.get_and_update!(next_team, :player_index, &({&1, _next_list_index(next_team.players, &1)}))
+    next_team_updated = Map.update(next_team, :current_player_index, 0, &(_next_list_index(next_team.players, &1)))
     updated_teams = List.replace_at(teams, next_team_index, next_team_updated)
     { updated_teams , next_team_updated }
   end
@@ -15,13 +15,22 @@ defmodule GameSys.Gameplay do
 
   # add player to team with lowest number of players, with score as tiebreaker
   def add_player( teams = [ %Team{} | _tail ], player) do
-    teams
-    |> Enum.sort_by(&length(&1), :asc)
-    |> List.first()
-    |> Map.get_and_update!(:players, fn players -> [ player | players ] end)
+    team_to_add_to = team_with_lowest_players(teams)
+
+
+    |> Map.get_and_update!(:players, fn players -> { players, [ player | players ] } end)
+    |> elem(1)
+
+    List.replace_at(teams, Enum.find_index
   end
   def add_player( players, player) do
     [ player | players ]
+  end
+
+  defp team_with_lowest_players(teams) do
+    teams
+    |> Enum.sort_by(fn team -> length(team.players) end, :asc)
+    |> List.first()
   end
 
   def next_list_element(list, element) do

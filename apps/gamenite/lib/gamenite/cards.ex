@@ -199,7 +199,11 @@ defmodule Gamenite.Cards do
     Card.changeset(card, attrs)
   end
 
-  # Flipping cards logic
+  @doc """
+  Flips card by changing is_face_up value in card struct.
+
+  Returns %Cards.Card{}.
+  """
   def flip_card(%Card{} = card) do
     %{ card | is_face_up: !card.is_face_up }
   end
@@ -216,25 +220,28 @@ defmodule Gamenite.Cards do
   def draw(deck, num, is_face_up) do
     {drawn_cards, remaining_deck} = Enum.split(deck, num)
 
-    drawn_fillped_cards = Enum.map(drawn_cards, &(flip_card(&1, is_face_up)))
-    { drawn_fillped_cards, remaining_deck }
+    drawn_flipped_cards = Enum.map(drawn_cards, &(flip_card(&1, is_face_up)))
+    { drawn_flipped_cards, remaining_deck }
   end
 
   @doc """
-  Like draw returns { drawn_cards, remaining_deck}. If num > length of deck remaining, then will
+  Similar to draw but includes discard pile for reshuffles. If num > length of deck remaining, then will
   shuffle discard pile and draw remaining cards from there.
+
+  Returns { drawn_cards, remaining_deck, discard_pile }
   """
   def draw_with_reshuffle(deck, discard_pile, num, is_face_up \\ true)
   def draw_with_reshuffle(deck, discard_pile, num, _) when num > Kernel.length(discard_pile) + Kernel.length(deck) do
     { :error, "Number of cards drawn must be less than left in deck and discard pile combined."}
   end
-  def draw_with_reshuffle(deck, _, num, is_face_up) when num <= Kernel.length(deck) do
-    draw(deck, num, is_face_up)
+  def draw_with_reshuffle(deck, discard_pile, num, is_face_up) when num <= Kernel.length(deck) do
+    { drawn_cards, remaining_deck } = draw(deck, num, is_face_up)
+    { drawn_cards, remaining_deck, discard_pile }
   end
   def draw_with_reshuffle(deck, discard_pile, num, is_face_up) when Kernel.length(deck) == 0 do
     replenished_deck = Enum.shuffle(discard_pile)
     { drawn_after_reshuffle, remaining_deck } = draw(replenished_deck, num, is_face_up)
-    { drawn_after_reshuffle , remaining_deck }
+    { drawn_after_reshuffle , remaining_deck, [] }
   end
   def draw_with_reshuffle(deck, discard_pile, num, is_face_up) do
     cards_left = Kernel.length(deck)
@@ -242,22 +249,33 @@ defmodule Gamenite.Cards do
 
     replenished_deck = Enum.shuffle(discard_pile)
     { drawn_after_reshuffle, remaining_deck } = draw(replenished_deck, num - cards_left, is_face_up)
-    { initial_drawn_cards ++ drawn_after_reshuffle, remaining_deck }
+    { initial_drawn_cards ++ drawn_after_reshuffle, remaining_deck, [] }
   end
 
+  @doc """
+  Draws cards and adds them to hand.
 
-  def draw_into_hand(deck, hand, num \\ 1) do
-    { drawn_cards, remaining_deck} = draw(deck, num)
-    { hand
-    |> update_in(hand.cards, fn cards -> [drawn_cards | cards] end),
-    remaining_deck }
+  Returns {[hand], [remaining_deck], [discard_pile]}
+  """
+
+  def draw_into_hand(deck, hand, discard_pile, num \\ 1) do
+    { drawn_cards, remaining_deck} = draw_with_reshuffle(deck, discard_pile, num)
+    { [ drawn_cards | hand ], remaining_deck, discard_pile }
   end
 
+  @doc """
+  Shuffles deck.
+
+  Returns deck in random order.
+  """
   def shuffle(deck), do: Enum.shuffle(deck)
 
+  @doc """
+  Discards card from hand into discard pile.
+
+  Returns { [hand], [discard_pile] }
+  """
   def discard(card, hand, discard_pile) do
-    { hand
-    |> update_in(hand.cards, fn cards -> List.delete(cards, card) end),
-    [ discard_pile | card]}
+    { List.delete(hand, card), [ card | discard_pile ]}
   end
 end

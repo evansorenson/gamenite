@@ -1,9 +1,9 @@
-defmodule GameSys.MixProject do
+defmodule Game.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :game_sys,
+      app: :game,
       version: "0.1.0",
       elixir: "~> 1.11",
       start_permanent: Mix.env() == :prod,
@@ -15,7 +15,7 @@ defmodule GameSys.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {GameSys.Application, []}
+      mod: {Game.Application, []}
     ]
   end
 
