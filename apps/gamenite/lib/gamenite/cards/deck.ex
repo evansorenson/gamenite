@@ -2,9 +2,11 @@ defmodule Gamenite.Cards.Deck do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Gamenite.Cards.Card
+
   schema "decks" do
     field :title, :string
-    # has_many :cards
+    has_many :cards, Card
 
     timestamps()
   end

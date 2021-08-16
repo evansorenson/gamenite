@@ -10,7 +10,7 @@ by adding `game_sys` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:game_sys, "~> 0.1.0"}
+    {:game, "~> 0.1.0"}
   ]
 end
 ```

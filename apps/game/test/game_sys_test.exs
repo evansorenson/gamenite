@@ -1,8 +1,8 @@
-defmodule GameSysTest do
+defmodule GameTest do
   use ExUnit.Case
-  doctest GameSys
+  doctest Game
 
   test "greets the world" do
-    assert GameSys.hello() == :world
+    assert Game.hello() == :world
   end
 end
