@@ -199,7 +199,7 @@ defmodule Gamenite.Cards do
     Card.changeset(card, attrs)
   end
 
-  @doc """
+    @doc """
   Flips card by changing is_face_up value in card struct.
 
   Returns %Cards.Card{}.
@@ -259,8 +259,8 @@ defmodule Gamenite.Cards do
   """
 
   def draw_into_hand(deck, hand, discard_pile, num \\ 1) do
-    { drawn_cards, remaining_deck} = draw_with_reshuffle(deck, discard_pile, num)
-    { [ drawn_cards | hand ], remaining_deck, discard_pile }
+    { drawn_cards, remaining_deck, new_discard_pile } = draw_with_reshuffle(deck, discard_pile, num)
+    { [ drawn_cards | hand ], remaining_deck, new_discard_pile }
   end
 
   @doc """
