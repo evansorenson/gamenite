@@ -23,8 +23,8 @@ defmodule Gameplay.TeamGame do
     is_finished: false)
   end
 
-    @doc """
-  Moves to next player's and/or team's turn.
+  @doc """
+  Moves to next player's and team's turn.
 
   Returns %__MODULE__{}.
   """
@@ -52,9 +52,15 @@ defmodule Gameplay.TeamGame do
     { _, next_team } = next_list_element(teams, current_team)
 
     game
-    |> put_in(team_key(teams, current_team), current_team)
+    |> update_team(teams, current_team)
     |> Map.replace!(:current_team, next_team)
   end
+
+  defp update_team(game, teams, team) do
+    game
+    |> put_in([:teams][Access.at(find_index(teams, team))], team)
+  end
+
 
   def inc_round(%__MODULE__{ rounds: rounds, current_round: current_round} = game) do
     _inc_round(game, next_list_element(rounds, current_round))
@@ -91,11 +97,15 @@ defmodule Gameplay.TeamGame do
   end
   defp _add_player(%{ current_team: current_team } = game, team, player) when current_team.id == team.id do
     game
-    |> update_in([:current_team][:players], fn players -> [ player | players ] end)
+    |> update_in(
+      [:current_team][:players],
+      fn players -> [ player | players ] end)
   end
   defp _add_player(%{ teams: teams } = game, team, player) do
     game
-    |> update_in(team_key(teams, team)[:players], fn players -> [ player | players ] end)
+    |> update_in(
+      [:teams][Access.at(find_index(teams, team))][:players],
+      fn players -> [ player | players ] end)
   end
 
   defp team_with_lowest_players(teams) do
@@ -203,9 +213,5 @@ defmodule Gameplay.TeamGame do
 
     game
     |> Map.replace!(:current_turn, turn)
-  end
-
-  defp team_key(teams, team) do
-    [:teams][Access.at(find_index(teams, team))]
   end
 end
