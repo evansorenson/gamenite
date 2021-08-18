@@ -259,8 +259,13 @@ defmodule Gamenite.Cards do
   """
 
   def draw_into_hand(deck, hand, discard_pile, num \\ 1) do
-    { drawn_cards, remaining_deck, new_discard_pile } = draw_with_reshuffle(deck, discard_pile, num)
-    { [ drawn_cards | hand ], remaining_deck, new_discard_pile }
+    case draw_with_reshuffle(deck, discard_pile, num) do
+      { :error, reason } ->
+        { :error, reason }
+
+      { drawn_cards, remaining_deck, new_discard_pile } ->
+        { [ drawn_cards | hand ], remaining_deck, new_discard_pile }
+    end
   end
 
   @doc """
@@ -271,11 +276,11 @@ defmodule Gamenite.Cards do
   def shuffle(deck), do: Enum.shuffle(deck)
 
   @doc """
-  Discards card from hand into discard pile.
+  Moves card from one pile to another.
 
-  Returns { [hand], [discard_pile] }
+  Returns { [origin_pile], [destination_pile] }
   """
-  def discard(card, hand, discard_pile) do
-    { List.delete(hand, card), [ card | discard_pile ]}
+  def move_card(card, origin_pile, destination_pile) do
+    { List.delete(origin_pile, card), [ card | destination_pile ]}
   end
 end

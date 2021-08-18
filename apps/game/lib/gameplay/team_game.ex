@@ -1,18 +1,25 @@
 defmodule Gameplay.TeamGame do
   alias Gamenite.Cards
   alias Gameplay.Team
+  alias Gameplay.PartyTurn
 
-  defstruct teams: [], current_team: nil, deck: [], discard_pile: [], rounds: [], current_round: nil
+  defstruct teams: [], current_team: nil, deck: [], starting_deck: [], discard_pile: [], current_turn: nil, rounds: [], current_round: nil, turn_length: 60, skip_limit: 2
 
-  def new(players, num_teams, deck, rounds) do
+  def new(players, num_teams, deck, rounds, turn_length, skip_limit) do
     teams = Team.split_teams(players, num_teams)
+    current_team = List.first(teams)
+
     struct!(__MODULE__,
     teams: teams,
-    current_team: List.first(teams),
+    current_team: current_team,
+    starting_deck: deck,
     deck: deck,
     discard_pile: [],
+    current_turn: PartyTurn.new(current_team.current_player),
     rounds: rounds,
     current_round: List.first(rounds),
+    skip_limit: skip_limit,
+    turn_length: turn_length,
     is_finished: false)
   end
 
@@ -23,8 +30,10 @@ defmodule Gameplay.TeamGame do
   """
   def next_player(game) do
     game
+    |> end_turn
     |> inc_player
     |> inc_team
+    |> new_turn
   end
 
   def inc_player(%__MODULE__{ teams: teams, current_team: current_team } = game) do
@@ -51,10 +60,10 @@ defmodule Gameplay.TeamGame do
     _inc_round(game, next_list_element(rounds, current_round))
   end
   defp _inc_round(game, { 0, _ }) do
-    Map.put(game, :is_finished, true)
+    Map.replace!(game, :is_finished, true)
   end
   defp _inc_round(game, { _, next_round }) do
-    Map.put(game, :current_round, next_round)
+    Map.replace!(game, :current_round, next_round)
   end
 
 
@@ -96,8 +105,35 @@ defmodule Gameplay.TeamGame do
     |> List.first()
   end
 
-  def reset_deck(%__MODULE__{ deck: deck, discard_pile: discard_pile } = game) do
+  def reset_deck(game) do
+    game
+    |> clear_all_players_hands
+    |> set_deck_to_starting
+  end
 
+  def clear_all_players_hands(%__MODULE__{ teams: teams, current_team: current_team } = game) do
+    cleared_teams = teams
+    |> Enum.map(&clear_team_hand(&1))
+
+    cleared_current_team =  clear_team_hand(current_team)
+
+    game
+    |> Map.replace!(:teams, cleared_teams)
+    |> Map.replace!(:current_team, cleared_current_team)
+  end
+
+  defp clear_team_hand(team) do
+    Enum.map(team.players, &clear_player_hand(&1))
+  end
+  defp clear_player_hand(player) do
+    player
+    |> Map.replace!(:hand, [])
+  end
+
+  def set_deck_to_starting(%__MODULE__{ starting_deck: starting_deck } = game) do
+    game
+    |> Map.replace!(:deck, starting_deck)
+    |> Map.replace!(:discard_pile, [])
   end
 
   def draw_card(%__MODULE__{ deck: deck, discard_pile: discard_pile, current_team: current_team } = game, num) do
@@ -107,18 +143,66 @@ defmodule Gameplay.TeamGame do
 
       { new_hand,  new_deck, new_discard_pile } ->
         game
-        |> put_in([:current_team][:current_player][:hand], new_hand)
+        |> update_current_hand(new_hand)
         |> Map.replace!(:deck, new_deck)
         |> Map.replace!(:discard_pile, new_discard_pile)
     end
   end
 
-  def discard(%__MODULE__{ discard_pile: discard_pile, current_team: current_team } = game, card) do
-    {new_hand, new_discard_pile } = Cards.discard(card, current_team.current_player.hand, discard_pile)
+  def update_current_hand(game, hand) do
+    game
+    |> put_in([:current_team][:current_player][:hand], hand)
+  end
+
+  def update_discard_pile(game, discard_pile) do
+    game
+    |> Map.replace!(:discard_pile, discard_pile)
+  end
+
+  def skip_card(%__MODULE__{ current_turn: current_turn, skip_limit: skip_limit } = _game, _card)
+  when current_turn.num_cards_skipped >= skip_limit
+  do
+    {:error, "You have reached skip limit of #{current_turn.skip_limit}"}
+  end
+  def skip_card(%__MODULE__{ discard_pile: discard_pile, current_team: current_team } = game, card) do
+    { new_hand, new_discard_pile } =
+      Cards.move_card(card, current_team.current_player.hand, discard_pile)
 
     game
-    |> put_in([:current_team][:current_player][:hand], new_hand)
-    |> Map.replace!(:discard_pile, new_discard_pile)
+    |> update_current_hand(new_hand)
+    |> update_discard_pile(new_discard_pile)
+    |> inc_skipped_card
+  end
+
+  defp inc_skipped_card(game) do
+    game
+    |> update_in([:current_turn][:num_cards_skipped], &(&1 + 1))
+  end
+
+  def correct_card(%__MODULE__{ current_turn: current_turn, current_team: current_team } = game, card) do
+    { new_hand, cards_correct } =
+      Cards.move_card(card, current_team.current_player.hand, current_turn.cards_correct)
+
+    game
+    |> update_current_hand(new_hand)
+    |> add_to_correct_cards(cards_correct)
+  end
+
+  defp add_to_correct_cards(game, cards_correct) do
+    game
+    |> put_in([:current_turn][:cards_correct], cards_correct)
+  end
+
+  def end_turn(%__MODULE__{ current_turn: current_turn } = game) do
+    game
+    |> update_in([:current_team][:turns], fn turns -> [ current_turn | turns ] end)
+  end
+
+  def new_turn(%__MODULE__{ current_team: current_team } = game) do
+    turn = PartyTurn.new(current_team.current_player)
+
+    game
+    |> Map.replace!(:current_turn, turn)
   end
 
   defp team_key(teams, team) do
