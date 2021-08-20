@@ -5,8 +5,7 @@ defmodule Gameplay.TeamGame do
 
   defstruct teams: [], current_team: nil, deck: [], starting_deck: [], discard_pile: [], current_turn: nil, rounds: [], current_round: nil, turn_length: 60, skip_limit: 2
 
-  def new(players, num_teams, deck, rounds, turn_length, skip_limit) do
-    teams = Team.split_teams(players, num_teams)
+  def new(teams, deck, rounds, turn_length \\ 60, skip_limit \\ 2) do
     current_team = List.first(teams)
 
     struct!(__MODULE__,
@@ -36,6 +35,11 @@ defmodule Gameplay.TeamGame do
     |> new_turn
   end
 
+  def end_turn(%__MODULE__{ current_turn: current_turn } = game) do
+    game
+    |> update_in([:current_team][:turns], fn turns -> [ current_turn | turns ] end)
+  end
+
   def inc_player(%__MODULE__{ teams: teams, current_team: current_team } = game) do
     game
     |> put_in(
@@ -53,7 +57,7 @@ defmodule Gameplay.TeamGame do
 
     game
     |> update_team(teams, current_team)
-    |> Map.replace!(:current_team, next_team)
+    |> replace_current_team(next_team)
   end
 
   defp update_team(game, teams, team) do
@@ -61,6 +65,17 @@ defmodule Gameplay.TeamGame do
     |> put_in([:teams][Access.at(find_index(teams, team))], team)
   end
 
+  defp replace_current_team(game, next_team) do
+    game
+    |> Map.replace!(:current_team, next_team)
+  end
+
+  def new_turn(%__MODULE__{ current_team: current_team } = game) do
+    turn = PartyTurn.new(current_team.current_player)
+
+    game
+    |> Map.replace!(:current_turn, turn)
+  end
 
   def inc_round(%__MODULE__{ rounds: rounds, current_round: current_round} = game) do
     _inc_round(game, next_list_element(rounds, current_round))
@@ -71,7 +86,6 @@ defmodule Gameplay.TeamGame do
   defp _inc_round(game, { _, next_round }) do
     Map.replace!(game, :current_round, next_round)
   end
-
 
   defp next_list_element(list, element) do
     curr_idx = find_index(list, element)
@@ -129,7 +143,7 @@ defmodule Gameplay.TeamGame do
 
     game
     |> Map.replace!(:teams, cleared_teams)
-    |> Map.replace!(:current_team, cleared_current_team)
+    |> replace_current_team(cleared_current_team)
   end
 
   defp clear_team_hand(team) do
@@ -201,17 +215,5 @@ defmodule Gameplay.TeamGame do
   defp add_to_correct_cards(game, cards_correct) do
     game
     |> put_in([:current_turn][:cards_correct], cards_correct)
-  end
-
-  def end_turn(%__MODULE__{ current_turn: current_turn } = game) do
-    game
-    |> update_in([:current_team][:turns], fn turns -> [ current_turn | turns ] end)
-  end
-
-  def new_turn(%__MODULE__{ current_team: current_team } = game) do
-    turn = PartyTurn.new(current_team.current_player)
-
-    game
-    |> Map.replace!(:current_turn, turn)
   end
 end

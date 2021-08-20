@@ -3,11 +3,12 @@ defmodule Gameplay.Team do
 
   @team_colors [:red, :blue, :green, :purple, :green, :orange, :pink ]
   def new(players, index) do
-    name = "Team #{Integer.to_string(index - 1)}"
+    name = "Team #{Integer.to_string(index)}"
     color = Enum.at(@team_colors, index - 1)
 
     struct!(
       __MODULE__,
+      id: Ecto.UUID.generate(),
       name: name,
       color: color,
       players: players,
