@@ -19,12 +19,12 @@ defmodule GameBuilders do
     Enum.map(number_of_players_on_each_team, &build_team(&1))
   end
 
-  def build_team(num_players)do
-    players = Enum.map(1..num_players, fn player -> setup_player(player) end)
-    %Team{ players: players }
+  def build_team(num_players \\ 4, team_number \\ 1)do
+    players = Enum.map(1..num_players, fn player -> build_player(player) end)
+    Team.new(players, team_number)
   end
 
-  def setup_player(name) do
+  def build_player(name) do
     %Player{ name: name }
   end
 

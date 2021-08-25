@@ -1,19 +1,44 @@
 defmodule Gameplay.Team do
-  defstruct id: Ecto.UUID, name: nil, score: 0, players: %{}, color: nil, current_player: nil, turns: []
+  use Accessible
+  use Ecto.Schema
+  import Ecto.Changeset
+
+  alias Gameplay.{Player, Turn}
+
+  @primary_key {:id, :binary_id, autogenerate: true}
+  embedded_schema do
+    field :name, :string
+    field :score, :integer
+    field :color, :string
+    embeds_many :players, Player
+    embeds_one :current_player, Player
+    embeds_many :turns, Turn
+  end
 
   @team_colors [:red, :blue, :green, :purple, :green, :orange, :pink ]
+  def changeset(team, fields) do
+    team
+    |> name_changeset(fields)
+    |> cast(fields, [:score, :color, :players, :current_player, :turns])
+    |> validate_required([:players, :current_player])
+    |> validate_number(:score, greater_than_or_equal_to: 0)
+    |> validate_inclusion(:color, @team_colors)
+    |> validate_length(:players, min: 2, max: 10)
+  end
+
+  def name_changeset(team, fields) do
+    team
+    |> cast(fields, [:name])
+    |> validate_required(:name)
+    |> validate_length(:name, min: 1, max: 15)
+  end
+
+
   def new(players, index) do
     name = "Team #{Integer.to_string(index)}"
     color = Enum.at(@team_colors, index - 1)
 
-    struct!(
-      __MODULE__,
-      id: Ecto.UUID.generate(),
-      name: name,
-      color: color,
-      players: players,
-      current_player: List.first(players)
-    )
+
   end
 
 
@@ -37,6 +62,7 @@ defmodule Gameplay.Team do
   [ team | teams ]
   end
   defp _split_teams(teams, players, n) do
+    IO.puts Kernel.floor(length(players) / n)
     { team_players, remaining_players } = Enum.split(players, div(length(players), n))
     team = new(team_players, n - 1 )
     _split_teams([ team | teams ], remaining_players, n - 1)

@@ -1,25 +1,61 @@
 defmodule Gameplay.TeamGame do
+  use Accessible
+  use Ecto.Schema
+  import Ecto.Changeset
+
   alias Gamenite.Cards
+  alias Gamenite.Cards.Card
   alias Gameplay.Team
-  alias Gameplay.PartyTurn
+  alias Gameplay.Turn
 
-  defstruct teams: [], current_team: nil, deck: [], starting_deck: [], discard_pile: [], current_turn: nil, rounds: [], current_round: nil, turn_length: 60, skip_limit: 2
 
-  def new(teams, deck, rounds, turn_length \\ 60, skip_limit \\ 2) do
+
+  embedded_schema do
+    field :turn_length, :integer, default: 60
+    field :skip_limit, :integer, default: 2
+    field :rounds, {:array, :string}
+    field :current_round, :string
+    field :discard_pile, {:array, :map}
+    embeds_one :current_turn, Turn
+    embeds_one :current_team, Team
+    embeds_many :teams, Team
+    has_many :deck, Card
+    has_many :starting_deck, Card
+  end
+  @fields [:turn_length, :skip_limit, :rounds, :current_round, :discard_pile, :current_turn, :current_team, :teams, :deck, :starting_deck]
+
+  # defstruct teams: [],
+  # current_team: nil,
+  # deck: [],
+  # starting_deck: [],
+  # discard_pile: [],
+  # current_turn: nil,
+  # rounds: [],
+  # current_round: nil,
+  # turn_length: 60,
+  # skip_limit: 2,
+  # is_finished: false
+
+  def new_game_changeset(fields) do
+    %__MODULE__{}
+    |> cast(fields, @fields)
+    |> validate_required([:teams, :current_team, :rounds, :current_round, :deck, :starting_deck, :current_turn])
+    |> validate_length(:teams, min: 2, max: 7)
+    |> validate_number(:turn_length, greater_than_or_equal_to: 30, less_than_or_equal_to: 120)
+    |> validate_number(:skip_limit, greater_than_or_equal_to: 0)
+    |> validate_length(:deck, min: 20, max: 100)
+  end
+
+  def new(teams, rounds, deck, fields \\ %{}) do
     current_team = List.first(teams)
 
-    struct!(__MODULE__,
-    teams: teams,
-    current_team: current_team,
-    starting_deck: deck,
-    deck: deck,
-    discard_pile: [],
-    current_turn: PartyTurn.new(current_team.current_player),
-    rounds: rounds,
-    current_round: List.first(rounds),
-    skip_limit: skip_limit,
-    turn_length: turn_length,
-    is_finished: false)
+    fields
+    |> Map.put(:current_team, current_team)
+    |> Map.put(:current_round, List.first(rounds))
+    |> Map.put(:current_turn, Turn.new(current_team.current_player))
+    |> Map.put(:starting_deck, deck)
+    |> new_game_changeset()
+    |> apply_action(:update)
   end
 
   @doc """
@@ -62,7 +98,7 @@ defmodule Gameplay.TeamGame do
 
   defp update_team(game, teams, team) do
     game
-    |> put_in([:teams][Access.at(find_index(teams, team))], team)
+    |> put_in([:teams][Access.at(find_element_index(teams, team))], team)
   end
 
   defp replace_current_team(game, next_team) do
@@ -88,12 +124,12 @@ defmodule Gameplay.TeamGame do
   end
 
   defp next_list_element(list, element) do
-    curr_idx = find_index(list, element)
+    curr_idx = find_element_index(list, element)
     next_idx = next_list_index(list, curr_idx)
     { next_idx, Enum.at(list, next_idx) }
   end
 
-  defp find_index(list, element) do
+  defp find_element_index(list, element) do
     Enum.find_index(list, &(&1 == element))
   end
 
@@ -112,13 +148,14 @@ defmodule Gameplay.TeamGame do
   defp _add_player(%{ current_team: current_team } = game, team, player) when current_team.id == team.id do
     game
     |> update_in(
-      [:current_team][:players],
+      [:current_team, :players],
       fn players -> [ player | players ] end)
   end
   defp _add_player(%{ teams: teams } = game, team, player) do
+    team_index = find_element_index(teams, team)
     game
     |> update_in(
-      [:teams][Access.at(find_index(teams, team))][:players],
+      [:teams, Access.at(team_index), :players],
       fn players -> [ player | players ] end)
   end
 

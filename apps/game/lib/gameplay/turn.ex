@@ -1,4 +1,4 @@
-defmodule Gameplay.PartyTurn do
+defmodule Gameplay.Turn do
   defstruct num_cards_skipped: 0, cards_correct: [], player: nil
 
   def new(player) do

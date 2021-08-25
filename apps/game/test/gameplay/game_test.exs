@@ -2,6 +2,15 @@ defmodule Gameplay.GameTest do
   use ExUnit.Case
   use GameBuilders
 
+
+  defp two_teams_of_two(context) do
+    {:ok , Map.put(context, :game, build_game([2, 2]))}
+  end
+
+  defp add_player(context) do
+    {:ok, Map.put(context, :player_to_add, build_player("newbie"))}
+  end
+
   describe "new game" do
     setup [:two_teams_of_two]
 
@@ -22,30 +31,34 @@ defmodule Gameplay.GameTest do
     end
   end
 
+
   describe "two teams of two" do
     setup [:two_teams_of_two, :add_player]
-    test "add_player/2 adding player to teams with even count, adds to first element",
-    %{game: game, player_to_add: player_to_add} do
-      updated_teams = TeamGame.add_player(game, player_to_add).teams
-      updated_team  = Enum.at(updated_teams, 0)
 
-      assert length(updated_teams) == 2
-      assert length(updated_team.players) == 3
-      assert length(Enum.at(updated_teams, 1).players) == 2
-      assert Enum.at(updated_team.players, 0) == player_to_add
+    test "add_player/2 adding player to current team",
+    %{game: game, player_to_add: player_to_add} do
+      added_current_team = TeamGame.add_player(game, player_to_add).current_team
+
+      assert length(added_current_team.players) == 3
+      assert Enum.at(added_current_team.players, 0) == player_to_add
     end
   end
 
-  describe "four teams" do
-    setup [:two_teams_of_four_and_three, :add_player]
+  defp four_teams(context) do
+    {:ok, Map.put(context, :four_team_game, build_game([4, 3, 2, 3]))}
+  end
 
-    test "add_player/2 adding player, adds to team with fewest players" do
-      updated_teams = TeamGame.add_player(game, player_to_add).teams
-      updated_team  = Enum.at(updated_teams, 3)
+  describe "four teams" do
+    setup [:four_teams, :add_player]
+
+    test "add_player/2 adding player, adds to team with fewest players", %{four_team_game: game, player_to_add: player} do
+      updated_game = TeamGame.add_player(game, player)
+      updated_teams = updated_game.teams
+      updated_team  = Enum.at(updated_teams, 2)
 
       assert length(updated_teams) == 4
-      assert length(updated_team.players) == 2
-      assert Enum.at(updated_team.players, 0) == player_to_add
+      assert length(updated_team.players) == 3
+      assert Enum.at(updated_team.players, 0) == player
     end
   end
 
