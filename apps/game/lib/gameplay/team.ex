@@ -31,6 +31,7 @@ defmodule Gameplay.Team do
     |> cast(fields, [:name])
     |> validate_required(:name)
     |> validate_length(:name, min: 1, max: 15)
+
   end
 
 
@@ -38,7 +39,15 @@ defmodule Gameplay.Team do
     name = "Team #{Integer.to_string(index)}"
     color = Enum.at(@team_colors, index - 1)
 
+    %__MODULE__{}
+    |> changeset(%{players: players, color: color, name: name})
+    |> apply_action(:update)
+  end
 
+  def update_name(team, name) do
+    team
+    |> name_changeset(%{ name: name})
+    |> apply_action(:update)
   end
 
 
