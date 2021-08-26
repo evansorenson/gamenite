@@ -258,7 +258,17 @@ defmodule Gamenite.Cards do
   Returns {[hand], [remaining_deck], [discard_pile]}
   """
 
-  def draw_into_hand(deck, hand, discard_pile, num \\ 1) do
+  def draw_into_hand(deck, hand, num \\ 1) do
+    case draw(deck, num) do
+      { :error, reason } ->
+        { :error, reason }
+
+      { drawn_cards, remaining_deck } ->
+        { [ drawn_cards | hand ], remaining_deck }
+    end
+  end
+
+  def draw_into_hand_with_reshuffle(deck, hand, discard_pile, num \\ 1) do
     case draw_with_reshuffle(deck, discard_pile, num) do
       { :error, reason } ->
         { :error, reason }
@@ -282,5 +292,10 @@ defmodule Gamenite.Cards do
   """
   def move_card(card, origin_pile, destination_pile) do
     { List.delete(origin_pile, card), [ card | destination_pile ]}
+  end
+
+  def correct_card(card) do
+    card
+    |> Map.put(:is_correct, true)
   end
 end
