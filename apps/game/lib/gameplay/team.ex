@@ -31,7 +31,6 @@ defmodule Gameplay.Team do
     |> cast(fields, [:name])
     |> validate_required(:name)
     |> validate_length(:name, min: 1, max: 15)
-
   end
 
 
@@ -75,9 +74,5 @@ defmodule Gameplay.Team do
     { team_players, remaining_players } = Enum.split(players, div(length(players), n))
     team = new(team_players, n - 1 )
     _split_teams([ team | teams ], remaining_players, n - 1)
-  end
-
-  def update_name(team, name) do
-    Map.put(team, :name, name)
   end
 end
