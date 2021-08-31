@@ -2,9 +2,18 @@ defmodule Gameplay.GameTest do
   use ExUnit.Case
   use GameBuilders
 
-
   defp two_teams_of_two(context) do
     {:ok , Map.put(context, :game, build_game([2, 2]))}
+  end
+
+  @max_teams Application.get_env(:gamenite, :max_teams
+  defp range_of_teams(context) do
+
+    games = Enum.map(
+      1..(@max_teams + 3),
+      &build_game(Enum.map(1..&1, 3)))
+
+    {:ok, Map.put(context, :games, games)}
   end
 
   defp add_player(context) do
@@ -25,12 +34,31 @@ defmodule Gameplay.GameTest do
     test "game is not finished", %{game: game} do
       refute game.is_finished
     end
-
-    test "discard pile is empty list", %{game: game} do
-      assert game.discard_pile == []
-    end
   end
 
+  describe "new games with range of teams" do
+    setup [:range_of_teams]
+
+    test "game with 0 teams throws error", do
+      assert build_game([]) == {:error, _}
+    end
+
+    test "games with less than 2 teams throw error", %{games: games} do
+      assert games[0] == {:error, _ }
+    end
+
+    test "games between 2 and max teams create succesfully" do
+      for i <- 1..@max_teams - 1 do
+        assert games[i] == %TeamGame{}
+      end
+    end
+
+    test "games above max teams throw errors" do
+      for i <- @max_teams..@max_teams + 2 do
+        assert games[i] == {:error, _}
+      end
+    end
+  end
 
   describe "two teams of two" do
     setup [:two_teams_of_two, :add_player]

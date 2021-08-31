@@ -29,10 +29,10 @@ defmodule Gamenite.Core.Cards.Card do
 
   Returns %Cards.Card{}.
   """
-  def flip_card(%Card{} = card) do
+  def flip_card(%__MODULE__{} = card) do
     %{ card | is_face_up: !card.is_face_up }
   end
-  def flip_card(%Card{} = card, is_face_up) do
+  def flip_card(%__MODULE__{} = card, is_face_up) do
    %{ card | is_face_up: is_face_up }
   end
 

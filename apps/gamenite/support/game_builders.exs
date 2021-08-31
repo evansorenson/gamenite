@@ -1,17 +1,17 @@
 defmodule GameBuilders do
   defmacro __using__(_options) do
     quote do
-      alias Gameplay.{TeamGame, Team, Player, PartyTurn}
+      alias Gamenite.Core.{TeamGame, Team, Player, PartyTurn}
       import GameBuilders, only: :functions
     end
   end
 
   alias Gameplay.{TeamGame, Team, Player, PartyTurn}
 
-  def build_game(number_of_players_on_each_team \\ [3, 3], rounds \\ [:catchphrase, :password, :charades]) do
+  def build_game(number_of_players_on_each_team \\ [3, 3]) do
     teams = build_teams(number_of_players_on_each_team)
     deck = build_deck()
-    TeamGame.new(teams, deck, rounds)
+    TeamGame.new(teams %{ deck: deck })
   end
 
 
@@ -28,7 +28,7 @@ defmodule GameBuilders do
     %Player{ name: name }
   end
 
-  def build_deck(cards \\ ["einstein", "horse", "duck", "alfred hitchcock", "dog"]) do
-    Enum.map(cards, &%Gamenite.Cards.Card{face: &1})
+  def build_deck(cards \\ 0..20) do
+    Enum.map(cards, &%Gamenite.Cards.Card{face: Integer.to_string(&1)})
   end
 end

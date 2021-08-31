@@ -13,23 +13,26 @@ defmodule Gamenite.Core.TeamGame do
     embeds_many :teams, Team
     embeds_many :deck, Card
   end
-  @fields [:turn_length, :skip_limit, :rounds, :current_round, :discard_pile, :current_turn, :current_team, :teams, :deck, :starting_deck]
+  @fields [:current_turn, :current_team, :teams, :deck, :starting_deck]
 
+  @max_teams Application.get_env(:gamenite, :max_teams)
+  @max_deck Application.get_env(:gamenite, :max_deck)
   def new_game_changeset(fields) do
     %__MODULE__{}
     |> cast(fields, @fields)
     |> validate_required([:teams, :current_team, :deck, :starting_deck, :current_turn])
-    |> validate_length(:teams, min: 2, max: 7)
-    |> validate_length(:deck, min: 20, max: 100)
+    |> validate_length(:teams, min: 2, max: @max_teams)
+    |> validate_length(:deck, min: 10, max: @max_deck)
   end
 
-  def new(teams, deck, fields \\ %{}) do
+  def new(teams, deck) do
     current_team = List.first(teams)
 
-    fields
+    %{}
+    |> Map.put(:teams, teams)
     |> Map.put(:current_team, current_team)
     |> Map.put(:current_turn, Turn.new(current_team.current_player))
-    |> Map.put(:starting_deck, deck)
+    |> Map.put(:deck, deck)
     |> new_game_changeset()
     |> apply_action(:update)
   end
@@ -70,7 +73,7 @@ defmodule Gamenite.Core.TeamGame do
 
   defp update_team(game, teams, team) do
     game
-    |> put_in([:teams][Access.filter(&match?(%{id: team.id}, &1))], team)
+    |> put_in([:teams][Access.at(find_element_index(teams, team))], team)
   end
 
   defp replace_current_team(game, next_team) do
@@ -86,7 +89,7 @@ defmodule Gamenite.Core.TeamGame do
   end
 
 
-  defp next_list_element(list, element) do
+  def next_list_element(list, element) do
     curr_idx = find_element_index(list, element)
     next_idx = next_list_index(list, curr_idx)
     { next_idx, Enum.at(list, next_idx) }
@@ -117,7 +120,7 @@ defmodule Gamenite.Core.TeamGame do
   defp _add_player(%{ teams: teams } = game, team, player) do
     game
     |> update_in(
-      [:teams, Access.filter(&match?(%{id: team.id}, &1)), :players],
+      [:teams, Access.at(find_element_index(teams, team)), :players],
       fn players -> [ player | players ] end)
   end
 
@@ -149,8 +152,8 @@ defmodule Gamenite.Core.TeamGame do
 
   def draw_card(%__MODULE__{ deck: deck, current_team: current_team } = game, num \\ 1) do
     case Cards.draw_into_hand(deck, current_team.current_player.hand, num) do
-      { :error, _ } ->
-        inc_round(game)
+      { :error, reason } ->
+        { :error, reason }
 
       { new_hand,  new_deck } ->
         game
