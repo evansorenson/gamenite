@@ -22,7 +22,7 @@ defmodule GamenitePersistance.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Gamenite.Application, []},
+      mod: {GamenitePersistance.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end

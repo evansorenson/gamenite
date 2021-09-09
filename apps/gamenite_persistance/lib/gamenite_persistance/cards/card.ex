@@ -7,8 +7,6 @@ defmodule GamenitePersistance.Cards.Card do
     field :back, :string
     field :face_image, :string
     field :back_image, :string
-    field :is_face_up, :boolean, default: false, virtual: true
-    field :is_correct, :boolean, default: false, virtual: true
     belongs_to :deck, GamenitePersistance.Cards.Deck
 
     timestamps()

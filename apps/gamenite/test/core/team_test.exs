@@ -19,10 +19,6 @@ defmodule TeamTest do
   describe "new team constructor" do
     setup [:create_team]
 
-    test "id is not nil", %{team: team} do
-      assert not is_nil(team.id)
-    end
-
     test "current player is first player", %{team: team} do
       assert team.current_player == List.first(team.players)
     end

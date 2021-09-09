@@ -1,4 +1,4 @@
-defmodule Gamenite.DataCase do
+defmodule GamenitePersistance.DataCase do
   @moduledoc """
   This module defines the setup for tests requiring
   access to the application's data layer.
@@ -10,7 +10,7 @@ defmodule Gamenite.DataCase do
   we enable the SQL sandbox, so changes done to the database
   are reverted at the end of every test. If you are using
   PostgreSQL, you can even run database tests asynchronously
-  by setting `use Gamenite.DataCase, async: true`, although
+  by setting `use GamenitePersistance.DataCase, async: true`, although
   this option is not recommended for other databases.
   """
 
@@ -18,20 +18,20 @@ defmodule Gamenite.DataCase do
 
   using do
     quote do
-      alias Gamenite.Repo
+      alias GamenitePersistance.Repo
 
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
-      import Gamenite.DataCase
+      import GamenitePersistance.DataCase
     end
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(Gamenite.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(GamenitePersistance.Repo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(Gamenite.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(GamenitePersistance.Repo, {:shared, self()})
     end
 
     :ok

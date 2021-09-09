@@ -1,4 +1,4 @@
-defmodule Gamenite.Repo.Migrations.CreateGames do
+defmodule GamenitePersistance.Repo.Migrations.CreateGames do
   use Ecto.Migration
 
   def change do

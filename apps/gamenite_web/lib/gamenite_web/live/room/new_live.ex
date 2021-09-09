@@ -5,7 +5,7 @@ defmodule GameniteWeb.Room.NewLive do
 
   use GameniteWeb, :live_view
 
-  alias Gamenite.Organizer
+  alias GamenitePersistance.Organizer
 
   alias GameniteWeb.Presence
   alias Phoenix.Socket.Broadcast
@@ -21,11 +21,11 @@ defmodule GameniteWeb.Room.NewLive do
     game = Map.get(session, "game")
 
     # This PubSub subscription will also handle other events from the users.
-    Phoenix.PubSub.subscribe(Gamenite.PubSub, "room:" <> slug)
+    Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug)
 
     # This PubSub subscription will allow the user to receive messages from
     # other users.
-    Phoenix.PubSub.subscribe(Gamenite.PubSub, "room:" <> slug <> ":" <> user.id)
+    Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug <> ":" <> user.id)
 
     # Track the connecting user with the `room:slug` topic.
     {:ok, _} = Presence.track(self(), "room:" <> slug, user.id, %{})
@@ -168,7 +168,7 @@ defmodule GameniteWeb.Room.NewLive do
 
   def mount_socket_user(socket, params) do
     user_id = Map.get(params, "user_id")
-    user = Gamenite.Accounts.get_user(user_id)
+    user = GamenitePersistance.Accounts.get_user(user_id)
     socket
     |> assign(:user, user)
     user

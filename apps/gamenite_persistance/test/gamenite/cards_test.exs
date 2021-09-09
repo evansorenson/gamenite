@@ -1,10 +1,10 @@
-defmodule Gamenite.CardsTest do
-  use Gamenite.DataCase
+defmodule GamenitePersistance.CardsTest do
+  use GamenitePersistance.DataCase
 
-  alias Gamenite.Cards
+  alias GamenitePersistance.Cards
 
   describe "decks" do
-    alias Gamenite.Cards.Deck
+    alias GamenitePersistance.Cards.Deck
 
     @valid_attrs %{title: "some title"}
     @update_attrs %{title: "some updated title"}
@@ -63,7 +63,7 @@ defmodule Gamenite.CardsTest do
   end
 
   describe "cards" do
-    alias Gamenite.Cards.Card
+    alias GamenitePersistance.Cards.Card
 
     @valid_attrs %{face: "some face"}
     @update_attrs %{face: "some updated face"}
@@ -76,10 +76,6 @@ defmodule Gamenite.CardsTest do
         |> Cards.create_card()
 
       card
-    end
-
-    def build_card_list(length) do
-      Enum.map(1..length, &card_fixture(%{face: Integer.to_string(&1)}))
     end
 
     test "list_cards/0 returns all cards" do
@@ -122,126 +118,6 @@ defmodule Gamenite.CardsTest do
     test "change_card/1 returns a card changeset" do
       card = card_fixture()
       assert %Ecto.Changeset{} = Cards.change_card(card)
-    end
-
-    test "flip_card/1 when face up flips card to face down" do
-      card = card_fixture()
-      card = %{card | is_face_up: true}
-      flipped_card = Cards.flip_card(card)
-      assert flipped_card.is_face_up == false
-    end
-
-    test "flip_card/1 when face down flips card to face up" do
-      card = card_fixture(%{is_face_up: false})
-      flipped_card = Cards.flip_card(card)
-      assert flipped_card.is_face_up == true
-    end
-
-    test "flip_card/2 when face up, flip to face up" do
-      card = card_fixture(%{is_face_up: true})
-      flipped_card = Cards.flip_card(card, true)
-      assert flipped_card.is_face_up == true
-    end
-
-    test "flip_card/2 when face up, flip to face down" do
-      card = card_fixture(%{is_face_up: true})
-      flipped_card = Cards.flip_card(card, false)
-      assert flipped_card.is_face_up == false
-    end
-
-    test "flip_card/2 when face down, flip to face down" do
-      card = card_fixture(%{is_face_up: false})
-      flipped_card = Cards.flip_card(card, false)
-      assert flipped_card.is_face_up == false
-    end
-
-    test "flip_card/2 when face down, flip to face up" do
-      card = card_fixture(%{is_face_up: false})
-      flipped_card = Cards.flip_card(card, true)
-      assert flipped_card.is_face_up == true
-    end
-
-    test "draw/3 draw negative cards" do
-      deck = build_card_list(10)
-      assert Cards.draw(deck, -5) == {:error, "Number of cards drawn must be positive integer."}
-    end
-
-    test "draw/3 draw zero cards" do
-      deck = build_card_list(10)
-      assert Cards.draw(deck, 0) == {:error, "Number of cards drawn must be positive integer."}
-    end
-
-    test "draw/3 draw decimal cards" do
-      deck = build_card_list(10)
-      assert Cards.draw(deck, 5.6) == {:error, "Number of cards drawn must be positive integer."}
-    end
-
-    test "draw/3 draw too many cards" do
-      deck = build_card_list(10)
-      assert Cards.draw(deck, 11) == { :error, "Not enough cards in deck."}
-    end
-
-    def test_drawn_cards(deck, drawn_cards, remaining_deck, num) do
-      assert Kernel.length(drawn_cards) == num
-      assert Kernel.length(remaining_deck) == Kernel.length(deck) - num
-      assert drawn_cards == Enum.take(deck, num)
-    end
-
-    test "draw/3 draw 1 card" do
-      deck = build_card_list(10)
-      num = 1
-      { drawn_cards, remaining_deck } = Cards.draw(deck, num, false)
-      test_drawn_cards(deck, drawn_cards, remaining_deck, num)
-    end
-
-    test "draw/3 draw 3 cards" do
-      deck = build_card_list(10)
-      num = 3
-      { drawn_cards, remaining_deck } = Cards.draw(deck, num, false)
-      test_drawn_cards(deck, drawn_cards, remaining_deck, num)
-    end
-
-    test "draw/3 draw all cards in deck" do
-      num = 10
-      deck = build_card_list(num)
-      { drawn_cards, remaining_deck } = Cards.draw(deck, num, false)
-      test_drawn_cards(deck, drawn_cards, remaining_deck, num)
-    end
-
-    def test_reshuffled_cards(deck, discard_pile, drawn_cards, remaining_deck, num) do
-      assert Kernel.length(drawn_cards) == num
-      assert Kernel.length(remaining_deck) == Kernel.length(deck) + Kernel.length(discard_pile) - num
-    end
-
-    test "draw_with_reshuffle/4 draw more than in deck and discard pile combined" do
-      deck = build_card_list(5)
-      discard_pile = build_card_list(5)
-      num = 11
-      assert Cards.draw_with_reshuffle(deck, discard_pile, num) == { :error, "Number of cards drawn must be less than left in deck and discard pile combined."}
-    end
-
-    test "draw_with_reshuffle/4 deck has zero cards, reshuffle and draw from discard pile" do
-      deck = []
-      discard_pile = build_card_list(10)
-      num = 4
-      { drawn_cards, remaining_deck } = Cards.draw_with_reshuffle(deck, discard_pile, num, false)
-      test_reshuffled_cards(deck, discard_pile, drawn_cards, remaining_deck, num)
-    end
-
-    test "draw_with_reshuffle/4 deck has some cards, reshuffle and draw rest from discard pile" do
-      deck = build_card_list(4)
-      discard_pile = build_card_list(10)
-      num = 7
-      { drawn_cards, remaining_deck } = Cards.draw_with_reshuffle(deck, discard_pile, num, false)
-      test_reshuffled_cards(deck, discard_pile, drawn_cards, remaining_deck, num)
-    end
-
-    test "draw_with_reshuffle/4 draw all cards from deck and from discard pile" do
-      deck = build_card_list(5)
-      discard_pile = build_card_list(5)
-      num = 10
-      { drawn_cards, remaining_deck } = Cards.draw_with_reshuffle(deck, discard_pile, num, false)
-      test_reshuffled_cards(deck, discard_pile, drawn_cards, remaining_deck, num)
     end
   end
 end

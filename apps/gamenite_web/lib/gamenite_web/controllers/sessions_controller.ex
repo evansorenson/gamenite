@@ -6,7 +6,7 @@ defmodule GameniteWeb.SessionController do
   end
 
   def create(conn, %{"session" => %{"username" => username, "password" => pass}}) do
-    case Gamenite.Accounts.authenticate_by_username_and_pass(username, pass) do
+    case GamenitePersistance.Accounts.authenticate_by_username_and_pass(username, pass) do
       {:ok, user} ->
         conn
         |> GameniteWeb.Auth.login(user)

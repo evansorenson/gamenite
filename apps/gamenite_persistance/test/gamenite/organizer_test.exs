@@ -1,10 +1,10 @@
-defmodule Gamenite.OrganizerTest do
-  use Gamenite.DataCase
+defmodule GamenitePersistance.OrganizerTest do
+  use GamenitePersistance.DataCase
 
-  alias Gamenite.Organizer
+  alias GamenitePersistance.Organizer
 
   describe "rooms" do
-    alias Gamenite.Organizer.Room
+    alias GamenitePersistance.Organizer.Room
 
     @valid_attrs %{slug: "some slug", title: "some title"}
     @update_attrs %{slug: "some updated slug", title: "some updated title"}

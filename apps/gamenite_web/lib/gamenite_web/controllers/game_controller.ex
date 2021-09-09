@@ -2,8 +2,8 @@ defmodule GameniteWeb.GameController do
   use GameniteWeb, :controller
   import Phoenix.LiveView.Controller
 
-  alias Gamenite.Gaming
-  alias Gamenite.Gaming.Game
+  alias GamenitePersistance.Gaming
+  alias GamenitePersistance.Gaming.Game
   alias GameniteWeb.Game.IndexLive
 
   def index(conn, _params) do

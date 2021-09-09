@@ -5,7 +5,7 @@ use Mix.Config
 # The MIX_TEST_PARTITION environment variable can be used
 # to provide built-in test partitioning in CI environment.
 # Run `mix help test` for more information.
-config :gamenite, Gamenite.Repo,
+config :gamenite_persistance, GamenitePersistance.Repo,
   username: "postgres",
   password: "unitthird15",
   database: "gamenite_dev",
@@ -17,6 +17,11 @@ config :gamenite, Gamenite.Repo,
 config :gamenite_web, GameniteWeb.Endpoint,
   http: [port: 4002],
   server: false
+
+config :gamenite,
+  max_teams: 4,
+  max_deck: 50,
+  min_players_on_team: 2
 
 # Print only warnings and errors during test
 config :logger, level: :warn

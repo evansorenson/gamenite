@@ -2,14 +2,14 @@ defmodule GameniteWeb.Auth do
   import Plug.Conn
   import Phoenix.Controller
   alias GameniteWeb.Router.Helpers, as: Routes
-  alias Gamenite.Accounts.User
-  alias Gamenite.Accounts
+  alias GamenitePersistance.Accounts.User
+  alias GamenitePersistance.Accounts
 
   def init(opts), do: opts
 
   def call(conn, _opts) do
     user_id = get_session(conn, :user_id)
-    user = user_id && Gamenite.Accounts.get_user(user_id)
+    user = user_id && GamenitePersistance.Accounts.get_user(user_id)
     assign(conn, :current_user, user)
   end
 

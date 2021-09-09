@@ -1,5 +1,5 @@
 defmodule GameniteWeb.UserView do
   use GameniteWeb, :view
 
-  alias Gamenite.Accounts
+  alias GamenitePersistance.Accounts
 end

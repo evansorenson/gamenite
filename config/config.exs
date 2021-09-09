@@ -10,19 +10,19 @@
 use Mix.Config
 
 # Configure Mix tasks and generators
-config :gamenite,
-  ecto_repos: [Gamenite.Repo]
+config :gamenite_persistance,
+  ecto_repos: [GamenitePersistance.Repo]
 
 config :gamenite_web,
-  ecto_repos: [Gamenite.Repo],
-  generators: [context_app: :gamenite]
+  ecto_repos: [GamenitePersistance.Repo],
+  generators: [context_app: :gamenite_persistance]
 
 # Configures the endpoint
 config :gamenite_web, GameniteWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "vFT8eI8mCdkGpDxyOYEbX9SuSnpErddv6arV79NL6QUbonYft/otBfYzm5p9D1dJ",
   render_errors: [view: GameniteWeb.ErrorView, accepts: ~w(html json), layout: false],
-  pubsub_server: Gamenite.PubSub,
+  pubsub_server: GamenitePersistance.PubSub,
   live_view: [signing_salt: "Ku8IXljo"]
 
 # Configures Elixir's Logger

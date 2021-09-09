@@ -1,8 +1,8 @@
 defmodule GameniteWeb.UserController do
   use GameniteWeb, :controller
 
-  alias Gamenite.Accounts
-  alias Gamenite.Accounts.User
+  alias GamenitePersistance.Accounts
+  alias GamenitePersistance.Accounts.User
   plug :authenticate_user when action in [:index, :show]
 
   def index(conn, _params) do

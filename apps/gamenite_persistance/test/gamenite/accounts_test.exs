@@ -1,10 +1,10 @@
-defmodule Gamenite.AccountsTest do
-  use Gamenite.DataCase
+defmodule GamenitePersistance.AccountsTest do
+  use GamenitePersistance.DataCase
 
-  alias Gamenite.Accounts
+  alias GamenitePersistance.Accounts
 
   describe "users" do
-    alias Gamenite.Accounts.User
+    alias GamenitePersistance.Accounts.User
 
     @valid_attrs %{username: "some username"}
     @update_attrs %{username: "some updated username"}

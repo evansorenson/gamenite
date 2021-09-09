@@ -1,25 +1,28 @@
-defmodule Core.Team do
+defmodule Gamenite.Core.Team do
   use Accessible
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Core.{Player, Turn}
+  alias Gamenite.Core.{Player}
 
   embedded_schema do
     field :name, :string
     field :score, :integer
     field :color, :string
+    field :turns, {:array, :map}
     embeds_many :players, Player
     embeds_one :current_player, Player
-    embeds_many :turns, {:array, :map}
   end
+  @fields [:id, :name, :score, :color, :turns]
 
-  @team_colors [:red, :blue, :green, :purple, :green, :orange, :pink ]
-  def changeset(team, fields) do
+  @team_colors ["C0392B", "2980B9", "27AE60", "884EA0", "D35400", "FF33B8", "F1C40F"]
+  def changeset(team, fields, players) do
     team
     |> name_changeset(fields)
-    |> cast(fields, [:score, :color, :players, :current_player, :turns])
-    |> validate_required([:players, :current_player])
+    |> cast(fields, @fields)
+    |> put_embed(:players, players)
+    |> put_embed(:current_player, hd(players))
+    |> validate_required([:players, :current_player, :color])
     |> validate_number(:score, greater_than_or_equal_to: 0)
     |> validate_inclusion(:color, @team_colors)
     |> validate_length(:players, min: 2, max: 10)
@@ -34,11 +37,12 @@ defmodule Core.Team do
 
 
   def new(players, index) do
+    id = Ecto.UUID.generate()
     name = "Team #{Integer.to_string(index)}"
     color = Enum.at(@team_colors, index - 1)
 
     %__MODULE__{}
-    |> changeset(%{players: players, color: color, name: name})
+    |> changeset(%{color: color, name: name, id: id}, players)
     |> apply_action(:update)
   end
 
@@ -69,7 +73,6 @@ defmodule Core.Team do
   [ team | teams ]
   end
   defp _split_teams(teams, players, n) do
-    IO.puts Kernel.floor(length(players) / n)
     { team_players, remaining_players } = Enum.split(players, div(length(players), n))
     team = new(team_players, n - 1 )
     _split_teams([ team | teams ], remaining_players, n - 1)

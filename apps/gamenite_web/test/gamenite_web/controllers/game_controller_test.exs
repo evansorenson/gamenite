@@ -1,7 +1,7 @@
 defmodule GameniteWeb.GameControllerTest do
   use GameniteWeb.ConnCase
 
-  alias Gamenite.Gaming
+  alias GamenitePersistance.Gaming
 
   @create_attrs %{description: "some description", play_count: 42, title: "some title"}
   @update_attrs %{description: "some updated description", play_count: 43, title: "some updated title"}

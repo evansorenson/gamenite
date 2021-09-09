@@ -31,11 +31,11 @@ defmodule GameniteWeb.Telemetry do
       ),
 
       # Database Metrics
-      summary("gamenite.repo.query.total_time", unit: {:native, :millisecond}),
-      summary("gamenite.repo.query.decode_time", unit: {:native, :millisecond}),
-      summary("gamenite.repo.query.query_time", unit: {:native, :millisecond}),
-      summary("gamenite.repo.query.queue_time", unit: {:native, :millisecond}),
-      summary("gamenite.repo.query.idle_time", unit: {:native, :millisecond}),
+      summary("GamenitePersistance.Repo.query.total_time", unit: {:native, :millisecond}),
+      summary("GamenitePersistance.Repo.query.decode_time", unit: {:native, :millisecond}),
+      summary("GamenitePersistance.Repo.query.query_time", unit: {:native, :millisecond}),
+      summary("GamenitePersistance.Repo.query.queue_time", unit: {:native, :millisecond}),
+      summary("GamenitePersistance.Repo.query.idle_time", unit: {:native, :millisecond}),
 
       # VM Metrics
       summary("vm.memory.total", unit: {:byte, :kilobyte}),

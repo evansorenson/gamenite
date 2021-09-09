@@ -1,8 +1,8 @@
 defmodule GameniteWeb.CardController do
   use GameniteWeb, :controller
 
-  alias Gamenite.Cards
-  alias Gamenite.Cards.Card
+  alias GamenitePersistance.Cards
+  alias GamenitePersistance.Cards.Card
 
   def index(conn, _params) do
     cards = Cards.list_cards()

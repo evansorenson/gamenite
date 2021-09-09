@@ -1,7 +1,7 @@
 use Mix.Config
 
 # Configure your database
-config :gamenite, Gamenite.Repo,
+config :gamenite_persistance, GamenitePersistance.Repo,
   username: "postgres",
   password: "unitthird15",
   database: "gamenite_dev",
@@ -9,9 +9,10 @@ config :gamenite, Gamenite.Repo,
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
-config :gamenite, Gamenite.Core.TeamGame
+config :gamenite,
   max_teams: 4,
-  max_deck: 50
+  max_deck: 50,
+  min_players_on_team: 2
 
 # For development, we disable any cache and enable
 # debugging and code reloading.

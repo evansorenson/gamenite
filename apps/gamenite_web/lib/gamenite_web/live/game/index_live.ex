@@ -1,8 +1,8 @@
 defmodule GameniteWeb.Game.IndexLive do
   use GameniteWeb, :live_view
 
-  alias Gamenite.Gaming
-  alias Gamenite.Organizer
+  alias GamenitePersistance.Gaming
+  alias GamenitePersistance.Organizer
 
   def mount(_params, _session, socket) do
     games = Gaming.list_games()

@@ -1,5 +1,5 @@
 defmodule Core.Turn do
-  defstruct num_cards_skipped: 0, cards_correct: [], player: nil
+  defstruct num_cards_skipped: 0, cards_correct: [], player: nil, started_at: nil, needs_review: false
 
   def new(player) do
     struct!(

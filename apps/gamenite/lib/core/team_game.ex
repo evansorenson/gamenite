@@ -3,37 +3,42 @@ defmodule Gamenite.Core.TeamGame do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Gamenite.Core.Cards
   alias Gamenite.Core.Cards.Card
 
-  alias Core.{Turn, Team}
+  alias Gamenite.Core.{Turn, Team}
 
   embedded_schema do
     field :current_turn, :map
+    field :is_finished, :boolean, default: false
     embeds_one :current_team, Team
     embeds_many :teams, Team
     embeds_many :deck, Card
   end
-  @fields [:current_turn, :current_team, :teams, :deck, :starting_deck]
+  @fields [:current_turn]
 
   @max_teams Application.get_env(:gamenite, :max_teams)
   @max_deck Application.get_env(:gamenite, :max_deck)
-  def new_game_changeset(fields) do
+  @spec new_game_changeset(
+          :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any},
+          nonempty_maybe_improper_list,
+          any
+        ) :: Ecto.Changeset.t()
+  def new_game_changeset(fields, teams, deck) do
     %__MODULE__{}
     |> cast(fields, @fields)
-    |> validate_required([:teams, :current_team, :deck, :starting_deck, :current_turn])
+    |> put_embed(:teams, teams)
+    |> put_embed(:current_team, hd(teams))
+    |> put_embed(:deck, deck)
+    |> validate_required([:teams, :current_team, :deck])
     |> validate_length(:teams, min: 2, max: @max_teams)
     |> validate_length(:deck, min: 10, max: @max_deck)
   end
 
+  def new([], _deck), do: {:error, "teams is empty list."}
   def new(teams, deck) do
-    current_team = List.first(teams)
-
     %{}
-    |> Map.put(:teams, teams)
-    |> Map.put(:current_team, current_team)
-    |> Map.put(:current_turn, Turn.new(current_team.current_player))
-    |> Map.put(:deck, deck)
-    |> new_game_changeset()
+    |> new_game_changeset(teams, deck)
     |> apply_action(:update)
   end
 
@@ -109,9 +114,12 @@ defmodule Gamenite.Core.TeamGame do
   """
   def add_player( %__MODULE__{ teams: teams } = game, player) do
     team_to_add = team_with_lowest_players(teams)
+    IO.inspect(team_to_add)
     _add_player(game, team_to_add, player)
   end
   defp _add_player(%{ current_team: current_team } = game, team, player) when current_team.id == team.id do
+    IO.puts team.id
+    IO.puts current_team.id
     game
     |> update_in(
       [:current_team, :players],
@@ -125,7 +133,6 @@ defmodule Gamenite.Core.TeamGame do
   end
 
   defp team_with_lowest_players(teams) do
-    IO.inspect teams
     teams
     |> Enum.sort_by(fn team -> length(team.players) end, :asc)
     |> List.first()
@@ -145,7 +152,7 @@ defmodule Gamenite.Core.TeamGame do
   # defp clear_team_hand(team) do
   #   Enum.map(team.players, &clear_player_hand(&1))
   # end
-  defp clear_current_player_hand(%__MODULE__{ current_team: current_team } = game) do
+  def clear_current_player_hand(game) do
     game
     |> put_in([:current_team][:current_player][:hand], [])
   end
@@ -162,7 +169,7 @@ defmodule Gamenite.Core.TeamGame do
     end
   end
 
-  defp update_deck(game, new_deck) do
+  def update_deck(game, new_deck) do
     game
     |> Map.replace!(:deck, new_deck)
   end
