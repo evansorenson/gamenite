@@ -1,4 +1,4 @@
-defmodule Gamenite.Core.Player do
+defmodule Gamenite.Core.TeamGame.Player do
   use Accessible
   use Ecto.Schema
   import Ecto.Changeset
@@ -14,7 +14,7 @@ defmodule Gamenite.Core.Player do
   def changeset(player, attrs) do
     player
     |> name_changeset(attrs)
-    |> cast(attrs, [:user_id, :color, :turns])
+    |> cast(attrs, [:id, :user_id, :color, :turns])
     |> cast_embed(:hand)
     |> validate_required([:user_id, :name])
     |> validate_length(:name, min: 2, max: 10)
@@ -28,8 +28,10 @@ defmodule Gamenite.Core.Player do
   end
 
   def new(attrs) do
+    id = Ecto.UUID.generate()
+
     %__MODULE__{}
-    |> changeset(attrs)
+    |> changeset(Map.put(attrs, :id, id))
     |> apply_action(:update)
   end
 

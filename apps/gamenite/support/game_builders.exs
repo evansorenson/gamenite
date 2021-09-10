@@ -1,12 +1,14 @@
 defmodule GameBuilders do
   defmacro __using__(_options) do
     quote do
-      alias Gamenite.Core.{TeamGame, Team, Player, PartyTurn}
+      alias Gamenite.Core.TeamGame
+      alias Gamenite.Core.TeamGame.{Team, Player, Turn}
       import GameBuilders, only: :functions
     end
   end
 
-  alias Gamenite.Core.{TeamGame, Team, Player, PartyTurn}
+  alias Gamenite.Core.TeamGame.{Team, Player, Turn}
+  alias Gamenite.Core.TeamGame
 
   def build_game(number_of_players_on_each_team \\ [3, 3]) do
     deck = build_deck()

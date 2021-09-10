@@ -1,8 +1,9 @@
-defmodule Game.SaladBowl do
+defmodule Gamnite.Boundary.SaladBowl do
   use GenServer
 
   alias Gamenite.Cards
-  alias Gameplay.TeamGame
+  alias Gamenite.Core.TeamGame
+  alias Gamenite.Core.Games.Charades
 
   # Server
   def init(game) do
@@ -69,7 +70,7 @@ defmodule Game.SaladBowl do
   end
 
   def handle_call({ :skip_card }, _from, game) do
-    case TeamGame.skip_card(game) do
+    case Charades.skip_card(game) do
       {:error, reason} ->
         reply_to_call_with_game_timeout({ {:error, reason}, game})
       game ->

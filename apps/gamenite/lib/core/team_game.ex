@@ -5,8 +5,9 @@ defmodule Gamenite.Core.TeamGame do
 
   alias Gamenite.Core.Cards
   alias Gamenite.Core.Cards.Card
+  alias Gamenite.Core.Lists
 
-  alias Gamenite.Core.{Turn, Team}
+  alias Gamenite.Core.TeamGame.{Turn, Team}
 
   embedded_schema do
     field :current_turn, :map
@@ -19,11 +20,6 @@ defmodule Gamenite.Core.TeamGame do
 
   @max_teams Application.get_env(:gamenite, :max_teams)
   @max_deck Application.get_env(:gamenite, :max_deck)
-  @spec new_game_changeset(
-          :invalid | %{optional(:__struct__) => none, optional(atom | binary) => any},
-          nonempty_maybe_improper_list,
-          any
-        ) :: Ecto.Changeset.t()
   def new_game_changeset(fields, teams, deck) do
     %__MODULE__{}
     |> cast(fields, @fields)
@@ -37,12 +33,12 @@ defmodule Gamenite.Core.TeamGame do
 
   def new([], _deck), do: {:error, "teams is empty list."}
   def new(teams, deck) do
-    %{}
+    %{current_turn: Turn.new(hd(teams).current_player)}
     |> new_game_changeset(teams, deck)
     |> apply_action(:update)
   end
 
-  defp end_turn(game) do
+  def end_turn(game) do
     game
     |> append_turn_to_team
     |> inc_player
@@ -50,40 +46,59 @@ defmodule Gamenite.Core.TeamGame do
     |> new_turn
   end
 
-
-  defp append_turn_to_team(%__MODULE__{ current_turn: current_turn } = game) do
+  defp append_turn_to_team(%__MODULE__{ current_team: current_team, current_turn: current_turn } = game) do
     game
-    |> update_in([:current_team][:turns], fn turns -> [ current_turn | turns ] end)
+    |> replace_current_team(Team.add_turn(current_team, current_turn))
   end
 
-  defp inc_player(%__MODULE__{ teams: teams, current_team: current_team } = game) do
-    game
-    |> put_in(
-      [:current_team][:players],
-      current_team.current_player
-    )
-    |> update_in(
-      [:current_team][:current_player],
-      &next_list_element(teams, &1)
-    )
+  defp inc_player(%__MODULE__{ current_team: current_team } = game) do
+    update_current_item_and_increment_list(
+      game,
+      current_team.players,
+      current_team.current_player,
+      &update_player/2,
+      &replace_current_player/2)
   end
 
   defp inc_team(%__MODULE__{ teams: teams, current_team: current_team } = game) do
-    { _, next_team } = next_list_element(teams, current_team)
-
-    game
-    |> update_team(teams, current_team)
-    |> replace_current_team(next_team)
+    update_current_item_and_increment_list(
+      game,
+      teams,
+      current_team,
+      &update_team/2,
+      &replace_current_team/2)
   end
 
-  defp update_team(game, teams, team) do
+  defp update_current_item_and_increment_list(game, list, current_item, update_func, replace_func) do
+    next_element = Lists.next_list_element_by_id(list, current_item.id)
+
     game
-    |> put_in([:teams][Access.at(find_element_index(teams, team))], team)
+    |> update_func.(current_item)
+    |> replace_func.(next_element)
+  end
+
+  defp update_team(%__MODULE__{ teams: teams } = game, team) do
+    team_index = Lists.find_element_index_by_id(teams, team.id)
+
+    game
+    |> put_in([:teams, Access.at(team_index)], team)
   end
 
   defp replace_current_team(game, next_team) do
     game
     |> Map.replace!(:current_team, next_team)
+  end
+
+  defp update_player(%{ current_team: current_team } = game, player) do
+    player_index = Lists.find_element_index_by_id(current_team.players, current_team.current_player.id)
+
+    game
+    |> put_in([:current_team, :players, Access.at(player_index)], player)
+  end
+
+  defp replace_current_player(game, next_player) do
+    game
+    |> put_in([:current_team, :current_player], next_player)
   end
 
   def new_turn(%__MODULE__{ current_team: current_team } = game) do
@@ -93,43 +108,27 @@ defmodule Gamenite.Core.TeamGame do
     |> Map.replace!(:current_turn, turn)
   end
 
-
-  def next_list_element(list, element) do
-    curr_idx = find_element_index(list, element)
-    next_idx = next_list_index(list, curr_idx)
-    { next_idx, Enum.at(list, next_idx) }
-  end
-
-  defp find_element_index(list, element) do
-    Enum.find_index(list, &(&1 == element))
-  end
-
-  defp next_list_index(list, index) when index >= 0 and index < Kernel.length(list), do: rem(index + 1, length(list))
-  defp next_list_index(_, _), do: {:error, "Index must be between 0 (inclusive) and length of list "}
-
   @doc """
   Adds player to either team with lowest number of players or if no teams, to list of players.
 
   Returns %__MODULE__{}.
   """
   def add_player( %__MODULE__{ teams: teams } = game, player) do
-    team_to_add = team_with_lowest_players(teams)
-    IO.inspect(team_to_add)
-    _add_player(game, team_to_add, player)
+    team_with_lowest_players(teams)
+    |> _add_player(game, player)
   end
-  defp _add_player(%{ current_team: current_team } = game, team, player) when current_team.id == team.id do
-    IO.puts team.id
-    IO.puts current_team.id
+  defp _add_player(team, %{ current_team: current_team } = game, player) when current_team.id == team.id do
+    added_team = Team.add_player(current_team, player)
+
     game
-    |> update_in(
-      [:current_team, :players],
-      fn players -> [ player | players ] end)
+    |> update_team(added_team)
+    |> replace_current_team(added_team)
   end
-  defp _add_player(%{ teams: teams } = game, team, player) do
+  defp _add_player(team, game, player) do
+    added_team = Team.add_player(team, player)
+
     game
-    |> update_in(
-      [:teams, Access.at(find_element_index(teams, team)), :players],
-      fn players -> [ player | players ] end)
+    |> update_team(added_team)
   end
 
   defp team_with_lowest_players(teams) do

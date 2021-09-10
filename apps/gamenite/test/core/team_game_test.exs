@@ -3,8 +3,14 @@ defmodule Gamenite.Core.GameTest do
   use GameBuilders
 
   defp working_game(context) do
-    {:ok, game } =  GameBuilders.build_game([4, 4])
-    {:ok , Map.put(context, :game, game)}
+    {:ok, game } =  GameBuilders.build_game([2, 2])
+
+    new_context = context
+    |> Map.put(:game, game)
+    |> Map.put(:team_one_id, Enum.at(game.teams, 0).id)
+    |> Map.put(:team_two_id, Enum.at(game.teams, 1).id)
+
+    {:ok , new_context}
   end
 
 
@@ -60,32 +66,101 @@ defmodule Gamenite.Core.GameTest do
     end
   end
 
-  describe "two teams of four" do
-    setup [:working_game, :add_player]
-
-    test "add_player/2 adding player to current team",
-    %{game: game, player_to_add: player_to_add} do
-      added_current_team = TeamGame.add_player(game, player_to_add).current_team
-
-      assert length(added_current_team.players) == 5
-      assert Enum.at(added_current_team.players, 0) == player_to_add
-    end
-  end
-
   defp four_teams(context) do
-    {:ok, game } = build_game([4, 4, 2, 3])
+    {:ok, game } = build_game([4, 4, 3, 3])
     {:ok, Map.put(context, :four_team_game, game)}
   end
 
-  describe "four teams" do
+  describe "adding players" do
     setup [:four_teams, :add_player]
 
     test "add_player/2 adding player, adds to team with fewest players and not current team", %{four_team_game: game, player_to_add: player} do
-      updated_game = TeamGame.add_player(game, player)
-      updated_team  = Enum.at(updated_game.teams, 2)
-
-      assert length(updated_team.players) == 3
-      assert Enum.at(updated_team.players, 0) == player
+      updated_game = game
+      |> TeamGame.add_player(player)
+      |> assert_player_added(game, 2)
+      |> TeamGame.add_player(player)
+      |> assert_player_added(game, 3)
+      |> TeamGame.add_player(player)
+      |> assert_current_team_added_player(game)
+      |> TeamGame.add_player(player)
+      |> assert_player_added(game, 1)
     end
+  end
+
+  defp assert_player_added(%{ teams: teams } = game, %{teams: old_teams } = _old_game, index) do
+    len_old_team = Team.team_length(Enum.at(old_teams, index))
+    len_new_team = Team.team_length(Enum.at(teams, index))
+    assert len_old_team + 1 == len_new_team
+    game
+  end
+
+  defp assert_current_team_added_player(%{ current_team: current_team } = game, %{ current_team: old_current_team } = _old_game) do
+    assert Team.team_length(old_current_team) + 1 == Team.team_length(current_team)
+    game
+  end
+
+  describe "ending turns" do
+    setup [:working_game]
+
+    test "end_turn/1 appends turn to current team", %{ game: game, team_one_id: team_one_id, team_two_id: team_two_id} do
+      ended_turn_game = game
+      |> TeamGame.end_turn()
+      |> assert_turns_appended(team_one_id, 1)
+      |> TeamGame.end_turn()
+      |> assert_turns_appended(team_two_id, 1)
+      |> TeamGame.end_turn()
+      |> assert_turns_appended(team_one_id, 2)
+      |> TeamGame.end_turn()
+      |> assert_turns_appended(team_two_id, 2)
+    end
+
+    test "end_turn/1 increments player on current team", %{ game: game } do
+      game
+      |> TeamGame.end_turn()
+      |> assert_current_player("Player1")
+      |> TeamGame.end_turn()
+      |> assert_current_player("Player2")
+      |> TeamGame.end_turn()
+      |> assert_current_player("Player2")
+      |> TeamGame.end_turn()
+      |> assert_current_player("Player1")
+      |> TeamGame.end_turn()
+      |> assert_current_player("Player1")
+      |> TeamGame.end_turn()
+      |> assert_current_player("Player2")
+    end
+
+    test "end_turn/1 changes current team to next team in list", %{ game: game, team_one_id: team_one_id, team_two_id: team_two_id} do
+      ended_turn_game = game
+      |> TeamGame.end_turn()
+      |> assert_next_team(team_two_id)
+      |> TeamGame.end_turn()
+      |> assert_next_team(team_one_id)
+      |> TeamGame.end_turn()
+      |> assert_next_team(team_two_id)
+      |> TeamGame.end_turn()
+      |> assert_next_team(team_one_id)
+    end
+
+    test "end_turn/1 creates new turn", %{ game: game} do
+      ended_turn_game = game
+      |> TeamGame.end_turn()
+    end
+  end
+
+  defp assert_turns_appended(game, team_id, appended_length) do
+    team = Gamenite.Core.Lists.find_element_by_id(game.teams, team_id)
+    assert length(team.turns) == appended_length
+    game
+  end
+
+  defp assert_current_player(game, player_name) do
+    assert game.current_team.current_player.name == player_name
+    game
+  end
+
+  defp assert_next_team(game, team_id) do
+    assert game.current_team.id == team_id
+    game
   end
 end

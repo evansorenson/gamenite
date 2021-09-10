@@ -1,15 +1,15 @@
-defmodule Gamenite.Core.Team do
+defmodule Gamenite.Core.TeamGame.Team do
   use Accessible
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Gamenite.Core.{Player}
+  alias Gamenite.Core.TeamGame.{Player}
 
   embedded_schema do
     field :name, :string
     field :score, :integer
     field :color, :string
-    field :turns, {:array, :map}
+    field :turns, {:array, :map}, default: []
     embeds_many :players, Player
     embeds_one :current_player, Player
   end
@@ -76,5 +76,24 @@ defmodule Gamenite.Core.Team do
     { team_players, remaining_players } = Enum.split(players, div(length(players), n))
     team = new(team_players, n - 1 )
     _split_teams([ team | teams ], remaining_players, n - 1)
+  end
+
+  def team_length(%__MODULE__{ players: players }) do
+    length(players)
+  end
+
+  def add_player(team, player) do
+    team
+    |> Map.update(:players, [ player ], fn players -> [ player | players ] end)
+  end
+
+  def remove_player(team, player) do
+    team
+    |> Map.update(:players, [], fn players -> List.delete(players, player) end)
+  end
+
+  def add_turn(team, turn) do
+    team
+    |> Map.update(:turns, [ turn ], fn turns -> [ turn | turns ] end)
   end
 end

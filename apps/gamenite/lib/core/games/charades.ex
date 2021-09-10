@@ -1,6 +1,7 @@
-defmodule Gamenite.Core.Charades do
+defmodule Gamenite.Core.Games.Charades do
   alias Gamenite.Core.TeamGame
   alias Gamenite.Core.Cards
+  alias Gamenite.Core.Lists
 
   @doc """
   Moves to next player's and team's turn.
@@ -82,7 +83,7 @@ defmodule Gamenite.Core.Charades do
 
   # Salad Bowl Logic
   def inc_round(%{ rounds: rounds, current_round: current_round} = game) do
-    _inc_round(game, TeamGame.next_list_element(rounds, current_round))
+    _inc_round(game, Lists.next_list_element(rounds, current_round))
   end
   defp _inc_round(game, { 0, _ }) do
     Map.replace!(game, :is_finished, true)
