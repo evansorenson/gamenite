@@ -103,7 +103,7 @@ defmodule Gamenite.Core.GameTest do
     setup [:working_game]
 
     test "end_turn/1 appends turn to current team", %{ game: game, team_one_id: team_one_id, team_two_id: team_two_id} do
-      ended_turn_game = game
+      game
       |> TeamGame.end_turn()
       |> assert_turns_appended(team_one_id, 1)
       |> TeamGame.end_turn()
@@ -131,7 +131,7 @@ defmodule Gamenite.Core.GameTest do
     end
 
     test "end_turn/1 changes current team to next team in list", %{ game: game, team_one_id: team_one_id, team_two_id: team_two_id} do
-      ended_turn_game = game
+      game
       |> TeamGame.end_turn()
       |> assert_next_team(team_two_id)
       |> TeamGame.end_turn()
@@ -142,8 +142,9 @@ defmodule Gamenite.Core.GameTest do
       |> assert_next_team(team_one_id)
     end
 
+    ## todo
     test "end_turn/1 creates new turn", %{ game: game} do
-      ended_turn_game = game
+      game
       |> TeamGame.end_turn()
     end
   end
@@ -162,5 +163,61 @@ defmodule Gamenite.Core.GameTest do
   defp assert_next_team(game, team_id) do
     assert game.current_team.id == team_id
     game
+  end
+
+  defp game_with_deck_with_no_cards(context) do
+    {:ok, game } =  GameBuilders.build_game([2, 2], 0)
+
+    new_context = context
+    |> Map.put(:deck_no_cards, game)
+
+    {:ok , new_context}
+  end
+
+  describe "drawing cards" do
+    setup [:working_game]
+
+    test "draw cards", %{game: game} do
+      updated_game = game
+      |> TeamGame.draw_card
+      |> assert_deck_length(4)
+      |> assert_hand_length(1)
+      |> TeamGame.draw_card
+      |> assert_deck_length(3)
+      |> assert_hand_length(2)
+      |> TeamGame.draw_card
+      |> assert_deck_length(2)
+      |> assert_hand_length(3)
+      |> TeamGame.draw_card(2)
+      |> assert_deck_length(0)
+      |> assert_hand_length(5)
+      |> TeamGame.draw_card
+
+      assert updated_game == {:error, "Not enough cards in deck." }
+    end
+  end
+
+  defp assert_deck_length(%{deck: deck } = game, deck_length) do
+    assert length(deck) == deck_length
+    game
+  end
+
+  defp assert_hand_length(%{current_team: current_team} = game, hand_length) do
+    assert length(current_team.current_player.hand) == hand_length
+    game
+  end
+
+  describe "update fields" do
+    setup [:working_game]
+
+    test "update deck", %{game: game} do
+      game_with_new_deck = TeamGame.update_deck(game, [1, 2, 3])
+      assert game_with_new_deck.deck == [1, 2, 3]
+    end
+
+    test "update current hand", %{game: game} do
+      updated_game = TeamGame.update_current_hand(game, [1, 2, 3])
+      assert updated_game.current_team.current_player.hand == [1, 2, 3]
+    end
   end
 end

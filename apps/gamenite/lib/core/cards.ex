@@ -73,7 +73,7 @@ defmodule Gamenite.Core.Cards do
         { :error, reason }
 
       { drawn_cards, remaining_deck } ->
-        { [ drawn_cards | hand ], remaining_deck }
+        { drawn_cards ++ hand, remaining_deck }
     end
   end
 
@@ -83,7 +83,7 @@ defmodule Gamenite.Core.Cards do
         { :error, reason }
 
       { drawn_cards, remaining_deck, new_discard_pile } ->
-        { [ drawn_cards | hand ], remaining_deck, new_discard_pile }
+        { drawn_cards ++ hand, remaining_deck, new_discard_pile }
     end
   end
 
@@ -100,7 +100,11 @@ defmodule Gamenite.Core.Cards do
   Returns { [origin_pile], [destination_pile] }
   """
   def move_card(card, origin_pile, destination_pile) do
-    { List.delete(origin_pile, card), [ card | destination_pile ]}
+    deleted_from_origin_pile = List.delete(origin_pile, card)
+    cond do
+      deleted_from_origin_pile == origin_pile -> { origin_pile, destination_pile }
+      true -> { List.delete(origin_pile, card), [ card | destination_pile ]}
+    end
   end
 
   def correct_card(card) do

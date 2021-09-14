@@ -1,4 +1,4 @@
-defmodule Gamenite do
+defmodule GamenitePersistance do
   @moduledoc """
   Gamenite keeps the contexts that define your domain
   and business logic.

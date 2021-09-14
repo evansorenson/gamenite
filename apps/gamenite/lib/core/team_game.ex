@@ -28,7 +28,7 @@ defmodule Gamenite.Core.TeamGame do
     |> put_embed(:deck, deck)
     |> validate_required([:teams, :current_team, :deck])
     |> validate_length(:teams, min: 2, max: @max_teams)
-    |> validate_length(:deck, min: 10, max: @max_deck)
+    |> validate_length(:deck, min: 5, max: @max_deck)
   end
 
   def new([], _deck), do: {:error, "teams is empty list."}
@@ -151,10 +151,6 @@ defmodule Gamenite.Core.TeamGame do
   # defp clear_team_hand(team) do
   #   Enum.map(team.players, &clear_player_hand(&1))
   # end
-  def clear_current_player_hand(game) do
-    game
-    |> put_in([:current_team][:current_player][:hand], [])
-  end
 
   def draw_card(%__MODULE__{ deck: deck, current_team: current_team } = game, num \\ 1) do
     case Cards.draw_into_hand(deck, current_team.current_player.hand, num) do
@@ -175,7 +171,7 @@ defmodule Gamenite.Core.TeamGame do
 
   def update_current_hand(game, hand) do
     game
-    |> put_in([:current_team][:current_player][:hand], hand)
+    |> put_in([:current_team, :current_player, :hand], hand)
   end
 
   def start_turn(%__MODULE__{ current_turn: current_turn } = game) do

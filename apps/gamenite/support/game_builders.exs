@@ -10,8 +10,8 @@ defmodule GameBuilders do
   alias Gamenite.Core.TeamGame.{Team, Player, Turn}
   alias Gamenite.Core.TeamGame
 
-  def build_game(number_of_players_on_each_team \\ [3, 3]) do
-    deck = build_deck()
+  def build_game(number_of_players_on_each_team \\ [3, 3], deck_length \\ 5) do
+    deck = build_deck(deck_length)
     teams = build_teams(number_of_players_on_each_team)
     TeamGame.new(teams, deck)
   end
@@ -32,7 +32,7 @@ defmodule GameBuilders do
     player
   end
 
-  def build_deck(cards \\ 0..20) do
-    Enum.map(cards, &%Gamenite.Core.Cards.Card{face: Integer.to_string(&1)})
+  def build_deck(deck_length) do
+    Enum.map(1..deck_length, &%Gamenite.Core.Cards.Card{face: Integer.to_string(&1)})
   end
 end
