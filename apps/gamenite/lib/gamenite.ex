@@ -1,5 +1,8 @@
 defmodule Gamenite do
 
+  def start_game_server(room_uuid, game_id) do
+
+  end
   def draw(room_uuid, num_cards) do
     GenServer.cast(room_uuid, {:draw, num_cards})
   end

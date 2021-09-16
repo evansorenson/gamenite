@@ -9,6 +9,24 @@
 </style>
 
 <h1><%= "Room: #{@room.title}" %></h1>
+<h1><%= "Game: #{@game.title}" %></h1>
+
+<%= form_for @game_options_changeset, @action, [phx_change: :validate, class: "block", csrf_token: @csrf_token], fn f -> %>
+  <%= if @game_options_changeset.action do %>
+    <div class="alert alert-danger">
+      <p>Oops, something went wrong! Please check the errors below.</p>
+    </div>
+  <% end %>
+
+  <div>
+    <%= checkbox f, :skip_limit?, placeholder: "Skipping Allowed" %>
+  </div>
+  <div>
+    <%= select f, :skip_limit,  placeholder: "Skip Limit" %>
+    <%= error_tag f, :skip_limit %>
+  </div>
+  <%= submit "Create User" %>
+<% end %>
 
 <h1>Users</h1>
 

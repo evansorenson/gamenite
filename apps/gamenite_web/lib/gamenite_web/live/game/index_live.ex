@@ -3,6 +3,7 @@ defmodule GameniteWeb.Game.IndexLive do
 
   alias GamenitePersistance.Gaming
   alias GamenitePersistance.Organizer
+  alias Gamenite
 
   def mount(_params, _session, socket) do
     games = Gaming.list_games()
@@ -18,20 +19,16 @@ defmodule GameniteWeb.Game.IndexLive do
     {:noreply, assign(socket, :games, Gaming.list_games())}
   end
   def handle_event("search", %{"search_field" => %{"query" => query}}, socket) do
-    IO.puts query
     games_search = Gaming.search_games(query)
     {:noreply, assign(socket, :games, games_search)}
   end
 
-  def handle_event("host_game", %{"game" => game}, socket) do
-    IO.puts "hi"
-    IO.inspect game
+  def handle_event("host_game", %{"game_id" => game_id}, socket) do
     case Organizer.create_room_with_random_slug() do
       {:ok, room} ->
         {:noreply,
           socket
-          |> assign(:game, game)
-          |> push_redirect(to: Routes.room_path(socket, :new, room.slug, game.id))
+          |> push_redirect(to: Routes.room_path(socket, :new, room.slug, %{ game_id: game_id }))
         }
       {:error, changeset} ->
         {:noreply,

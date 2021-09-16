@@ -6,16 +6,20 @@ defmodule GameniteWeb.Room.NewLive do
   use GameniteWeb, :live_view
 
   alias GamenitePersistance.Organizer
+  alias Gamenite.Core.Games.CharadesOptions
 
   alias GameniteWeb.Presence
   alias Phoenix.Socket.Broadcast
 
 
   @player_colors ['F2F3F4', '222222', 'F3C300', '875692', 'F38400', 'A1CAF1', 'BE0032', 'C2B280', '848482', '008856', 'E68FAC', '0067A5', 'F99379', '604E97', 'F6A600', 'B3446C', 'DCD300', '882D17', '8DB600', '654522', 'E25822', '2B3D26']
+  @default_rounds ["Catchphrase", "Password", "Charades"]
 
   @impl true
-  def mount(_params, %{"slug" => slug, "game" => game} = session, socket) do
+  def mount(_params, %{"slug" => slug, "game_id" => game_id, "_csrf_token" => csrf_token} = session, socket) do
     user = mount_socket_user(socket, session)
+    game = GamenitePersistance.Gaming.get_game!(game_id)
+    game_options_changeset = CharadesOptions.new_salad_bowl(%{ rounds: ["Catchphrase", "Password", "Charades"]})
 
     # This PubSub subscription will also handle other events from the users.
     Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug)
@@ -38,9 +42,10 @@ defmodule GameniteWeb.Room.NewLive do
         {:ok,
           socket
           |> assign(:room, room)
+          |> assign(:game, game)
+          |> assign(:game_options_changeset, game_options_changeset)
           |> assign(:user, user)
           |> assign(:slug, slug)
-          |> assign(:game, game)
           |> assign(:connected_users, [])
           |> assign(:offer_requests, [])
           |> assign(:ice_candidate_offers, [])
@@ -127,6 +132,14 @@ defmodule GameniteWeb.Room.NewLive do
 
     send_direct_message(socket.assigns.slug, payload["toUser"], "new_answer", payload)
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("validate", %{"game_options_changeset" => game_options_changeset}, socket) do
+    IO.inspect game_options_changeset
+
+
+    {:noreply, assign(socket, game_options_changeset: game_options_changeset)}
   end
 
   @impl true
