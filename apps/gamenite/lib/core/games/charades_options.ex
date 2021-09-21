@@ -2,17 +2,15 @@ defmodule Gamenite.Core.Games.CharadesOptions do
   use Ecto.Schema
   import Ecto.Changeset
 
-  @default_rounds ["Catchphrase", "Password", "Charades"]
-  @rounds @default_rounds ++ ["Pictionary"]
+
   embedded_schema do
     field :turn_length, :integer, default: 60
     field :skip_limit, :integer, default: 1
-    field :skip_limit?, :boolean, default: false
-    field :rounds, {:array, :string}, default: @default_rounds
+    field :rounds, {:array, :string}, default: Application.get_env(:gamenite, :salad_bowl_default_rounds)
     field :current_round, :string
     field :starting_deck, {:array, :map}
   end
-  @fields [:turn_length, :skip_limit, :rounds, :current_round, :starting_deck]
+  @fields [:turn_length, :skip_limit, :starting_deck]
 
   def changeset(charades, params) do
     charades
@@ -24,20 +22,17 @@ defmodule Gamenite.Core.Games.CharadesOptions do
   end
 
 
-  def salad_bowl_changeset(changeset) do
+  def salad_bowl_changeset(changeset, params) do
     changeset
-    |> validate_required([:current_round, :starting_deck])
-    |> validate_subset(:rounds, @rounds)
+    |> cast(params, [:rounds])
+    |> validate_subset(:rounds, Application.get_env(:gamenite, :salad_bowl_all_rounds))
     |> validate_length(:rounds, min: 1)
   end
 
-  def new_salad_bowl(%{rounds: rounds} = fields) do
-    fields
-    |> Map.put(:current_round, List.first(rounds))
-
+  def new_salad_bowl(params) do
     %__MODULE__{}
-    |> changeset(fields)
-    |> salad_bowl_changeset
+    |> changeset(params)
+    |> salad_bowl_changeset(params)
   end
 
   def new(fields) do

@@ -16,6 +16,18 @@ defmodule Gamenite.Core.TeamGame.Team do
   @fields [:id, :name, :score, :color, :turns]
 
   @team_colors ["C0392B", "2980B9", "27AE60", "884EA0", "D35400", "FF33B8", "F1C40F"]
+  def changeset(team, fields) do
+    team
+    |> name_changeset(fields)
+    |> cast(fields, @fields)
+    |> cast_embed(:players)
+    |> validate_required([:players, :color])
+    |> validate_number(:score, greater_than_or_equal_to: 0)
+    |> validate_inclusion(:color, @team_colors)
+    |> validate_length(:players, min: 2, max: 10)
+  end
+
+
   def changeset(team, fields, players) do
     team
     |> name_changeset(fields)

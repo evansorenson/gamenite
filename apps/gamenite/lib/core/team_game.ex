@@ -20,22 +20,27 @@ defmodule Gamenite.Core.TeamGame do
 
   @max_teams Application.get_env(:gamenite, :max_teams)
   @max_deck Application.get_env(:gamenite, :max_deck)
-  def new_game_changeset(fields, teams, deck) do
-    %__MODULE__{}
+  def finalize_game_changeset(team_game, %{teams: teams, deck: deck} = fields) do
+    team_game
     |> cast(fields, @fields)
     |> put_embed(:teams, teams)
     |> put_embed(:current_team, hd(teams))
     |> put_embed(:deck, deck)
-    |> validate_required([:teams, :current_team, :deck])
+    |> put(:current_turn, Turn.new(hd(teams).current_player))
+    |> validate_required([:teams, :current_team, :deck, :current_turn])
     |> validate_length(:teams, min: 2, max: @max_teams)
     |> validate_length(:deck, min: 5, max: @max_deck)
   end
 
-  def new([], _deck), do: {:error, "teams is empty list."}
-  def new(teams, deck) do
-    %{current_turn: Turn.new(hd(teams).current_player)}
-    |> new_game_changeset(teams, deck)
-    |> apply_action(:update)
+  def teams_changeset(team_game, fields) do
+    team_game
+    |> cast(fields, @fields)
+    |> cast_embed(:teams)
+    |> validate_required([:teams])
+    |> validate_length(:teams, min: 2, max: @max_teams)
+  end
+  def new(fields) do
+    struct!(__MODULE__, fields)
   end
 
   def end_turn(game) do

@@ -24,7 +24,7 @@ defmodule GameniteWeb.Router do
     resources "/users", UserController, only: [:index, :show, :new, :create]
     resources "/sessions", SessionController, only: [:new, :create, :delete]
 
-    resources "/games", GameController, only: [:create, :new, :show, :edit]
+    resources "/games", GameController, only: [:create, :index, :new, :show, :edit]
 
 
     get "/:slug", RoomController, :new

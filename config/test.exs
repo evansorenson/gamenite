@@ -21,7 +21,9 @@ config :gamenite_web, GameniteWeb.Endpoint,
 config :gamenite,
   max_teams: 4,
   max_deck: 50,
-  min_players_on_team: 2
+  min_players_on_team: 2,
+  default_salad_bowl_rounds: ["Catchphrase", "Password", "Charades"],
+  all_salad_bowl_rounds: ["Catchphrase", "Password", "Charades", "Pictionary"]
 
 # Print only warnings and errors during test
 config :logger, level: :warn

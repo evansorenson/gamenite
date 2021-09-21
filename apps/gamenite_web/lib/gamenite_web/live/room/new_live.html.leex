@@ -1,56 +1,82 @@
-<style>
-.dot {
-    height: 25px;
-    width: 25px;
-    background-color: #bbb;
-    border-radius: 50%;
-    display: inline-block;
-}
-</style>
+
 
 <h1><%= "Room: #{@room.title}" %></h1>
 <h1><%= "Game: #{@game.title}" %></h1>
 
-<%= form_for @game_options_changeset, @action, [phx_change: :validate, class: "block", csrf_token: @csrf_token], fn f -> %>
-  <%= if @game_options_changeset.action do %>
-    <div class="alert alert-danger">
-      <p>Oops, something went wrong! Please check the errors below.</p>
-    </div>
+
+<table class="table-fixed">
+  <style>
+    .options-column {
+      @apply bg-gray-dark text-blurple-dark font-bold;
+    },
+    .value-column {
+      @apply bg-gray-darkest text-blurple-dark;
+    }
+  </style>
+  <thead>
+    <tr>
+      <th class="w-3/4"></th>
+      <th class="w-1/4"></th>
+    </tr>
+  </thead>
+  <%= form_for @game_options_changeset, "#", [phx_change: :validate], fn f -> %>
+    <tr>
+      <td class="options-column bg-gray-dark text-blurple">
+        <%= label f, :skip_limit, "Skip Limit" %>
+        <%= error_tag f, :skip_limit %>
+      </td>
+      <td class="value-column">
+        <%= select f, :skip_limit, 0..5 %>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="options-column">
+        <%= label f, :turn_length, "Turn Length" %>
+        <%= error_tag f, :turn_length %>
+      </td>
+      <td class="value-column">
+         <%= select f, :turn_length, [30, 45, 60, 90, 120] %>
+      </td>
+    </tr>
+
+    <tr>
+      <td class="options-column">
+      <%= label f, :rounds, "Rounds" %>
+      <%= error_tag f, :rounds %>
+      </td>
+      <td class="value-column">
+        <%= array_input f, :rounds, options: Application.get_env(:gamenite, :salad_bowl_all_rounds) %>
+        <%= array_add_button f, :rounds, options: Application.get_env(:gamenite, :salad_bowl_all_rounds) %>
+      </td>
+    </tr>
   <% end %>
+</table>
 
-  <div>
-    <%= checkbox f, :skip_limit?, placeholder: "Skipping Allowed" %>
+
+
+
+<h1 class="text-6xl font-bold text-center py-4">Users</h1>
+<div class="table bg-blurple rounded-3xl flex-wrap">
+      <%= for i <- 0..9 do %>
+          <%= case Enum.fetch(@connected_users, i) do %>
+          <% {:ok, user} -> %>
+            <div class="inline-grid px-8 py-8 w-1/5 place-items-center">
+              <div class="object-none object-bottom-center h-24 w-24 bg-black rounded-full"></div>
+              <h1 class="object-none object-bottom-center"><%= user %></h1>
+            </div>
+          <% _ -> %>
+            <div class="inline-grid px-8 py-8 w-1/5 place-items-center">
+              <div class="object-none object-bottom-center h-24 w-24 bg-gray-light rounded-full"></div>
+            </div>
+          <% end %>
+      <% end %>
   </div>
-  <div>
-    <%= select f, :skip_limit,  placeholder: "Skip Limit" %>
-    <%= error_tag f, :skip_limit %>
-  </div>
-  <%= submit "Create User" %>
-<% end %>
-
-<h1>Users</h1>
-
-<div class="row">
-    <%= for i <- 0..10 do %>
-    <div class="column">
-        <%= case Enum.fetch(@connected_users, i) do %>
-        <% {:ok, user} -> %>
-            <div style="margin:0">
-            <span class="dot" background-color="#www"></span>
-            </div>
-            <div>
-            <%= user %>
-            </div>
-        <% _ -> %>
-            <div style="margin:0">
-            <span class="dot" background-color="#www"></span>
-            </div>
-        <% end %>
-    </div>
-    <% end %>
 </div>
 
-<button id="start-game" phx-click="start_game" phx-hook="StartGame">Start Game</button>
+
+
+<button class="" id="start-game" phx-click="start_game">Start Game</button>
 
 <div id="offer-requests">
     <%= for request <- @offer_requests do %>

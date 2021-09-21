@@ -7,19 +7,22 @@ defmodule GameniteWeb.Room.NewLive do
 
   alias GamenitePersistance.Organizer
   alias Gamenite.Core.Games.CharadesOptions
+  alias Gamenite.Core.TeamGame
+  alias Gamenite.Core.TeamGame.Team
 
   alias GameniteWeb.Presence
   alias Phoenix.Socket.Broadcast
 
 
   @player_colors ['F2F3F4', '222222', 'F3C300', '875692', 'F38400', 'A1CAF1', 'BE0032', 'C2B280', '848482', '008856', 'E68FAC', '0067A5', 'F99379', '604E97', 'F6A600', 'B3446C', 'DCD300', '882D17', '8DB600', '654522', 'E25822', '2B3D26']
-  @default_rounds ["Catchphrase", "Password", "Charades"]
 
   @impl true
-  def mount(_params, %{"slug" => slug, "game_id" => game_id, "_csrf_token" => csrf_token} = session, socket) do
+  def mount(_params, %{"slug" => slug, "game_id" => game_id } = session, socket) do
     user = mount_socket_user(socket, session)
     game = GamenitePersistance.Gaming.get_game!(game_id)
-    game_options_changeset = CharadesOptions.new_salad_bowl(%{ rounds: ["Catchphrase", "Password", "Charades"]})
+    game_options_changeset = CharadesOptions.new_salad_bowl(%{})
+    team_game_changeset = TeamGame.teams_changeset(%TeamGame{}, %{teams: [%{}, %{}]})
+    IO.inspect(team_game_changeset)
 
     # This PubSub subscription will also handle other events from the users.
     Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug)
@@ -44,6 +47,7 @@ defmodule GameniteWeb.Room.NewLive do
           |> assign(:room, room)
           |> assign(:game, game)
           |> assign(:game_options_changeset, game_options_changeset)
+          |> assign(:team_game_changeset, team_game_changeset)
           |> assign(:user, user)
           |> assign(:slug, slug)
           |> assign(:connected_users, [])
@@ -135,9 +139,15 @@ defmodule GameniteWeb.Room.NewLive do
   end
 
   @impl true
-  def handle_event("validate", %{"game_options_changeset" => game_options_changeset}, socket) do
-    IO.inspect game_options_changeset
+  def handle_event("validate", %{"charades_options" => params}, socket) do
+    IO.inspect params
 
+    game_options_changeset =
+      %CharadesOptions{}
+      |> CharadesOptions.salad_bowl_changeset(params)
+      |> Map.put(:action, :update)
+
+    IO.inspect(game_options_changeset)
 
     {:noreply, assign(socket, game_options_changeset: game_options_changeset)}
   end
@@ -149,10 +159,11 @@ defmodule GameniteWeb.Room.NewLive do
 
   @impl true
   def handle_event("start_game", _payload, socket) do
-    {:noreply,
-    socket
-    |> push_redirect(to: Routes.room_path(socket, :show, socket.assigns.slug))
-    }
+    # {:noreply,
+    # socket
+    # |> push_redirect(to: Routes.room_path(socket, :show, socket.assigns.slug))
+    # }
+    {:noreply, socket}
   end
 
 

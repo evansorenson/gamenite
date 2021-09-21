@@ -12,7 +12,9 @@ config :gamenite_persistance, GamenitePersistance.Repo,
 config :gamenite,
   max_teams: 4,
   max_deck: 50,
-  min_players_on_team: 2
+  min_players_on_team: 2,
+  salad_bowl_default_rounds: ["Catchphrase", "Password", "Charades"],
+  salad_bowl_all_rounds: ["Catchphrase", "Password", "Charades", "Pictionary"]
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
