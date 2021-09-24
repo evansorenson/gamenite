@@ -50,11 +50,18 @@
         <%= array_add_button f, :rounds, options: Application.get_env(:gamenite, :salad_bowl_all_rounds) %>
       </td>
     </tr>
+
+    <tr>
+      <td class="options-column bg-gray-dark text-blurple">
+        <%= label f, :cards_per_player, "Cards Written Per Player" %>
+        <%= error_tag f, :cards_per_player %>
+      </td>
+      <td class="value-column">
+        <%= select f, :cards_per_player, 2..10 %>
+      </td>
+    </tr>
   <% end %>
 </table>
-
-
-
 
 <h1 class="text-6xl font-bold text-center py-4">Users</h1>
 <div class="table bg-blurple rounded-3xl flex-wrap">
@@ -64,6 +71,9 @@
             <div class="inline-grid px-8 py-8 w-1/5 place-items-center">
               <div class="object-none object-bottom-center h-24 w-24 bg-black rounded-full"></div>
               <h1 class="object-none object-bottom-center"><%= user %></h1>
+              <%= if user == user do %>
+                <button>
+              <% end %>
             </div>
           <% _ -> %>
             <div class="inline-grid px-8 py-8 w-1/5 place-items-center">
@@ -72,11 +82,10 @@
           <% end %>
       <% end %>
   </div>
+  <button phx-click="start_game">Start Game</button>
 </div>
 
 
-
-<button class="" id="start-game" phx-click="start_game">Start Game</button>
 
 <div id="offer-requests">
     <%= for request <- @offer_requests do %>

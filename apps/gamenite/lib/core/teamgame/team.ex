@@ -81,12 +81,12 @@ defmodule Gamenite.Core.TeamGame.Team do
     _split_teams([], Enum.shuffle(players), n)
   end
   defp _split_teams(teams, players, 1) do
-  team = new(players, 0)
+  {:ok, team } = new(players, 0)
   [ team | teams ]
   end
   defp _split_teams(teams, players, n) do
     { team_players, remaining_players } = Enum.split(players, div(length(players), n))
-    team = new(team_players, n - 1 )
+    {:ok, team } = new(team_players, n - 1 )
     _split_teams([ team | teams ], remaining_players, n - 1)
   end
 

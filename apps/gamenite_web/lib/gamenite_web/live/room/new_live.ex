@@ -6,15 +6,16 @@ defmodule GameniteWeb.Room.NewLive do
   use GameniteWeb, :live_view
 
   alias GamenitePersistance.Organizer
+  alias GamenitePersistance.Accounts
   alias Gamenite.Core.Games.CharadesOptions
   alias Gamenite.Core.TeamGame
   alias Gamenite.Core.TeamGame.Team
+
 
   alias GameniteWeb.Presence
   alias Phoenix.Socket.Broadcast
 
 
-  @player_colors ['F2F3F4', '222222', 'F3C300', '875692', 'F38400', 'A1CAF1', 'BE0032', 'C2B280', '848482', '008856', 'E68FAC', '0067A5', 'F99379', '604E97', 'F6A600', 'B3446C', 'DCD300', '882D17', '8DB600', '654522', 'E25822', '2B3D26']
 
   @impl true
   def mount(_params, %{"slug" => slug, "game_id" => game_id } = session, socket) do
@@ -22,7 +23,6 @@ defmodule GameniteWeb.Room.NewLive do
     game = GamenitePersistance.Gaming.get_game!(game_id)
     game_options_changeset = CharadesOptions.new_salad_bowl(%{})
     team_game_changeset = TeamGame.teams_changeset(%TeamGame{}, %{teams: [%{}, %{}]})
-    IO.inspect(team_game_changeset)
 
     # This PubSub subscription will also handle other events from the users.
     Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug)
@@ -140,14 +140,10 @@ defmodule GameniteWeb.Room.NewLive do
 
   @impl true
   def handle_event("validate", %{"charades_options" => params}, socket) do
-    IO.inspect params
-
     game_options_changeset =
       %CharadesOptions{}
       |> CharadesOptions.salad_bowl_changeset(params)
       |> Map.put(:action, :update)
-
-    IO.inspect(game_options_changeset)
 
     {:noreply, assign(socket, game_options_changeset: game_options_changeset)}
   end
@@ -159,10 +155,24 @@ defmodule GameniteWeb.Room.NewLive do
 
   @impl true
   def handle_event("start_game", _payload, socket) do
-    # {:noreply,
-    # socket
-    # |> push_redirect(to: Routes.room_path(socket, :show, socket.assigns.slug))
-    # }
+    IO.puts "hi"
+
+    players = socket.assigns.connected_users
+    |> Enum.map(fn username -> Accounts.get_user_by(%{username: username}) end)
+    |> TeamGame.Player.new_players_from_users()
+    IO.inspect(players)
+
+    teams = players
+    |> TeamGame.Team.split_teams(2)
+    IO.inspect(teams)
+
+    TeamGame.new(%{teams: teams})
+
+
+    {:noreply,
+    socket
+    |> push_redirect(to: Routes.room_path(socket, :show, socket.assigns.slug))
+    }
     {:noreply, socket}
   end
 
@@ -172,7 +182,6 @@ defmodule GameniteWeb.Room.NewLive do
           | %{:assigns => atom | %{:slug => binary, optional(any) => any}, optional(any) => any}
         ) :: list
   def list_present(socket) do
-    IO.inspect  Presence.list("room:" <> socket.assigns.slug)
     Presence.list("room:" <> socket.assigns.slug)
     |> Enum.map(fn {_, %{user: user, metas: _}} -> user.username
      end)
