@@ -1,4 +1,4 @@
-defmodule Gamenite.Core.Cards.Card do
+defmodule Gamenite.Cards.Card do
   use Ecto.Schema
   import Ecto.Changeset
 

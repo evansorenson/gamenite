@@ -1,5 +1,5 @@
-defmodule Gamenite.Core.Cards do
-  alias Gamenite.Core.Cards.{Card, Deck, Hand}
+defmodule Gamenite.Cards do
+  alias Gamenite.Cards.{Card, Deck, Hand}
 
   @doc """
   Flips card by changing face_up? value in card struct.
@@ -110,5 +110,9 @@ defmodule Gamenite.Core.Cards do
   def correct_card(card) do
     card
     |> Map.put(:is_correct, true)
+  end
+
+  def card_in_deck?(deck, card) do
+    Enum.any?(deck, fn x -> x.face == card.face end)
   end
 end

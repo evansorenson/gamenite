@@ -1,4 +1,4 @@
-defmodule Gamenite.Core.PlayerTest do
+defmodule Gamenite.PlayerTest do
   use ExUnit.Case
   use GameBuilders
 

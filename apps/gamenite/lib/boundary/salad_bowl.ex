@@ -1,9 +1,9 @@
-defmodule Gamnite.Boundary.SaladBowl do
+defmodule Gamnite.SaladBowl do
   use GenServer
 
   alias Gamenite.Cards
-  alias Gamenite.Core.TeamGame
-  alias Gamenite.Core.Games.Charades
+  alias Gamenite.TeamGame
+  alias Gamenite.Games.Charades
 
   # Server
   def init(game) do
@@ -25,7 +25,7 @@ defmodule Gamnite.Boundary.SaladBowl do
   def start_game(room_uuid, game) do
     DynamicSupervisor.start_child(
       Game.Supervisor.SaladBowl,
-      {__MODULE__, {room_uuid, game}}
+      child_spec({room_uuid, game})
     )
   end
 

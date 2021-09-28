@@ -1,7 +1,7 @@
-defmodule Gamenite.Core.Games.Charades do
-  alias Gamenite.Core.TeamGame
-  alias Gamenite.Core.Cards
-  alias Gamenite.Core.Lists
+defmodule Gamenite.Games.Charades do
+  alias Gamenite.TeamGame
+  alias Gamenite.Cards
+  alias Gamenite.Lists
 
   @doc """
   Moves to next player's and team's turn.
@@ -80,6 +80,22 @@ defmodule Gamenite.Core.Games.Charades do
     game
     |> TeamGame.update_deck(new_deck)
   end
+
+  def add_cards_to_deck(%{ deck: deck } = game, cards) do
+    errors = Enum.reduce(deck, fn card, acc ->
+      case Cards.card_in_deck?(cards, card) do
+      true  -> [ "#{card.face} already in deck." | acc ]
+      _ -> acc
+      end
+    end )
+
+    do_add_cards_to_deck(game, cards, errors)
+  end
+  defp do_add_cards_to_deck(%{ deck: deck } = game, cards, []) do
+    game
+    |> TeamGame.update_deck([ cards | deck ])
+  end
+  defp do_add_cards_to_deck(_game, _cards, errors), do: {:error, errors}
 
   # Salad Bowl Logic
   def inc_round(%{ rounds: rounds, current_round: current_round} = game) do

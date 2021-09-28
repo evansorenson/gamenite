@@ -1,8 +1,8 @@
-defmodule Gamenite.Core.Cards.CardTest do
+defmodule Gamenite.Cards.CardTest do
   use ExUnit.Case
 
-  alias Gamenite.Core.Cards
-  alias Gamenite.Core.Cards.Card
+  alias Gamenite.Cards
+  alias Gamenite.Cards.Card
 
 
   @valid_attrs %{face: "some face"}

@@ -1,4 +1,4 @@
-defmodule Gamenite.Core.Lists do
+defmodule Gamenite.Lists do
 
   def next_list_element(list, element) do
     curr_idx = find_element_index(list, element)
