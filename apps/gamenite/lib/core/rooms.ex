@@ -14,11 +14,6 @@ defmodule Gamenite.Rooms do
   do
     {:error, "Room is full."}
   end
-  def join(%{password: password}, _player)
-  when not is_nil(password)
-  do
-    {:error, "Room requires password."}
-  end
   def join(%{connected_users: %{}} = room, player) do
     do_join(room, Map.put(player, :host?, true))
   end

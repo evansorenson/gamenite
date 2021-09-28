@@ -62,11 +62,6 @@ defmodule Gamenite.RoomsTest do
 
       assert map_size(new_room.connected_users) == 5
     end
-
-    test "join room with password requires password", %{player_to_join: player} do
-      password_room = Room.new(%{password: "123"})
-      assert Rooms.join(password_room, player) == {:error, "Room requires password."}
-    end
   end
 
   describe "player leaving room" do
