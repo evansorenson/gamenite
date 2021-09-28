@@ -1,4 +1,5 @@
 defmodule Gamenite.Rooms do
+
   def join(room, player, password) do
     cond do
       Pbkdf2.verify_pass(password, room.password) ->
@@ -9,6 +10,8 @@ defmodule Gamenite.Rooms do
   end
 
   @max_room_size 8
+  @spec join(%{:connected_users => map, optional(any) => any}, any) ::
+          {:error, <<_::104>>} | %{:connected_users => map, optional(any) => any}
   def join(%{connected_users: connected_users}, _player)
   when map_size(connected_users) >= @max_room_size
   do
@@ -26,28 +29,31 @@ defmodule Gamenite.Rooms do
     %{ room | connected_users: Map.delete(connected_users, id)}
   end
 
-  def change_mute_status(room, %{muted?: muted?} = player) do
+  def invert_mute(room, %{muted?: muted?} = player) do
     do_mute(room, player, not muted?)
   end
 
   def mute_all(room, host_player) do
     do_mute_all(room, true)
-    do_mute(room, host_player, false)
+    |> do_mute(host_player, false)
   end
 
   def unmute_all(room) do
     do_mute_all(room, false)
   end
 
-  defp do_mute(%{connected_users: connected_users} = room, %{id: player_id} = _player, mute?) do
-    players = Enum.map(connected_users, fn
-      %{id: ^player_id} = player -> %{player | muted?: mute?}
-      player -> player end )
+  defp do_mute(%{connected_users: connected_users} = room, %{user_id: id} = player, mute?) do
+    connected_users = Map.put(connected_users, id, %{player | muted?: mute?})
 
-    %{room | connected_users: players}
+    room
+    |> Map.put(:connected_users, connected_users)
   end
 
-  def do_mute_all(%{connected_users: connected_users} = room, mute?) do
-    Enum.reduce(connected_users, room, fn player, room -> do_mute(room, player, mute?) end)
+  defp do_mute_all(%{connected_users: connected_users} = room, mute?) do
+   users = for {k, v} <- connected_users, into: %{} do
+     {k, %{v | muted?: mute?}}
+   end
+
+   %{ room | connected_users: users}
   end
 end

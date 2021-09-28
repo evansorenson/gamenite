@@ -1,7 +1,10 @@
 defmodule Gamenite do
 
-  def start_game_server(room_uuid, game_id) do
-
+  def start_game("Salad Bowl", room_uuid) do
+    Gamenite.SaladBowlGameKeeper.start_game()
+  end
+  def start_game("Charades", room_uuid) do
+    Gamenite.Charades.start_game()
   end
   def draw(room_uuid, num_cards) do
     GenServer.cast(room_uuid, {:draw, num_cards})

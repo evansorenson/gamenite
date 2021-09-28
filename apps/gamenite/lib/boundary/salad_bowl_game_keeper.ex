@@ -1,4 +1,4 @@
-defmodule Gamnite.SaladBowl do
+defmodule Gamenite.SaladBowlGameKeeper do
   use GenServer
 
   alias Gamenite.Cards
@@ -6,26 +6,35 @@ defmodule Gamnite.SaladBowl do
   alias Gamenite.Games.Charades
 
   # Server
-  def init(game) do
-    {:ok, game}
+  def init({game_name, room_uuid}) do
+    {:ok, TeamGame.new(%{name: game_name, room_id: room_uuid})}
   end
 
-  def child_spec({room_uuid, game}) do
+  def child_spec({game_name, room_uuid}) do
     %{
       id: {__MODULE__, room_uuid},
-      start: {__MODULE__, :start_link, [{room_uuid, game}]},
+      start: {__MODULE__, :start_link, [{game_name, room_uuid}]},
       restart: :temporary
     }
   end
 
-  def start_link({room_uuid, game}) do
-    GenServer.start_link(__MODULE__, game, name: room_uuid)
+  def start_link({game_name, room_uuid}) do
+    GenServer.start_link(
+      __MODULE__,
+      {game_name, room_uuid},
+      name: via(game_name, room_uuid))
   end
 
-  def start_game(room_uuid, game) do
+  defp via(game_name, room_uuid) do
+    {:via,
+    Registry,
+    {Gamenite.Registry.Game, {game_name, room_uuid}}}
+  end
+
+  def start_game(game_name, room_uuid) do
     DynamicSupervisor.start_child(
-      Game.Supervisor.SaladBowl,
-      child_spec({room_uuid, game})
+      Gamenite.Supervisor.Game,
+      child_spec({game_name, room_uuid})
     )
   end
 
@@ -61,7 +70,7 @@ defmodule Gamnite.SaladBowl do
   end
 
   def handle_call(:next_player, _from, game) do
-    updated_game = TeamGame.next_player(game)
+    updated_game = TeamGame.end_turn(game)
     reply_to_call_with_game_timeout({ Map.get(updated_game, :current_team), updated_game })
   end
 
@@ -85,7 +94,7 @@ defmodule Gamnite.SaladBowl do
   def handle_info({ :end_turn, turn }, game)
   when game.turn.player == turn.player
   do
-    reply_to_call_with_game_timeout({ :ok, TeamGame.next_player(game)})
+    reply_to_call_with_game_timeout({ :ok, TeamGame.end_turn(game)})
   end
   def handle_info({ :end_turn, _turn}, game), do: {:noreply, game}
 

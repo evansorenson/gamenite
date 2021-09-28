@@ -1,4 +1,6 @@
 defmodule Gamenite.Rooms.Room do
+  use Accessible
+
   defstruct id: nil, name: nil, password: nil, connected_users: %{}, messages: []
 
   def new(%{password: password} = attrs) do

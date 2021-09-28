@@ -31,7 +31,7 @@ defmodule Gamenite.RoomsTest do
   end
 
   def player_in_room(context) do
-    {:ok, Map.put(context, :player_in_room, Roommate.new(%{user_id: 1}))}
+    {:ok, Map.put(context, :player_in_room, Roommate.new(%{user_id: 1, host?: true}))}
   end
 
   describe "players joining room" do
@@ -66,11 +66,65 @@ defmodule Gamenite.RoomsTest do
 
   describe "player leaving room" do
     setup [:build_room_with_some, :player_in_room]
+
     test "player leaves room successfully", %{some_room: some_room, player_in_room: player} do
       new_room = some_room
       |> Rooms.leave(player)
 
       assert map_size(new_room.connected_users) == 3
+    end
+  end
+
+  describe "muting/unmuting players" do
+    setup [:build_room_with_some, :player_in_room]
+
+    test "mute unmuted player",  %{some_room: some_room, player_in_room: player} do
+      some_room
+      |> Rooms.invert_mute(player)
+      |> assert_mute_status(player, true)
+    end
+
+    test "unmute muted player", %{some_room: some_room, player_in_room: player} do
+      some_room
+      |> Rooms.invert_mute(%{ player | muted?: true})
+      |> assert_mute_status(player, false)
+    end
+
+    test "unmute all players", %{some_room: some_room } do
+      some_room
+      |> Rooms.unmute_all
+      |> assert_unmute_all
+    end
+
+    test "mute all players except host", %{some_room: some_room, player_in_room: host} do
+      some_room
+      |> Rooms.mute_all(host)
+      |> assert_mute_all
+    end
+
+    defp assert_mute_status(%{connected_users: connected_users} = room, %{user_id: id} = _player, muted?) do
+      player = Map.get(connected_users, id)
+      assert player.muted? == muted?
+      room
+    end
+
+    defp assert_unmute_all(room) do
+      for {_k, user} <- room.connected_users do
+        assert_mute_status(room, user, false)
+      end
+    end
+
+    defp assert_mute_all(room) do
+      for {_k, user} <- room.connected_users do
+        do_assert_mute_all(room, user)
+      end
+      room
+    end
+    defp do_assert_mute_all(room, %{host?: false} = player) do
+      assert_mute_status(room, player, true)
+    end
+    defp do_assert_mute_all(room, player) do
+      assert_mute_status(room, player, false)
     end
   end
 end

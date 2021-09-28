@@ -5,11 +5,11 @@ defmodule GameniteWeb.Room.NewLive do
 
   use GameniteWeb, :live_view
 
-  alias GamenitePersistance.Organizer
   alias GamenitePersistance.Accounts
   alias Gamenite.Games.CharadesOptions
   alias Gamenite.TeamGame
   alias Gamenite.TeamGame.Team
+  alias Gamenite.RoomKeeper
 
 
   alias GameniteWeb.Presence
@@ -20,8 +20,11 @@ defmodule GameniteWeb.Room.NewLive do
   @impl true
   @spec mount(any, map, Phoenix.LiveView.Socket.t()) :: {:ok, Phoenix.LiveView.Socket.t()}
   def mount(_params, %{"slug" => slug, "game_id" => game_id } = session, socket) do
+    room_state =
+
     user = mount_socket_user(socket, session)
     game = GamenitePersistance.Gaming.get_game!(game_id)
+    game_state = Gamenite.start_game(game.name, room_state.id)
     game_options_changeset = CharadesOptions.new_salad_bowl(%{})
     team_game_changeset = TeamGame.teams_changeset(%TeamGame{}, %{teams: [%{}, %{}]})
 
@@ -35,18 +38,12 @@ defmodule GameniteWeb.Room.NewLive do
     # Track the connecting user with the `room:slug` topic.
     {:ok, _} = Presence.track(self(), "room:" <> slug, user.id, %{})
 
-    case Organizer.get_room(slug) do
-      nil ->
+    case RoomKeeper.create_room(slug, "Testing") do
+      {:ok, _pid} ->
         {:ok,
           socket
-          |> put_flash(:error, "That room does not exist.")
-          |> push_redirect(to: Routes.game_path(socket, :index))
-        }
-      room ->
-        {:ok,
-          socket
-          |> assign(:room, room)
-          |> assign(:game, game)
+          |> assign(:room_state, room_state)
+          |> assign(:game_state, game_state)
           |> assign(:game_options_changeset, game_options_changeset)
           |> assign(:team_game_changeset, team_game_changeset)
           |> assign(:user, user)
@@ -56,6 +53,12 @@ defmodule GameniteWeb.Room.NewLive do
           |> assign(:ice_candidate_offers, [])
           |> assign(:sdp_offers, [])
           |> assign(:answers, [])
+        }
+      _ ->
+        {:ok,
+          socket
+          |> put_flash(:error, "That room does not exist.")
+          |> push_redirect(to: Routes.game_path(socket, :index))
         }
     end
   end
