@@ -8,6 +8,7 @@
     <%= live_title_tag assigns[:page_title] || "Gamenite", suffix: " · Phoenix Framework" %>
     <link phx-track-static rel="stylesheet" href="<%= Routes.static_path(@conn, "/css/app.css") %>"/>
     <script defer phx-track-static type="text/javascript" src="<%= Routes.static_path(@conn, "/js/app.js") %>"></script>
+
   </head>
   <body>
     <header class="bg-gradient-to-r from-gray-darkest to-black">

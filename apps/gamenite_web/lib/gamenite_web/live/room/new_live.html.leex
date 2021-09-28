@@ -1,27 +1,15 @@
 
 
+
 <h1><%= "Room: #{@room.title}" %></h1>
 <h1><%= "Game: #{@game.title}" %></h1>
 
 
-<table class="table-fixed">
-  <style>
-    .options-column {
-      @apply bg-gray-dark text-blurple-dark font-bold;
-    },
-    .value-column {
-      @apply bg-gray-darkest text-blurple-dark;
-    }
-  </style>
-  <thead>
-    <tr>
-      <th class="w-3/4"></th>
-      <th class="w-1/4"></th>
-    </tr>
-  </thead>
+<table class="table">
+  <tbody>
   <%= form_for @game_options_changeset, "#", [phx_change: :validate], fn f -> %>
-    <tr>
-      <td class="options-column bg-gray-dark text-blurple">
+    <tr class="rounded-t-3xl">
+      <td class="options-column">
         <%= label f, :skip_limit, "Skip Limit" %>
         <%= error_tag f, :skip_limit %>
       </td>
@@ -40,10 +28,21 @@
       </td>
     </tr>
 
-    <tr>
+    <tr class="rounded-b-3xl">
       <td class="options-column">
-      <%= label f, :rounds, "Rounds" %>
-      <%= error_tag f, :rounds %>
+
+      <div class="flex items-start">
+        <div class="box-content border-2 place-content-start">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="px-2 flex text-center h-14 text-8xl">
+          <%= label f, :rounds, "Rounds" %>
+          <%= error_tag f, :rounds %>
+        </div>
+
+      </div>
       </td>
       <td class="value-column">
         <%= array_input f, :rounds, options: Application.get_env(:gamenite, :salad_bowl_all_rounds) %>
@@ -51,6 +50,7 @@
       </td>
     </tr>
   <% end %>
+  </tbody>
 </table>
 
 

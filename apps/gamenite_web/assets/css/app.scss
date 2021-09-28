@@ -10,6 +10,20 @@
   display: none;
 }
 
+.options-column {
+  @apply bg-gray-dark;
+  @apply text-white;
+  @apply font-bold;
+  @apply w-3/4;
+}
+
+.value-column {
+  @apply bg-gray-darkest;
+  @apply text-white;
+  @apply font-bold;
+  @apply w-1/4;
+}
+
 .phx-click-loading {
   opacity: 0.5;
   transition: opacity 1s ease-out;
