@@ -8,58 +8,79 @@ defmodule GameniteWeb.Room.NewLive do
   alias GamenitePersistance.Accounts
   alias Gamenite.Games.CharadesOptions
   alias Gamenite.TeamGame
-  alias Gamenite.TeamGame.Team
   alias Gamenite.RoomKeeper
+  alias GameniteWeb.LiveMonitor
 
-
-  alias GameniteWeb.Presence
   alias Phoenix.Socket.Broadcast
-
-
 
   @impl true
   @spec mount(any, map, Phoenix.LiveView.Socket.t()) :: {:ok, Phoenix.LiveView.Socket.t()}
   def mount(_params, %{"slug" => slug, "game_id" => game_id } = session, socket) do
-    room_state =
-
     user = mount_socket_user(socket, session)
     game = GamenitePersistance.Gaming.get_game!(game_id)
-    game_state = Gamenite.start_game(game.name, room_state.id)
-    game_options_changeset = CharadesOptions.new_salad_bowl(%{})
-    team_game_changeset = TeamGame.teams_changeset(%TeamGame{}, %{teams: [%{}, %{}]})
 
-    # This PubSub subscription will also handle other events from the users.
-    Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug)
+    if connected?(socket) do
+      monitor_live_view_process(slug, user)
+    end
 
-    # This PubSub subscription will allow the user to receive messages from
-    # other users.
-    Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug <> ":" <> user.id)
+    with :ok <- start_or_get_room_process(slug),
+    {:ok, room} <- RoomKeeper.join(slug, Gamenite.Rooms.Roommate.new(%{user_id: user.id})),
+    :ok <- start_or_get_game_process(game, slug)
+    do
+      broadcast_room_update(slug, room)
+      game_options_changeset = CharadesOptions.new_salad_bowl(%{})
+      team_game_changeset = TeamGame.teams_changeset(%TeamGame{}, %{teams: [%{}, %{}]})
 
-    # Track the connecting user with the `room:slug` topic.
-    {:ok, _} = Presence.track(self(), "room:" <> slug, user.id, %{})
+      # This PubSub subscription will also handle other events from the users.
+      Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug)
+      Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "game:" <> slug)
 
-    case RoomKeeper.create_room(slug, "Testing") do
-      {:ok, _pid} ->
-        {:ok,
+      # This PubSub subscription will allow the user to receive messages from
+      # other users.
+      Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug <> ":" <> user.id)
+
+      {:ok,
+    socket
+        |> assign(:room, room)
+        |> assign(:game, game)
+        |> assign(:game_options_changeset, game_options_changeset)
+        |> assign(:team_game_changeset, team_game_changeset)
+        |> assign(:user, user)
+        |> assign(:offer_requests, [])
+        |> assign(:ice_candidate_offers, [])
+        |> assign(:sdp_offers, [])
+        |> assign(:answers, [])
+    }
+    else
+      {:error, _reason} -> {:ok,
           socket
-          |> assign(:room_state, room_state)
-          |> assign(:game_state, game_state)
-          |> assign(:game_options_changeset, game_options_changeset)
-          |> assign(:team_game_changeset, team_game_changeset)
-          |> assign(:user, user)
-          |> assign(:slug, slug)
-          |> assign(:connected_users, [])
-          |> assign(:offer_requests, [])
-          |> assign(:ice_candidate_offers, [])
-          |> assign(:sdp_offers, [])
-          |> assign(:answers, [])
-        }
-      _ ->
-        {:ok,
-          socket
-          |> put_flash(:error, "That room does not exist.")
+          |> put_flash(:error, "Room could not be created.")
           |> push_redirect(to: Routes.game_path(socket, :index))
         }
+    end
+  end
+
+  defp monitor_live_view_process(room_slug, user) do
+   LiveMonitor.monitor(
+    self(),
+    __MODULE__,
+    %{user: user, room_slug: room_slug}
+    )
+  end
+
+  defp start_or_get_room_process(slug) do
+    case RoomKeeper.create_room(slug) do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> :ok
+      _ -> :error
+    end
+  end
+
+  defp start_or_get_game_process(game, slug) do
+    case Gamenite.start_game(game.title, slug) do
+      {:ok, _pid} -> :ok
+      {:error, {:already_started, _pid}} -> :ok
+      _ -> :error
     end
   end
 
@@ -70,22 +91,23 @@ defmodule GameniteWeb.Room.NewLive do
   there are no remaining players.
   """
   @spec unmount(term(), map()) :: :ok
-  def unmount(_reason, %{player_id: player_id, room_id: room_id}) do
-    # {:ok, game} = GameServer.leave_game(game_id, player_id)
-    # broadcast_game_state_update!(room_id, game)
-
-    # if length(game.connected_players) == 0 do
-    #   GameSupervisor.terminate_child(game_id)
-    # end
+  def unmount(_reason, %{user: user, room_slug: room_slug}) do
+    {:ok, room} = RoomKeeper.leave(room_slug, user.id)
+    broadcast_room_update(room_slug, room)
 
     :ok
   end
 
-  @impl true
-  def handle_info(%Broadcast{event: "presence_diff"}, socket) do
+  def handle_info(%Broadcast{event: "game_state_update", payload: game}, socket) do
     {:noreply,
       socket
-      |> assign(:connected_users, list_present(socket))}
+      |> assign(:game, game)}
+  end
+
+  def handle_info(%Broadcast{event: "room_state_update", payload: room}, socket) do
+    {:noreply,
+      socket
+      |> assign(:room, room)}
   end
 
   @impl true
@@ -124,7 +146,7 @@ defmodule GameniteWeb.Room.NewLive do
 
   @impl true
   def handle_event("join_call", _params, socket) do
-    for user <- socket.assigns.connected_users do
+    for user <- socket.assigns.room.connected_users do
       send_direct_message(
         socket.assigns.slug,
         user,
@@ -187,16 +209,12 @@ defmodule GameniteWeb.Room.NewLive do
 
   @impl true
   def handle_event("start_game", _payload, socket) do
-    IO.puts "hi"
-
-    players = socket.assigns.connected_users
+    players = socket.assigns.room.connected_users
     |> Enum.map(fn username -> Accounts.get_user_by(%{username: username}) end)
     |> TeamGame.Player.new_players_from_users()
-    IO.inspect(players)
 
     teams = players
     |> TeamGame.Team.split_teams(2)
-    IO.inspect(teams)
 
     TeamGame.new(%{teams: teams})
 
@@ -208,23 +226,30 @@ defmodule GameniteWeb.Room.NewLive do
     {:noreply, socket}
   end
 
-
-  @spec list_present(
-          atom
-          | %{:assigns => atom | %{:slug => binary, optional(any) => any}, optional(any) => any}
-        ) :: list
-  def list_present(socket) do
-    Presence.list("room:" <> socket.assigns.slug)
-    |> Enum.map(fn {_, %{user: user, metas: _}} -> user.username
-     end)
-  end
-
   defp send_direct_message(slug, to_user, event, payload) do
     GameniteWeb.Endpoint.broadcast_from(
       self(),
       "room:" <> slug <> ":" <> to_user,
       event,
       payload
+    )
+  end
+
+  defp broadcast_game_update(room_id, game) do
+    GameniteWeb.Endpoint.broadcast_from(
+      self(),
+      "game:" <> room_id,
+      "game_state_update",
+      game
+    )
+  end
+
+  defp broadcast_room_update(room_id, room) do
+    GameniteWeb.Endpoint.broadcast_from(
+      self(),
+      "room:" <> room_id,
+      "room_state_update",
+      room
     )
   end
 

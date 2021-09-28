@@ -25,8 +25,8 @@ defmodule Gamenite.Rooms do
     %{ room | connected_users: Map.put_new(connected_users, id, player)}
   end
 
-  def leave(%{connected_users: connected_users} = room, %{user_id: id} = _player) do
-    %{ room | connected_users: Map.delete(connected_users, id)}
+  def leave(%{connected_users: connected_users} = room, user_id) do
+    %{ room | connected_users: Map.delete(connected_users, user_id)}
   end
 
   def invert_mute(room, %{muted?: muted?} = player) do

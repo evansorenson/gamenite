@@ -3,7 +3,6 @@ defmodule GameniteWeb.InputHelpers do
 
   def array_input(form, field, attr \\ []) do
     values = Phoenix.HTML.Form.input_value(form, field) || []
-    IO.inspect values
     id = Phoenix.HTML.Form.input_id(form,field)
     content_tag :ul, id: container_id(id), data: [index: Enum.count(values) ] do
       values

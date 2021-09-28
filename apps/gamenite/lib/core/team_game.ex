@@ -10,13 +10,15 @@ defmodule Gamenite.TeamGame do
   alias Gamenite.TeamGame.{Turn, Team}
 
   embedded_schema do
+    field :name, :string
+    field :room_id, :string
     field :current_turn, :map
     field :is_finished, :boolean, default: false
     embeds_one :current_team, Team
     embeds_many :teams, Team
     embeds_many :deck, Card
   end
-  @fields [:current_turn]
+  @fields [:current_turn, :name]
 
   @max_teams Application.get_env(:gamenite, :max_teams)
   @max_deck Application.get_env(:gamenite, :max_deck)

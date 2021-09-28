@@ -118,7 +118,6 @@ defmodule GamenitePersistance.Organizer do
 
   def generate_slug do
     slug = _generate_slug()
-    IO.puts slug
     case slug_exists?(slug) do
       true -> generate_slug()
       false -> slug

@@ -11,7 +11,7 @@ defmodule Gamenite.Application do
       { Registry,
       [ name: Gamenite.Registry.Game, keys: :unique] },
       { DynamicSupervisor,
-      [name: Gamenite.Supervisor.GameSession, strategy: :one_for_one]},
+      [name: Gamenite.Supervisor.Game, strategy: :one_for_one]},
       { Registry,
       [ name: Gamenite.Registry.Room, keys: :unique] },
       { DynamicSupervisor,

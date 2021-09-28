@@ -22,13 +22,13 @@ defmodule Gamenite.SaladBowlGameKeeper do
     GenServer.start_link(
       __MODULE__,
       {game_name, room_uuid},
-      name: via(game_name, room_uuid))
+      name: via(room_uuid))
   end
 
-  defp via(game_name, room_uuid) do
+  defp via(room_uuid) do
     {:via,
     Registry,
-    {Gamenite.Registry.Game, {game_name, room_uuid}}}
+    {Gamenite.Registry.Game, {room_uuid}}}
   end
 
   def start_game(game_name, room_uuid) do

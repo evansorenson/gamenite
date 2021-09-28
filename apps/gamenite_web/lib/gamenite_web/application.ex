@@ -14,6 +14,7 @@ defmodule GameniteWeb.Application do
       GameniteWeb.Telemetry,
       # Start our Presence module.
       GameniteWeb.Presence,
+      {GameniteWeb.LiveMonitor, %{}}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -6,22 +6,22 @@ defmodule Gamenite.RoomKeeper do
   alias Gamenite.Rooms.Room
 
   # Server
-  def init({room_uuid, name, password}) do
-    {:ok, Room.new(%{id: room_uuid, name: name, password: password})}
+  def init({room_uuid,  password}) do
+    {:ok, Room.new(%{id: room_uuid, password: password})}
   end
 
-  def child_spec({room_uuid, name, password}) do
+  def child_spec({room_uuid,  password}) do
     %{
       id: {__MODULE__, room_uuid},
-      start: {__MODULE__, :start_link, [{room_uuid, name, password}]},
+      start: {__MODULE__, :start_link, [{room_uuid, password}]},
       restart: :temporary
     }
   end
 
-  def start_link({room_uuid, name, password}) do
+  def start_link({room_uuid, password}) do
     GenServer.start_link(
       __MODULE__,
-      {room_uuid, name, password},
+      {room_uuid, password},
       name: via(room_uuid))
   end
 
@@ -31,14 +31,15 @@ defmodule Gamenite.RoomKeeper do
     {Gamenite.Registry.Room, room_uuid}}
   end
 
-  def create_room(room_uuid, name, password \\ nil) do
+  def create_room(room_uuid, password \\ nil) do
     DynamicSupervisor.start_child(
       Gamenite.Supervisor.Room,
-      child_spec({room_uuid, name, password}))
+      child_spec({room_uuid, password}))
   end
 
   def handle_call({:join, player}, _from, room) do
-    {:reply, :ok, Rooms.join(room, player)}
+    new_state = Rooms.join(room, player)
+    {:reply, {:ok, new_state}, new_state}
   end
 
   def handle_call({:leave, _player}, _from, %{connected_users: connected_users} = room) when map_size(connected_users) == 1 do
@@ -46,8 +47,9 @@ defmodule Gamenite.RoomKeeper do
     reason = "No players connected."
     {:stop, reason, {:stop, reason}, room}
   end
-  def handle_call({:leave, player}, _from, room) do
-    {:reply, :ok, Rooms.leave(room, player)}
+  def handle_call({:leave, user_id}, _from, room) do
+    new_state = Rooms.leave(room, user_id)
+    {:reply, {:ok, new_state}, new_state}
   end
 
   def handle_call({:invert_mute, player}, _from, room) do
@@ -75,8 +77,8 @@ defmodule Gamenite.RoomKeeper do
     GenServer.call(via(room_id), {:join, player})
   end
 
-  def leave(room_id, player) do
-    GenServer.call(via(room_id), {:leave, player})
+  def leave(room_id, user_id) do
+    GenServer.call(via(room_id), {:leave, user_id})
   end
 
   def invert_mute(room_id, player) do
