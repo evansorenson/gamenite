@@ -7,9 +7,9 @@ defmodule GameniteWeb.Room.NewLive do
 
   alias GamenitePersistance.Organizer
   alias GamenitePersistance.Accounts
-  alias Gamenite.Core.Games.CharadesOptions
-  alias Gamenite.Core.TeamGame
-  alias Gamenite.Core.TeamGame.Team
+  alias Gamenite.Games.CharadesOptions
+  alias Gamenite.TeamGame
+  alias Gamenite.TeamGame.Team
 
 
   alias GameniteWeb.Presence
@@ -18,6 +18,7 @@ defmodule GameniteWeb.Room.NewLive do
 
 
   @impl true
+  @spec mount(any, map, Phoenix.LiveView.Socket.t()) :: {:ok, Phoenix.LiveView.Socket.t()}
   def mount(_params, %{"slug" => slug, "game_id" => game_id } = session, socket) do
     user = mount_socket_user(socket, session)
     game = GamenitePersistance.Gaming.get_game!(game_id)
@@ -57,6 +58,24 @@ defmodule GameniteWeb.Room.NewLive do
           |> assign(:answers, [])
         }
     end
+  end
+
+  @doc """
+  Callback that happens when the LV process is terminating.
+  This allows the player to be removed from the game, and
+  the entire game server process can also be terminated if
+  there are no remaining players.
+  """
+  @spec unmount(term(), map()) :: :ok
+  def unmount(_reason, %{player_id: player_id, room_id: room_id}) do
+    # {:ok, game} = GameServer.leave_game(game_id, player_id)
+    # broadcast_game_state_update!(room_id, game)
+
+    # if length(game.connected_players) == 0 do
+    #   GameSupervisor.terminate_child(game_id)
+    # end
+
+    :ok
   end
 
   @impl true
@@ -140,6 +159,16 @@ defmodule GameniteWeb.Room.NewLive do
 
   @impl true
   def handle_event("validate", %{"charades_options" => params}, socket) do
+    game_options_changeset =
+      %CharadesOptions{}
+      |> CharadesOptions.salad_bowl_changeset(params)
+      |> Map.put(:action, :update)
+
+    {:noreply, assign(socket, game_options_changeset: game_options_changeset)}
+  end
+
+  @impl true
+  def handle_event("validate", %{"player_cards" => params}, socket) do
     game_options_changeset =
       %CharadesOptions{}
       |> CharadesOptions.salad_bowl_changeset(params)

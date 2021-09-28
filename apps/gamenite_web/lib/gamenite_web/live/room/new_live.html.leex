@@ -21,7 +21,7 @@
   </thead>
   <%= form_for @game_options_changeset, "#", [phx_change: :validate], fn f -> %>
     <tr>
-      <td class="options-column bg-gray-dark text-blurple">
+      <td class="options-column">
         <%= label f, :skip_limit, "Skip Limit" %>
         <%= error_tag f, :skip_limit %>
       </td>
@@ -52,7 +52,7 @@
     </tr>
 
     <tr>
-      <td class="options-column bg-gray-dark text-blurple">
+      <td class="options-column">
         <%= label f, :cards_per_player, "Cards Written Per Player" %>
         <%= error_tag f, :cards_per_player %>
       </td>

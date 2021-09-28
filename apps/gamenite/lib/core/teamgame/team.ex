@@ -1,9 +1,9 @@
-defmodule Gamenite.Core.TeamGame.Team do
+defmodule Gamenite.TeamGame.Team do
   use Accessible
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Gamenite.Core.TeamGame.{Player}
+  alias Gamenite.TeamGame.{Player}
 
   embedded_schema do
     field :name, :string

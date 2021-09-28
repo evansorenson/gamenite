@@ -1,4 +1,4 @@
-defmodule Gamenite.Core.GameTest do
+defmodule Gamenite.GameTest do
   use ExUnit.Case
   use GameBuilders
 
@@ -150,7 +150,7 @@ defmodule Gamenite.Core.GameTest do
   end
 
   defp assert_turns_appended(game, team_id, appended_length) do
-    team = Gamenite.Core.Lists.find_element_by_id(game.teams, team_id)
+    team = Gamenite.Lists.find_element_by_id(game.teams, team_id)
     assert length(team.turns) == appended_length
     game
   end

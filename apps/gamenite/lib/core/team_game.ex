@@ -1,13 +1,13 @@
-defmodule Gamenite.Core.TeamGame do
+defmodule Gamenite.TeamGame do
   use Accessible
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Gamenite.Core.Cards
-  alias Gamenite.Core.Cards.Card
-  alias Gamenite.Core.Lists
+  alias Gamenite.Cards
+  alias Gamenite.Cards.Card
+  alias Gamenite.Lists
 
-  alias Gamenite.Core.TeamGame.{Turn, Team}
+  alias Gamenite.TeamGame.{Turn, Team}
 
   embedded_schema do
     field :current_turn, :map

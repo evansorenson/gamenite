@@ -1,3 +1,3 @@
-defmodule Gamenite.Core.Cards.OneSidedCard do
+defmodule Gamenite.Cards.OneSidedCard do
 
 end

@@ -1,4 +1,4 @@
-defmodule Gamenite.Core.Games.CharadesOptions do
+defmodule Gamenite.Games.CharadesOptions do
   use Ecto.Schema
   import Ecto.Changeset
 
