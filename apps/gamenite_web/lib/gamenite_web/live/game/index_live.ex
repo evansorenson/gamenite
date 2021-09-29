@@ -2,8 +2,7 @@ defmodule GameniteWeb.Game.IndexLive do
   use GameniteWeb, :live_view
 
   alias GamenitePersistance.Gaming
-  alias GamenitePersistance.Organizer
-  alias Gamenite
+  alias Gamenite.RoomKeeper
 
   def mount(_params, _session, socket) do
     games = Gaming.list_games()
@@ -24,16 +23,15 @@ defmodule GameniteWeb.Game.IndexLive do
   end
 
   def handle_event("host_game", %{"game_id" => game_id}, socket) do
-    case Organizer.create_room_with_random_slug() do
-      {:ok, room} ->
+    with {:ok, room_slug} <- RoomKeeper.create_room(),
+         :ok <- RoomKeeper.set_game(room_slug, game_id) do
+      {:noreply,
+      socket
+      |> push_redirect(to: Routes.room_path(socket, :new, room_slug))}
+    else
+      {:error, _reason} ->
         {:noreply,
           socket
-          |> push_redirect(to: Routes.room_path(socket, :new, room.slug, %{ game_id: game_id }))
-        }
-      {:error, changeset} ->
-        {:noreply,
-          socket
-          |> assign(:changeset, changeset)
           |> put_flash(:error, "Could not start the room.")
         }
     end

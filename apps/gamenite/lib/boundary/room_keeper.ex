@@ -31,10 +31,36 @@ defmodule Gamenite.RoomKeeper do
     {Gamenite.Registry.Room, room_uuid}}
   end
 
-  def create_room(room_uuid, password \\ nil) do
+  def generate_slug do
+    slug = do_generate_slug()
+    if slug_exists?(slug) do
+       generate_slug()
+    end
+
+    slug
+  end
+
+  defp do_generate_slug() do
+    :random.seed(:erlang.now)
+    alphabet = Enum.map(Enum.to_list(?A..?Z), fn(n) -> <<n>> end)
+    letters = Enum.take_random(alphabet, 6)
+    Enum.join(letters, "")
+  end
+
+  def slug_exists?(slug) do
+    IO.inspect Registry.lookup(Gamenite.Registry.Room, slug)
+    case Registry.lookup(Gamenite.Registry.Room, slug) do
+      [{_pid, _val}] -> true
+      [] -> false
+    end
+  end
+
+  def create_room(password \\ nil) do
+    room_slug = generate_slug()
     DynamicSupervisor.start_child(
       Gamenite.Supervisor.Room,
-      child_spec({room_uuid, password}))
+      child_spec({room_slug, password}))
+    {:ok, room_slug}
   end
 
   def handle_call({:join, player}, _from, room) do
@@ -72,6 +98,10 @@ defmodule Gamenite.RoomKeeper do
     {:reply, :ok, Rooms.message(room, message)}
   end
 
+  def handle_call({:set_game, game_id}, _from, room) do
+    {:reply, :ok, Rooms.set_game(room, game_id)}
+  end
+
   # API
   def join(room_id, player) do
     GenServer.call(via(room_id), {:join, player})
@@ -83,5 +113,9 @@ defmodule Gamenite.RoomKeeper do
 
   def invert_mute(room_id, player) do
     GenServer.call(via(room_id), {:invert_mute, player})
+  end
+
+  def set_game(room_id, game_id) do
+    GenServer.call(via(room_id), {:set_game, game_id})
   end
 end

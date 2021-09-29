@@ -28,7 +28,6 @@ defmodule GameniteWeb.Router do
 
 
     get "/:slug", RoomController, :new
-    get "/:slug/:game", RoomController, :show
   end
 
   # Other scopes may use custom stacks.

@@ -1,7 +1,7 @@
 defmodule Gamenite.Rooms.Room do
   use Accessible
 
-  defstruct id: nil, name: nil, password: nil, connected_users: %{}, messages: []
+  defstruct id: nil, name: nil, password: nil, connected_users: %{}, messages: [], game_id: nil
 
   def new(%{password: nil} = attrs) do
     struct!(__MODULE__, attrs)

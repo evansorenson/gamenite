@@ -56,4 +56,9 @@ defmodule Gamenite.Rooms do
 
    %{ room | connected_users: users}
   end
+
+  def set_game(room, game_id) do
+    room
+    |> Map.put(:game_id, game_id)
+  end
 end
