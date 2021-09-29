@@ -4,12 +4,13 @@ defmodule GameniteWeb.Room.NewLive do
   """
 
   use GameniteWeb, :live_view
+  require Logger
 
   alias GamenitePersistance.Accounts
   alias Gamenite.Games.CharadesOptions
   alias Gamenite.TeamGame
-  alias Gamenite.RoomKeeper
-  alias GameniteWeb.LiveMonitor
+
+  alias GameniteWeb.RoomComponent
 
   alias Phoenix.Socket.Broadcast
 
@@ -18,21 +19,14 @@ defmodule GameniteWeb.Room.NewLive do
   def mount(_params, %{"slug" => slug, "game_id" => game_id } = session, socket) do
     user = mount_socket_user(socket, session)
     game = GamenitePersistance.Gaming.get_game!(game_id)
+    Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug)
 
-    if connected?(socket) do
-      monitor_live_view_process(slug, user)
-    end
-
-    with :ok <- start_or_get_room_process(slug),
-    {:ok, room} <- RoomKeeper.join(slug, Gamenite.Rooms.Roommate.new(%{user_id: user.id})),
-    :ok <- start_or_get_game_process(game, slug)
+    with :ok <- start_or_get_game_process(game, slug)
     do
-      broadcast_room_update(slug, room)
       game_options_changeset = CharadesOptions.new_salad_bowl(%{})
       team_game_changeset = TeamGame.teams_changeset(%TeamGame{}, %{teams: [%{}, %{}]})
 
       # This PubSub subscription will also handle other events from the users.
-      Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug)
       Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "game:" <> slug)
 
       # This PubSub subscription will allow the user to receive messages from
@@ -41,7 +35,7 @@ defmodule GameniteWeb.Room.NewLive do
 
       {:ok,
     socket
-        |> assign(:room, room)
+        |> assign(:slug, slug)
         |> assign(:game, game)
         |> assign(:game_options_changeset, game_options_changeset)
         |> assign(:team_game_changeset, team_game_changeset)
@@ -60,22 +54,6 @@ defmodule GameniteWeb.Room.NewLive do
     end
   end
 
-  defp monitor_live_view_process(room_slug, user) do
-   LiveMonitor.monitor(
-    self(),
-    __MODULE__,
-    %{user: user, room_slug: room_slug}
-    )
-  end
-
-  defp start_or_get_room_process(slug) do
-    case RoomKeeper.create_room(slug) do
-      {:ok, _pid} -> :ok
-      {:error, {:already_started, _pid}} -> :ok
-      _ -> :error
-    end
-  end
-
   defp start_or_get_game_process(game, slug) do
     case Gamenite.start_game(game.title, slug) do
       {:ok, _pid} -> :ok
@@ -84,116 +62,22 @@ defmodule GameniteWeb.Room.NewLive do
     end
   end
 
-  @doc """
-  Callback that happens when the LV process is terminating.
-  This allows the player to be removed from the game, and
-  the entire game server process can also be terminated if
-  there are no remaining players.
-  """
-  @spec unmount(term(), map()) :: :ok
-  def unmount(_reason, %{user: user, room_slug: room_slug}) do
-    {:ok, room} = RoomKeeper.leave(room_slug, user.id)
-    broadcast_room_update(room_slug, room)
-
-    :ok
+  def handle_info(%Broadcast{event: "room_state_update", payload: room}, socket) do
+    IO.puts socket.assigns.user.id
+    IO.inspect room
+    send_update(RoomComponent, id: 1, room: room)
+    {:noreply, socket}
   end
 
   def handle_info(%Broadcast{event: "game_state_update", payload: game}, socket) do
+
     {:noreply,
       socket
       |> assign(:game, game)}
   end
 
-  def handle_info(%Broadcast{event: "room_state_update", payload: room}, socket) do
-    {:noreply,
-      socket
-      |> assign(:room, room)}
-  end
-
-  @impl true
-  @doc """
-  When an offer requested has been received, add it to the '@offer_request' list.
-  """
-  def handle_info(%Broadcast{event: "request_offers", payload: request}, socket) do
-    {:noreply,
-      socket
-      |> assign(:offer_requests, socket.assigns.offer_requests ++ [request])}
-  end
-
-  @impl true
-  def handle_info(%Broadcast{event: "new_ice_candidate", payload: payload}, socket) do
-    {:noreply,
-      socket
-      |> assign(:ice_candidate_offers, socket.assigns.ice_candidate_offers ++ [payload])
-    }
-  end
-
-  @impl true
-  def handle_info(%Broadcast{event: "new_sdp_offer", payload: payload}, socket) do
-    {:noreply,
-      socket
-      |> assign(:sdp_offers, socket.assigns.ice_candidate_offers ++ [payload])
-    }
-  end
-
-  @impl true
-  def handle_info(%Broadcast{event: "new_answer", payload: payload}, socket) do
-    {:noreply,
-      socket
-      |> assign(:answers, socket.assigns.answers ++ [payload])
-    }
-  end
-
-  @impl true
-  def handle_event("join_call", _params, socket) do
-    for user <- socket.assigns.room.connected_users do
-      send_direct_message(
-        socket.assigns.slug,
-        user,
-        "request_offers",
-        %{from_user: socket.assigns.user}
-      )
-    end
-
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("new_ice_candidate", payload, socket) do
-    payload = Map.merge(payload, %{"from_user" => socket.assigns.user.username})
-
-    send_direct_message(socket.assigns.slug, payload["toUser"], "new_ice_candidate", payload)
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("new_sdp_offer", payload, socket) do
-    payload = Map.merge(payload, %{"from_user" => socket.assigns.user.username})
-
-    send_direct_message(socket.assigns.slug, payload["toUser"], "new_sdp_offer", payload)
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("new_answer", payload, socket) do
-    payload = Map.merge(payload, %{"from_user" => socket.assigns.user.username})
-
-    send_direct_message(socket.assigns.slug, payload["toUser"], "new_answer", payload)
-    {:noreply, socket}
-  end
-
   @impl true
   def handle_event("validate", %{"charades_options" => params}, socket) do
-    game_options_changeset =
-      %CharadesOptions{}
-      |> CharadesOptions.salad_bowl_changeset(params)
-      |> Map.put(:action, :update)
-
-    {:noreply, assign(socket, game_options_changeset: game_options_changeset)}
-  end
-
-  @impl true
-  def handle_event("validate", %{"player_cards" => params}, socket) do
     game_options_changeset =
       %CharadesOptions{}
       |> CharadesOptions.salad_bowl_changeset(params)
@@ -209,31 +93,19 @@ defmodule GameniteWeb.Room.NewLive do
 
   @impl true
   def handle_event("start_game", _payload, socket) do
-    players = socket.assigns.room.connected_users
-    |> Enum.map(fn username -> Accounts.get_user_by(%{username: username}) end)
+    players = socket.assigns.room.connected_users |> Map.to_list()
+    |> Enum.map(fn {_k, %{user_id: user_id} = _roommate} -> Accounts.get_user_by(%{id: user_id}) end)
     |> TeamGame.Player.new_players_from_users()
 
     teams = players
     |> TeamGame.Team.split_teams(2)
 
-    TeamGame.new(%{teams: teams})
+    # game_changeset = TeamGame.finalize_game_changeset(socket.assigns.game, %{teams: teams})
 
-
-    {:noreply,
-    socket
-    |> push_redirect(to: Routes.room_path(socket, :show, socket.assigns.slug))
-    }
     {:noreply, socket}
   end
 
-  defp send_direct_message(slug, to_user, event, payload) do
-    GameniteWeb.Endpoint.broadcast_from(
-      self(),
-      "room:" <> slug <> ":" <> to_user,
-      event,
-      payload
-    )
-  end
+
 
   defp broadcast_game_update(room_id, game) do
     GameniteWeb.Endpoint.broadcast_from(
@@ -244,15 +116,6 @@ defmodule GameniteWeb.Room.NewLive do
     )
   end
 
-  defp broadcast_room_update(room_id, room) do
-    GameniteWeb.Endpoint.broadcast_from(
-      self(),
-      "room:" <> room_id,
-      "room_state_update",
-      room
-    )
-  end
-
   defp mount_socket_user(socket, params) do
     user_id = Map.get(params, "user_id")
     user = GamenitePersistance.Accounts.get_user(user_id)
@@ -260,4 +123,86 @@ defmodule GameniteWeb.Room.NewLive do
     |> assign(:user, user)
     user
   end
+
+    ## All RPC logic >>>
+    @impl true
+    @doc """
+    When an offer requested has been received, add it to the '@offer_request' list.
+    """
+    defp send_direct_message(slug, to_user, event, payload) do
+      GameniteWeb.Endpoint.broadcast_from(
+        self(),
+        "room:" <> slug <> ":" <> to_user,
+        event,
+        payload
+      )
+    end
+
+    @impl true
+    def handle_event("join_call", _params, socket) do
+      for user <- socket.assigns.room.connected_users do
+        send_direct_message(
+          socket.assigns.slug,
+          user,
+          "request_offers",
+          %{from_user: socket.assigns.user}
+        )
+      end
+
+      {:noreply, socket}
+    end
+
+    @impl true
+    def handle_event("new_ice_candidate", payload, socket) do
+      payload = Map.merge(payload, %{"from_user" => socket.assigns.user.username})
+
+      send_direct_message(socket.assigns.slug, payload["toUser"], "new_ice_candidate", payload)
+      {:noreply, socket}
+    end
+
+    @impl true
+    def handle_event("new_sdp_offer", payload, socket) do
+      payload = Map.merge(payload, %{"from_user" => socket.assigns.user.username})
+
+      send_direct_message(socket.assigns.slug, payload["toUser"], "new_sdp_offer", payload)
+      {:noreply, socket}
+    end
+
+    @impl true
+    def handle_event("new_answer", payload, socket) do
+      payload = Map.merge(payload, %{"from_user" => socket.assigns.user.username})
+
+      send_direct_message(socket.assigns.slug, payload["toUser"], "new_answer", payload)
+      {:noreply, socket}
+    end
+
+    def handle_info(%Broadcast{event: "request_offers", payload: request}, socket) do
+      {:noreply,
+        socket
+        |> assign(:offer_requests, socket.assigns.offer_requests ++ [request])}
+    end
+
+    @impl true
+    def handle_info(%Broadcast{event: "new_ice_candidate", payload: payload}, socket) do
+      {:noreply,
+        socket
+        |> assign(:ice_candidate_offers, socket.assigns.ice_candidate_offers ++ [payload])
+      }
+    end
+
+    @impl true
+    def handle_info(%Broadcast{event: "new_sdp_offer", payload: payload}, socket) do
+      {:noreply,
+        socket
+        |> assign(:sdp_offers, socket.assigns.ice_candidate_offers ++ [payload])
+      }
+    end
+
+    @impl true
+    def handle_info(%Broadcast{event: "new_answer", payload: payload}, socket) do
+      {:noreply,
+        socket
+        |> assign(:answers, socket.assigns.answers ++ [payload])
+      }
+    end
 end

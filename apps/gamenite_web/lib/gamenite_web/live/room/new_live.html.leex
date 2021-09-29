@@ -1,6 +1,5 @@
 <h1><%= "Game: #{@game.title}" %></h1>
 
-
 <table class="table">
   <tbody>
   <%= form_for @game_options_changeset, "#", [phx_change: :validate], fn f -> %>
@@ -59,24 +58,12 @@
   </tbody>
 </table>
 
-<h1 class="text-6xl font-bold text-center py-4">Users</h1>
-<div class="table bg-blurple rounded-3xl flex-wrap">
-      <%= for i <- 0..9 do %>
-          <%= case Enum.fetch(Map.to_list(@room.connected_users), i) do %>
-          <% {:ok, {_k, user}} -> %>
-            <div class="inline-grid px-8 py-8 w-1/5 place-items-center">
-              <div class="object-none object-bottom-center h-24 w-24 bg-black rounded-full"></div>
-              <h1 class="object-none object-bottom-center"><%= user.user_id %></h1>
-            </div>
-          <% _ -> %>
-            <div class="inline-grid px-8 py-8 w-1/5 place-items-center">
-              <div class="object-none object-bottom-center h-24 w-24 bg-gray-light rounded-full"></div>
-            </div>
-          <% end %>
-      <% end %>
-  </div>
-  <button phx-click="start_game">Start Game</button>
+
 </div>
+
+ <%= live_component @socket, RoomComponent, slug: @slug, user: @user, id: 1 %>
+
+<button phx-click="start_game">Start Game</button>
 
 
 
