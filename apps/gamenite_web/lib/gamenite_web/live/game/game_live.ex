@@ -1,5 +1,5 @@
 defmodule GameniteWeb.GameLive do
-  use GameniteWeb, :live_view
+  use GameniteWeb, :live_component
 
   alias Gamenite.Games.CharadesOptions
 
@@ -7,11 +7,8 @@ defmodule GameniteWeb.GameLive do
   alias Phoenix.Socket.Broadcast
   alias GamenitePersistance.Accounts
 
-
-  def mount(_params, %{"slug" => slug, "game_id" => game_id } = _session, socket) do
+  def update(%{slug: slug, game_id: game_id } = _assigns, socket) do
     game = GamenitePersistance.Gaming.get_game!(game_id)
-    IO.puts "game mount"
-
     Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "game:" <> slug)
 
     with :ok <- start_or_get_game_process(game, slug) do

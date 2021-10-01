@@ -1,8 +1,8 @@
-<%=  live_render @socket, GameniteWeb.GameLive, id: @game_id,  session: %{"slug" => @slug, "game_id" => @game_id } %>
+<%= live_component @socket, GameniteWeb.GameLive, id: @game_id,  slug: @slug, game_id: @game_id %>
 
 <h1 class="text-6xl font-bold text-center py-4">Users</h1>
 <div class="table bg-blurple rounded-3xl flex-wrap items-center">
-      <%= for i <- 0..9 do %>
+  <%= for i <- 0..9 do %>
           <%= case Enum.fetch(Map.to_list(@room.connected_users), i) do %>
           <% {:ok, {_k, user}} -> %>
             <div class="inline-grid px-8 py-8 w-1/5 center">
@@ -14,7 +14,7 @@
               <div class="object-none object-bottom-center h-24 w-24 bg-gray-light rounded-full"></div>
             </div>
           <% end %>
-      <% end %>
+  <% end %>
 </div>
 
 <div id="offer-requests">
