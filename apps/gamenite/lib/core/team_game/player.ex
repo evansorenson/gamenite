@@ -11,13 +11,11 @@ defmodule Gamenite.TeamGame.Player do
 
   @player_colors ["F2F3F4", "222222", "F3C300", "875692", "F38400", "A1CAF1", "BE0032", "C2B280", "848482", "008856", "E68FAC", "0067A5", "F99379", "604E97", "F6A600", "B3446C", "DCD300", "882D17", "8DB600", "654522", "E25822", "2B3D26"]
 
-  def changeset(player, %{user: user} = attrs) do
+  def changeset(player, attrs) do
     player
     |> name_changeset(attrs)
     |> cast(attrs, [:id, :color, :turns])
-    |> cast_embed(:hand)
-    |> put_embed(:user, user)
-    |> validate_required([:user, :name, :color])
+    |> validate_required([:id, :name, :color])
     |> validate_length(:name, min: 2, max: 15)
   end
 
@@ -46,7 +44,7 @@ defmodule Gamenite.TeamGame.Player do
     users
     |> Enum.with_index
     |> Enum.map(fn {user, index} ->
-      new(%{user: user, color: Enum.at(@player_colors, index), name: user.username})
+      new(%{id: user.id, color: Enum.at(@player_colors, index), name: user.username})
       |> elem(1) end)
   end
 end

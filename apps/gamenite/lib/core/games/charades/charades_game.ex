@@ -14,11 +14,10 @@ defmodule Gamenite.Games.CharadesGame do
   end
   @fields [:turn_length, :skip_limit, :deck, :starting_deck, :cards_per_player]
 
-  def changeset(charades, %{team_game: team_game} = params) do
-    charades
+  def changeset(changeset, params) do
+    changeset
     |> cast(params, @fields)
-    |> put_embed(team_game)
-    |> validate_required(:turn_length, :skip_limit, :team_game)
+    |> validate_required([:turn_length, :skip_limit])
     |> validate_number(:turn_length, less_than_or_equal_to: 120)
     |> validate_number(:turn_length, greater_than_or_equal_to: 30)
     |> validate_number(:skip_limit, greater_than_or_equal_to: 0)
@@ -28,12 +27,19 @@ defmodule Gamenite.Games.CharadesGame do
 
   def salad_bowl_changeset(changeset, params) do
     changeset
+    |> changeset(params)
     |> cast(params, [:rounds, :cards_per_player])
-    |> put_embed(team_game)
-    |> validate_required(:cards)
+    |> validate_required([:rounds, :cards_per_player])
     |> validate_subset(:rounds, Application.get_env(:gamenite, :salad_bowl_all_rounds))
     |> validate_length(:rounds, min: 1)
     |> validate_number(:cards_per_player, greater_than: 2, less_than_or_equal_to: 10)
+  end
+
+  def finalize_changeset_and_create(team_game, changeset) do
+    changeset
+    |> put_embed(:team_game, team_game)
+    |> validate_required([:team_game])
+    |> apply_action!(:update)
   end
 
   def new_salad_bowl(params) do

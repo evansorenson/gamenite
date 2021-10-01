@@ -8,8 +8,8 @@ defmodule Gamenite.TeamGame.Team do
     field :score, :integer
     field :color, :string
     field :turns, {:array, :map}, default: []
-    embeds_many :players, :map
-    embeds_one :current_player, :map
+    field :players, {:array, :map}
+    field :current_player, :map
   end
   @fields [:id, :name, :score, :color, :turns, :players, :current_player]
 
@@ -37,8 +37,8 @@ defmodule Gamenite.TeamGame.Team do
     color = Enum.at(@team_colors, index - 1)
 
     %__MODULE__{}
-    |> changeset(%{color: color, name: name, id: id, players: players})
-    |> apply_action(:update)
+    |> changeset(%{color: color, name: name, id: id, current_player: hd(players), players: players})
+    |> apply_action!(:update)
   end
 
   def update_name(team, name) do
@@ -55,7 +55,7 @@ defmodule Gamenite.TeamGame.Team do
   """
 
   def split_teams(players, n) when n * 2 > length(players) do
-    {:error, "There must be at least two players per team."}
+    {:error, "At least four players are required."}
   end
   def split_teams(_players, n) when n > 7 do
     {:error, "Too many teams. Must be 7 or under."}
@@ -64,12 +64,12 @@ defmodule Gamenite.TeamGame.Team do
     _split_teams([], Enum.shuffle(players), n)
   end
   defp _split_teams(teams, players, 1) do
-  {:ok, team } = new(players, 0)
+  team = new(players, 0)
   [ team | teams ]
   end
   defp _split_teams(teams, players, n) do
     { team_players, remaining_players } = Enum.split(players, div(length(players), n))
-    {:ok, team } = new(team_players, n - 1 )
+    team = new( team_players, n - 1 )
     _split_teams([ team | teams ], remaining_players, n - 1)
   end
 

@@ -9,16 +9,16 @@ defmodule Gamenite.Games.CharadesPlayer do
     embeds_many :hand, Card
   end
 
-  def changeset(charades_player, %{player: player, hand: hand} = _attrs) do
+  def changeset(charades_player, %{player: player} = attrs) do
     charades_player
+    |> cast(attrs, [:id])
     |> put_embed(:player, player)
-    |> cast_embed(:hand, hand)
-    |> validate_required([:player, :hand])
+    |> validate_required([:player])
   end
 
   def new(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> apply_action(:update)
+    |> apply_action!(:update)
   end
 end

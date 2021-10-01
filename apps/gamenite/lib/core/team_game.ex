@@ -8,15 +8,13 @@ defmodule Gamenite.TeamGame do
   alias Gamenite.TeamGame.{Turn, Team}
 
   embedded_schema do
-    field :title, :string
     field :room_id, :string
     field :current_turn, :map
-    field :options, :map
     field :is_finished, :boolean, default: false
     embeds_one :current_team, Team
     embeds_many :teams, Team
   end
-  @fields [:current_turn, :title]
+  @fields [:current_turn]
 
   @max_teams Application.get_env(:gamenite, :max_teams)
   def finalize_game_changeset(team_game, %{teams: teams} = fields) do
@@ -24,8 +22,7 @@ defmodule Gamenite.TeamGame do
     |> cast(fields, @fields)
     |> put_embed(:teams, teams)
     |> put_embed(:current_team, hd(teams))
-    |> put(:current_turn, Turn.new(hd(teams).current_player))
-    |> validate_required([:teams, :options, :current_team, :current_turn, :title])
+    |> validate_required([:teams, :current_team ])
     |> validate_length(:teams, min: 2, max: @max_teams)
   end
 
@@ -36,10 +33,10 @@ defmodule Gamenite.TeamGame do
     |> validate_required([:teams])
     |> validate_length(:teams, min: 2, max: @max_teams)
   end
-  def new(teams, options) do
+  def new(teams) do
     %__MODULE__{}
-    |> finalize_game_changeset(%{teams: teams, options: options})
-    |> apply_action(:update)
+    |> finalize_game_changeset(%{teams: teams})
+    |> apply_action!(:update)
   end
 
 
@@ -119,9 +116,14 @@ defmodule Gamenite.TeamGame do
   Returns %__MODULE__{}.
   """
   def add_player( %__MODULE__{ teams: teams } = game, player) do
-    team_with_lowest_players(teams)
-    |> _add_player(game, player)
+    if player_exists?(game, player) do
+       {:error, "Player is already in game."}
+    else
+      team_with_lowest_players(teams)
+      |> _add_player(game, player)
+    end
   end
+
   defp _add_player(team, %{ current_team: current_team } = game, player) when current_team.id == team.id do
     added_team = Team.add_player(current_team, player)
 
@@ -140,6 +142,12 @@ defmodule Gamenite.TeamGame do
     teams
     |> Enum.sort_by(fn team -> length(team.players) end, :asc)
     |> List.first()
+  end
+
+  defp player_exists?(%{teams: teams} = game, player) do
+    teams
+    |> Enum.flat_map(fn team -> team.players end)
+    |> Enum.any?(fn current_player -> current_player.id == player.id end)
   end
 
   def start_turn(%__MODULE__{ current_turn: current_turn } = game) do

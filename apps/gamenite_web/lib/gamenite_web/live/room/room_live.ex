@@ -7,7 +7,7 @@ defmodule GameniteWeb.RoomLive do
 
   alias GamenitePersistance.Accounts
   alias Phoenix.Socket.Broadcast
-  alias Gamenite.RoomKeeper
+  alias Gamenite.RoomAPI
   alias Gamenite.Rooms.{Roommate}
   alias GameniteWeb.LiveMonitor
 
@@ -21,12 +21,12 @@ defmodule GameniteWeb.RoomLive do
       monitor_live_view_process(slug, user)
     end
 
-    if RoomKeeper.slug_exists?(slug) do
+    if RoomAPI.slug_exists?(slug) do
       {:ok, room} = join_room(slug, user)
       broadcast_room_update(room.id, room)
       {:ok,
       socket
-      |> assign(room: room, user: user, game_id: room.game_id, slug: slug)
+      |> assign(room: room, user: user, game_id: room.game_id, slug: slug, connected_users: room.connected_users)
       |> assign(offer_requests: [], ice_candidate_offers: [], sdp_offers: [], answers: [])}
     else
       {:ok, socket
@@ -36,7 +36,7 @@ defmodule GameniteWeb.RoomLive do
   end
 
   defp join_room(room_id, user) do
-    RoomKeeper.join(room_id, Roommate.new_from_user(user))
+    RoomAPI.join(room_id, Roommate.new_from_user(user))
   end
 
   defp broadcast_room_update(room_id, room) do
@@ -48,6 +48,16 @@ defmodule GameniteWeb.RoomLive do
     )
   end
 
+  def handle_event("mute", %{"user_id" => user_id}, socket) do
+    {:ok, room} = RoomAPI.invert_mute(socket.assigns.room.id, Map.get(socket.assigns.room.connected_users, user_id))
+    broadcast_room_update(socket.assigns.slug, room)
+    {:noreply, assign(socket, room: room)}
+  end
+
+  def handle_info(%Broadcast{event: "game_state_update", payload: game}, socket) do
+    # send_update(self(), GameniteWeb.GameLive, %{ id: socket.assigns.game_id, game: game})
+    { :noreply, socket }
+  end
 
   defp monitor_live_view_process(room_slug, user) do
     LiveMonitor.monitor(
@@ -63,16 +73,16 @@ defmodule GameniteWeb.RoomLive do
   the entire game server process can also be terminated if
   there are no remaining players.
   """
-  @spec unmount(term(), map()) :: :ok
   def unmount(_reason, %{user: user, room_slug: room_slug}) do
     Logger.info("Unmounting LiveView")
-    {:ok, room} = RoomKeeper.leave(room_slug, user.id)
-    broadcast_room_update(room_slug, room)
+    # {:ok, room} = RoomAPI.leave(room_slug, user.id)
+    # broadcast_room_update(room_slug, room)
 
     :ok
   end
 
   def handle_info(%Broadcast{event: "room_state_update", payload: room}, socket) do
+    # send_update(self(), GameniteWeb.GameLive, %{ id: socket.assigns.game_id, connected_users: room.connected_users })
     {:noreply, assign(socket, room: room)}
   end
 

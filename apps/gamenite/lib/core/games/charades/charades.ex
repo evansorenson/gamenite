@@ -20,7 +20,7 @@ defmodule Gamenite.Games.Charades do
         {:error, reason}
       { drawn_cards, remaining_deck } ->
         game
-        |> replace_current_player(%{current_player | hand: [ drawn_cards | hand ]})
+        |> TeamGame.replace_current_player(%{current_player | hand: [ drawn_cards | current_player.hand ]})
         |> put_in([:options, :deck], remaining_deck)
     end
   end
