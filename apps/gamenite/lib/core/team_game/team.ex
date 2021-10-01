@@ -3,38 +3,22 @@ defmodule Gamenite.TeamGame.Team do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Gamenite.TeamGame.{Player}
-
   embedded_schema do
     field :name, :string
     field :score, :integer
     field :color, :string
     field :turns, {:array, :map}, default: []
-    embeds_many :players, Player
-    embeds_one :current_player, Player
+    embeds_many :players, :map
+    embeds_one :current_player, :map
   end
-  @fields [:id, :name, :score, :color, :turns]
+  @fields [:id, :name, :score, :color, :turns, :players, :current_player]
 
   @team_colors ["C0392B", "2980B9", "27AE60", "884EA0", "D35400", "FF33B8", "F1C40F"]
   def changeset(team, fields) do
     team
     |> name_changeset(fields)
     |> cast(fields, @fields)
-    |> cast_embed(:players)
     |> validate_required([:players, :color])
-    |> validate_number(:score, greater_than_or_equal_to: 0)
-    |> validate_inclusion(:color, @team_colors)
-    |> validate_length(:players, min: 2, max: 10)
-  end
-
-
-  def changeset(team, fields, players) do
-    team
-    |> name_changeset(fields)
-    |> cast(fields, @fields)
-    |> put_embed(:players, players)
-    |> put_embed(:current_player, hd(players))
-    |> validate_required([:players, :current_player, :color])
     |> validate_number(:score, greater_than_or_equal_to: 0)
     |> validate_inclusion(:color, @team_colors)
     |> validate_length(:players, min: 2, max: 10)
@@ -47,14 +31,13 @@ defmodule Gamenite.TeamGame.Team do
     |> validate_length(:name, min: 1, max: 15)
   end
 
-
   def new(players, index) do
     id = Ecto.UUID.generate()
     name = "Team #{Integer.to_string(index)}"
     color = Enum.at(@team_colors, index - 1)
 
     %__MODULE__{}
-    |> changeset(%{color: color, name: name, id: id}, players)
+    |> changeset(%{color: color, name: name, id: id, players: players})
     |> apply_action(:update)
   end
 

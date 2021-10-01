@@ -23,7 +23,7 @@ defmodule Gamenite.Cards do
   @doc """
   Returns { drawn_cards, remaining_deck}.
   """
-  def draw(deck, num, face_up? \\ true)
+  def draw(deck, num \\ 1, face_up? \\ true)
   def draw(_, num, _) when num < 1 or not is_integer(num), do: {:error, "Number of cards drawn must be positive integer."}
   def draw(deck, num, _) when num > Kernel.length(deck), do: {:error, "Not enough cards in deck."}
   def draw(deck, num, face_up?) do

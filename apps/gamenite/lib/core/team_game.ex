@@ -3,35 +3,30 @@ defmodule Gamenite.TeamGame do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Gamenite.Cards
-  alias Gamenite.Cards.Card
   alias Gamenite.Lists
 
   alias Gamenite.TeamGame.{Turn, Team}
 
   embedded_schema do
-    field :name, :string
+    field :title, :string
     field :room_id, :string
     field :current_turn, :map
+    field :options, :map
     field :is_finished, :boolean, default: false
     embeds_one :current_team, Team
     embeds_many :teams, Team
-    embeds_many :deck, Card
   end
-  @fields [:current_turn, :name]
+  @fields [:current_turn, :title]
 
   @max_teams Application.get_env(:gamenite, :max_teams)
-  @max_deck Application.get_env(:gamenite, :max_deck)
-  def finalize_game_changeset(team_game, %{teams: teams, deck: deck} = fields) do
+  def finalize_game_changeset(team_game, %{teams: teams} = fields) do
     team_game
     |> cast(fields, @fields)
     |> put_embed(:teams, teams)
     |> put_embed(:current_team, hd(teams))
-    |> put_embed(:deck, deck)
     |> put(:current_turn, Turn.new(hd(teams).current_player))
-    |> validate_required([:teams, :current_team, :deck, :current_turn])
+    |> validate_required([:teams, :options, :current_team, :current_turn, :title])
     |> validate_length(:teams, min: 2, max: @max_teams)
-    |> validate_length(:deck, min: 5, max: @max_deck)
   end
 
   def teams_changeset(team_game, fields) do
@@ -41,9 +36,12 @@ defmodule Gamenite.TeamGame do
     |> validate_required([:teams])
     |> validate_length(:teams, min: 2, max: @max_teams)
   end
-  def new(fields) do
-    struct!(__MODULE__, fields)
+  def new(teams, options) do
+    %__MODULE__{}
+    |> finalize_game_changeset(%{teams: teams, options: options})
+    |> apply_action(:update)
   end
+
 
   def end_turn(game) do
     game
@@ -103,7 +101,7 @@ defmodule Gamenite.TeamGame do
     |> put_in([:current_team, :players, Access.at(player_index)], player)
   end
 
-  defp replace_current_player(game, next_player) do
+  def replace_current_player(game, next_player) do
     game
     |> put_in([:current_team, :current_player], next_player)
   end
@@ -142,43 +140,6 @@ defmodule Gamenite.TeamGame do
     teams
     |> Enum.sort_by(fn team -> length(team.players) end, :asc)
     |> List.first()
-  end
-
-  # def clear_all_players_hands(%__MODULE__{ teams: teams, current_team: current_team } = game) do
-  #   cleared_teams = teams
-  #   |> Enum.map(&clear_team_hand(&1))
-
-  #   cleared_current_team =  clear_team_hand(current_team)
-
-  #   game
-  #   |> Map.replace!(:teams, cleared_teams)
-  #   |> replace_current_team(cleared_current_team)
-  # end
-
-  # defp clear_team_hand(team) do
-  #   Enum.map(team.players, &clear_player_hand(&1))
-  # end
-
-  def draw_card(%__MODULE__{ deck: deck, current_team: current_team } = game, num \\ 1) do
-    case Cards.draw_into_hand(deck, current_team.current_player.hand, num) do
-      { :error, reason } ->
-        { :error, reason }
-
-      { new_hand,  new_deck } ->
-        game
-        |> update_current_hand(new_hand)
-        |> update_deck(new_deck)
-    end
-  end
-
-  def update_deck(game, new_deck) do
-    game
-    |> Map.replace!(:deck, new_deck)
-  end
-
-  def update_current_hand(game, hand) do
-    game
-    |> put_in([:current_team, :current_player, :hand], hand)
   end
 
   def start_turn(%__MODULE__{ current_turn: current_turn } = game) do

@@ -1,4 +1,4 @@
-defmodule Gamenite.RoomKeeper do
+defmodule Gamenite.RoomServer do
   use GenServer
   require Logger
 
@@ -6,32 +6,41 @@ defmodule Gamenite.RoomKeeper do
   alias Gamenite.Rooms.Room
 
   # Server
-  def init({room_uuid,  password}) do
-    {:ok, Room.new(%{id: room_uuid, password: password})}
+  def init({slug,}) do
+    {:ok, Room.new(%{id: slug})}
   end
 
-  def child_spec({room_uuid,  password}) do
+  defp start_link({slug}) do
+    GenServer.start_link(
+      __MODULE__,
+      {slug},
+      name: via(slug))
+  end
+
+  defp via(slug) do
+    {:via,
+    Registry,
+    {Gamenite.Registry.Room, slug}}
+  end
+
+  def child_spec({slug,  password}) do
     %{
-      id: {__MODULE__, room_uuid},
-      start: {__MODULE__, :start_link, [{room_uuid, password}]},
+      id: {__MODULE__, slug},
+      start: {__MODULE__, :start_link, [{slug}]},
       restart: :temporary
     }
   end
 
-  def start_link({room_uuid, password}) do
-    GenServer.start_link(
-      __MODULE__,
-      {room_uuid, password},
-      name: via(room_uuid))
+  def start_child() do
+    slug = generate_slug()
+    DynamicSupervisor.start_child(
+      Gamenite.Supervisor.Room,
+      child_spec({slug}))
+    {:ok, slug}
   end
 
-  defp via(room_uuid) do
-    {:via,
-    Registry,
-    {Gamenite.Registry.Room, room_uuid}}
-  end
 
-  def generate_slug do
+  defp generate_slug do
     slug = do_generate_slug()
     if slug_exists?(slug) do
        generate_slug()
@@ -42,9 +51,9 @@ defmodule Gamenite.RoomKeeper do
 
   defp do_generate_slug() do
     :random.seed(:erlang.now)
-    alphabet = Enum.map(Enum.to_list(?A..?Z), fn(n) -> <<n>> end)
-    letters = Enum.take_random(alphabet, 6)
-    Enum.join(letters, "")
+    letters_numbers = Enum.map(Enum.to_list(?A..?Z) ++ Enum.to_list(?0..?9), fn(n) -> <<n>> end)
+    slug = Enum.take_random(letters_numbers, 6)
+    Enum.join(slug, "")
   end
 
   def slug_exists?(slug) do
@@ -53,14 +62,6 @@ defmodule Gamenite.RoomKeeper do
       [{_pid, _val}] -> true
       [] -> false
     end
-  end
-
-  def create_room(password \\ nil) do
-    room_slug = generate_slug()
-    DynamicSupervisor.start_child(
-      Gamenite.Supervisor.Room,
-      child_spec({room_slug, password}))
-    {:ok, room_slug}
   end
 
   def handle_call({:join, player}, _from, room) do
@@ -100,22 +101,5 @@ defmodule Gamenite.RoomKeeper do
 
   def handle_call({:set_game, game_id}, _from, room) do
     {:reply, :ok, Rooms.set_game(room, game_id)}
-  end
-
-  # API
-  def join(room_id, player) do
-    GenServer.call(via(room_id), {:join, player})
-  end
-
-  def leave(room_id, user_id) do
-    GenServer.call(via(room_id), {:leave, user_id})
-  end
-
-  def invert_mute(room_id, player) do
-    GenServer.call(via(room_id), {:invert_mute, player})
-  end
-
-  def set_game(room_id, game_id) do
-    GenServer.call(via(room_id), {:set_game, game_id})
   end
 end

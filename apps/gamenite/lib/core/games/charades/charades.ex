@@ -14,6 +14,17 @@ defmodule Gamenite.Games.Charades do
     |> TeamGame.new_turn
   end
 
+  def draw_card(%{ current_team: %{current_player: current_player}, options: %{deck: deck}} = game) do
+    case Cards.draw(deck) do
+      {:error, reason} ->
+        {:error, reason}
+      { drawn_cards, remaining_deck } ->
+        game
+        |> replace_current_player(%{current_player | hand: [ drawn_cards | hand ]})
+        |> put_in([:options, :deck], remaining_deck)
+    end
+  end
+
   def skip_card(%{ current_turn: current_turn, options: options } = _game, _card)
   when current_turn.num_cards_skipped >= options.skip_limit
   do
@@ -27,7 +38,7 @@ defmodule Gamenite.Games.Charades do
   def skip_card(game) do
     game
     |> inc_skipped_card
-    |> TeamGame.draw_card()
+    |> draw_card()
   end
 
   defp inc_skipped_card(game) do
@@ -96,6 +107,7 @@ defmodule Gamenite.Games.Charades do
     |> TeamGame.update_deck([ cards | deck ])
   end
   defp do_add_cards_to_deck(_game, _cards, errors), do: {:error, errors}
+
 
   # Salad Bowl Logic
   def inc_round(%{ rounds: rounds, current_round: current_round} = game) do

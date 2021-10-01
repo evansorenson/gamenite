@@ -1,53 +1,45 @@
 defmodule GameniteWeb.GameLive do
   use GameniteWeb, :live_view
 
-  alias Gamenite.Games.CharadesOptions
-
-  alias Gamenite.TeamGame
   alias Phoenix.Socket.Broadcast
   alias GamenitePersistance.Accounts
 
-
+  @impl true
   def mount(_params, %{"slug" => slug, "game_id" => game_id } = _session, socket) do
-    game = GamenitePersistance.Gaming.get_game!(game_id)
-    IO.puts "game mount"
+    game_info = GamenitePersistance.Gaming.get_game!(game_id)
 
     Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "game:" <> slug)
 
-    with :ok <- start_or_get_game_process(game, slug) do
-      game_options_changeset = CharadesOptions.new_salad_bowl(%{})
-      team_game_changeset = TeamGame.teams_changeset(%TeamGame{}, %{teams: [%{}, %{}]})
+    game_options_changeset = CharadesOptions.new_salad_bowl(%{})
 
-      {:ok,
-      socket
-      |> assign(game: game)
-      |> assign(game_options_changeset: game_options_changeset)
-      |> assign(team_game_changeset: team_game_changeset)
-      }
-    else
-      {:error, reason} ->
-        socket
-        |> put_flash(:error, reason)
-        |> push_redirect(to: Routes.game_path(socket, :index))
-    end
+    {:ok,
+    socket
+    |> assign(game_info: game_info)
+    |> assign(game_options_changeset: game_options_changeset)
+    |> assign(slug: slug)
+    }
   end
 
   @impl true
   def handle_event("start_game", _payload, socket) do
-    players = socket.assigns.room.connected_users |> Map.to_list()
-    |> Enum.map(fn {_k, %{user_id: user_id} = _roommate} -> Accounts.get_user_by(%{id: user_id}) end)
-    |> TeamGame.Player.new_players_from_users()
+    case socket.assigns.game_options_changeset do
+      {:ok, game_options} ->
+        socket.assigns.game_info
+        |> Gamenite.construct_game_data(
+          game_options,
+          socket.assigns.connected_users,
+          &Gamenite.Games.CharadesPlayer.new/1
+          )
+        |> Gamenite.start_game(socket.assigns.slug)
 
-    teams = players
-    |> TeamGame.Team.split_teams(2)
-
-    # game_changeset = TeamGame.finalize_game_changeset(socket.assigns.game, %{teams: teams})
-
-    {:noreply, socket}
+        {:noreply, assign(socket, Gamenite.SaladBowlGameKeeper.state())}
+      {:error, _errors} ->
+        {:noreply, put_flash(socket, :error, "Game Options have errors.")}
+    end
   end
 
-  defp start_or_get_game_process(game, slug) do
-    case Gamenite.start_game(game.title, slug) do
+  defp start_or_get_game_process(game_info, slug) do
+    case Gamenite.start_game(game_info.title, slug) do
       {:ok, _pid} -> :ok
       {:error, {:already_started, _pid}} -> :ok
       _ -> :error
@@ -70,7 +62,7 @@ defmodule GameniteWeb.GameLive do
       |> assign(:game, game)}
   end
 
-  def handle_info(%Broadcast{event: "connected_uers_update", payload: game}, socket) do
+  def handle_info(%Broadcast{event: "connected_users_update", payload: game}, socket) do
 
     {:noreply,
       socket

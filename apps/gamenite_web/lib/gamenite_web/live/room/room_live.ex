@@ -77,10 +77,10 @@ defmodule GameniteWeb.RoomLive do
     {:noreply, assign(socket, room: room)}
   end
 
-  @impl true
-  def handle_event("change_display_name", %{"new_name" => new_name}, socket) do
-    socket
-  end
+  # @impl true
+  # def handle_event("change_display_name", %{"new_name" => new_name}, socket) do
+  #   socket
+  # end
 
   defp mount_socket_user(socket, params) do
     user_id = Map.get(params, "user_id")
