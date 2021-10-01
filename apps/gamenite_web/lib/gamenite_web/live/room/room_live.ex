@@ -12,7 +12,6 @@ defmodule GameniteWeb.RoomLive do
   alias GameniteWeb.LiveMonitor
 
   @impl true
-  @spec mount(any, map, Phoenix.LiveView.Socket.t()) :: {:ok, Phoenix.LiveView.Socket.t()}
   def mount( _params, %{"slug" => slug } = session, socket) do
     user = mount_socket_user(socket, session)
     Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug)
