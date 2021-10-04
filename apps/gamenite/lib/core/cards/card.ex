@@ -8,9 +8,8 @@ defmodule Gamenite.Cards.Card do
     field :face_image, :string
     field :back_image, :string
     field :face_up?, :boolean, default: false
-    field :is_correct, :boolean, default: false
   end
-  @fields [:face, :back, :face_image, :back_image, :face_up?, :is_correct]
+  @fields [:face, :back, :face_image, :back_image, :face_up?]
 
   def changeset(card, fields) do
     card

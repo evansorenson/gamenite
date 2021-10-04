@@ -1,5 +1,5 @@
 <%= live_component @socket, GameniteWeb.GameLive, id: @game_id,  slug: @slug, game_id: @game_id,
-                                                  connected_users: @connected_users %>
+                                                   user: @user, connected_users: @connected_users %>
 
 <h1 class="text-6xl font-bold text-center py-4">Users</h1>
 <div class="table bg-blurple rounded-3xl flex-wrap items-center">

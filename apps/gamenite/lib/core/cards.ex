@@ -107,11 +107,6 @@ defmodule Gamenite.Cards do
     end
   end
 
-  def correct_card(card) do
-    card
-    |> Map.put(:is_correct, true)
-  end
-
   def card_in_deck?(deck, card) do
     Enum.any?(deck, fn x -> x.face == card.face end)
   end

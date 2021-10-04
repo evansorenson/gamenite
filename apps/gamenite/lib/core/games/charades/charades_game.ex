@@ -1,9 +1,15 @@
 defmodule Gamenite.Games.CharadesGame do
   use Ecto.Schema
   import Ecto.Changeset
+  alias Gamenite.Games.CharadesPlayer
+  alias Gamenite.TeamGame
+  alias Gamenite.TeamGame.Team
 
   embedded_schema do
-    embeds_one :team_game, Gamenite.TeamGame
+    embeds_one :current_player, CharadesPlayer
+    embeds_one :current_team, Team
+    embeds_many :teams, Team
+    embeds_one :current_turn, CharadesTurn
     field :turn_length, :integer, default: 60
     field :skip_limit, :integer, default: 1
     field :rounds, {:array, :string}, default: Application.get_env(:gamenite, :salad_bowl_default_rounds)
@@ -11,11 +17,13 @@ defmodule Gamenite.Games.CharadesGame do
     field :current_round, :string
     field :starting_deck, {:array, :map}
     field :deck, {:array, :map}
+    field :finished?, :boolean, default: false
   end
   @fields [:turn_length, :skip_limit, :deck, :starting_deck, :cards_per_player]
 
-  def changeset(changeset, params) do
-    changeset
+  def changeset(charades_game, params) do
+    charades_game
+    |> TeamGame.changeset(params)
     |> cast(params, @fields)
     |> validate_required([:turn_length, :skip_limit])
     |> validate_number(:turn_length, less_than_or_equal_to: 120)
@@ -25,8 +33,9 @@ defmodule Gamenite.Games.CharadesGame do
   end
 
 
-  def salad_bowl_changeset(changeset, params) do
-    changeset
+  def salad_bowl_changeset(salad_bowl_game, params) do
+    salad_bowl_game
+    |> TeamGame.changeset(params)
     |> changeset(params)
     |> cast(params, [:rounds, :cards_per_player])
     |> validate_required([:rounds, :cards_per_player])
@@ -35,16 +44,13 @@ defmodule Gamenite.Games.CharadesGame do
     |> validate_number(:cards_per_player, greater_than: 2, less_than_or_equal_to: 10)
   end
 
-  def finalize_changeset_and_create(team_game, changeset) do
+  def create(changeset) do
     changeset
-    |> put_embed(:team_game, team_game)
-    |> validate_required([:team_game])
-    |> apply_action!(:update)
+    |> apply_action(:update)
   end
 
   def new_salad_bowl(params) do
     %__MODULE__{}
-    |> changeset(params)
     |> salad_bowl_changeset(params)
   end
 

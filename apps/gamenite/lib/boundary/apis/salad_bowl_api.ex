@@ -25,15 +25,15 @@ defmodule Gamenite.SaladBowlAPI do
     GenServer.call(via(room_slug), :next_player)
   end
 
-  def correct_card(room_slug, card) do
-    GenServer.call(via(room_slug), {:correct_card, card})
+  def correct_card(room_slug) do
+    GenServer.call(via(room_slug), :correct)
   end
 
   def review_cards(room_slug) do
     GenServer.call(via(room_slug), :review_cards )
   end
 
-  def skip_card(room_slug, card) do
-    GenServer.call(via(room_slug), {:skip_card, card})
+  def skip_card(room_slug) do
+    GenServer.call(via(room_slug), :skip)
   end
 end

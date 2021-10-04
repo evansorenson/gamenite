@@ -9,9 +9,8 @@ defmodule Gamenite.TeamGame.Team do
     field :color, :string
     field :turns, {:array, :map}, default: []
     field :players, {:array, :map}
-    field :current_player, :map
   end
-  @fields [:id, :name, :score, :color, :turns, :players, :current_player]
+  @fields [:id, :name, :score, :color, :turns, :players]
 
   @team_colors ["C0392B", "2980B9", "27AE60", "884EA0", "D35400", "FF33B8", "F1C40F"]
   def changeset(team, fields) do
@@ -21,7 +20,7 @@ defmodule Gamenite.TeamGame.Team do
     |> validate_required([:players, :color])
     |> validate_number(:score, greater_than_or_equal_to: 0)
     |> validate_inclusion(:color, @team_colors)
-    |> validate_length(:players, min: 2, max: 10)
+    |> validate_length(:players, min: 2, message: "Not enough players to start game.")
   end
 
   def name_changeset(team, fields) do
@@ -36,9 +35,7 @@ defmodule Gamenite.TeamGame.Team do
     name = "Team #{Integer.to_string(index)}"
     color = Enum.at(@team_colors, index - 1)
 
-    %__MODULE__{}
-    |> changeset(%{color: color, name: name, id: id, current_player: hd(players), players: players})
-    |> apply_action!(:update)
+    %{color: color, name: name, id: id, players: players}
   end
 
   def update_name(team, name) do
@@ -54,12 +51,12 @@ defmodule Gamenite.TeamGame.Team do
   Returns [%Gameplay.Team{}]
   """
 
-  def split_teams(players, n) when n * 2 > length(players) do
-    {:error, "At least four players are required."}
-  end
-  def split_teams(_players, n) when n > 7 do
-    {:error, "Too many teams. Must be 7 or under."}
-  end
+  # def split_teams(players, n) when n * 2 > length(players) do
+  #   {:error, "At least four players are required."}
+  # end
+  # def split_teams(_players, n) when n > 7 do
+  #   {:error, "Too many teams. Must be 7 or under."}
+  # end
   def split_teams(players, n) do
     _split_teams([], Enum.shuffle(players), n)
   end

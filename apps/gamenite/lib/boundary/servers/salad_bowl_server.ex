@@ -31,15 +31,9 @@ defmodule Gamenite.SaladBowlServer do
   end
 
   def start_child(game, room_uuid) do
-    with {:ok, _pid} <- DynamicSupervisor.start_child(
+    DynamicSupervisor.start_child(
       Gamenite.Supervisor.Game,
       child_spec({game, room_uuid}))
-    do
-      {:ok, game}
-    else
-      {:error, reason} ->
-        {:error, reason}
-    end
   end
 
   defp ok_new_game_response(new_game) do
@@ -96,13 +90,13 @@ defmodule Gamenite.SaladBowlServer do
     |> ok_new_game_response()
   end
 
-  def handle_call({ :correct_card, card }, _from, game) do
+  def handle_call(:correct_card, _from, game) do
     game
-    |> Charades.card_is_correct(card)
+    |> Charades.card_is_correct
     |> ok_new_game_response
   end
 
-  def handle_call({ :skip_card }, _from, game) do
+  def handle_call(:skip_card, _from, game) do
     case Charades.skip_card(game) do
       {:error, reason} ->
         error_old_game_response(game, reason)

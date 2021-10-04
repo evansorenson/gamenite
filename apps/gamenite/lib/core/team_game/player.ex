@@ -44,7 +44,6 @@ defmodule Gamenite.TeamGame.Player do
     users
     |> Enum.with_index
     |> Enum.map(fn {user, index} ->
-      new(%{id: user.id, color: Enum.at(@player_colors, index), name: user.username})
-      |> elem(1) end)
+      %{id: user.id, color: Enum.at(@player_colors, index), name: user.username} end)
   end
 end
