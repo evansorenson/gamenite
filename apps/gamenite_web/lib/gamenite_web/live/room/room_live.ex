@@ -14,11 +14,13 @@ defmodule GameniteWeb.RoomLive do
   @impl true
   def mount( _params, %{"slug" => slug } = session, socket) do
     user = mount_socket_user(socket, session)
-    Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug)
-    Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug <> ":" <> user.id)
 
     if connected?(socket) do
       monitor_live_view_process(slug, user)
+
+      Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug)
+      Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "room:" <> slug <> ":" <> user.id)
+      Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "game:" <> slug)
     end
 
     if RoomAPI.slug_exists?(slug) do
@@ -54,11 +56,6 @@ defmodule GameniteWeb.RoomLive do
     {:noreply, assign(socket, room: room)}
   end
 
-  def handle_info(%Broadcast{event: "game_state_update", payload: game}, socket) do
-    # send_update(self(), GameniteWeb.GameLive, %{ id: socket.assigns.game_id, game: game})
-    { :noreply, socket }
-  end
-
   defp monitor_live_view_process(room_slug, user) do
     LiveMonitor.monitor(
      self(),
@@ -82,8 +79,12 @@ defmodule GameniteWeb.RoomLive do
   end
 
   def handle_info(%Broadcast{event: "room_state_update", payload: room}, socket) do
-    # send_update(self(), GameniteWeb.GameLive, %{ id: socket.assigns.game_id, connected_users: room.connected_users })
     {:noreply, assign(socket, room: room)}
+  end
+
+  def handle_info(%Broadcast{event: "game_state_update", payload: game}, socket) do
+    send_update(self(), GameniteWeb.GameLive, %{ id: socket.assigns.game_id, game: game })
+    {:noreply, socket}
   end
 
   # @impl true

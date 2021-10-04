@@ -1,8 +1,16 @@
 defmodule Gamenite.SaladBowlAPI do
-  import Gamenite.SaladBowlServer, only: [via: 1, start_child: 2]
+  import Gamenite.SaladBowlServer, only: [via: 1, start_child: 2, game_exists?: 1]
 
   def start_game(game, room_slug) do
     start_child(game, room_slug)
+  end
+
+  def exists?(room_slug) do
+    game_exists?(room_slug)
+  end
+
+  def state(room_slug) do
+    GenServer.call(via(room_slug), :state)
   end
 
   def add_player(room_slug, player) do

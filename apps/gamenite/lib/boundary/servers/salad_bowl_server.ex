@@ -6,7 +6,7 @@ defmodule Gamenite.SaladBowlServer do
   alias Gamenite.Games.Charades
 
   def init({game, room_uuid}) do
-    {:ok, game}
+    {:ok, Charades.new_turn(game)}
   end
 
   def child_spec({game, room_uuid}) do
@@ -27,7 +27,7 @@ defmodule Gamenite.SaladBowlServer do
   def via(room_uuid) do
     {:via,
     Registry,
-    {Gamenite.Registry.Game, {room_uuid}}}
+    {Gamenite.Registry.Game, room_uuid}}
   end
 
   def start_child(game, room_uuid) do
@@ -36,12 +36,24 @@ defmodule Gamenite.SaladBowlServer do
       child_spec({game, room_uuid}))
   end
 
-  defp ok_new_game_response(new_game) do
-    {{:ok, new_game}, new_game}
+  def game_exists?(room_slug) do
+    case Registry.lookup(Gamenite.Registry.Game, room_slug) do
+      [{_pid, _val}] -> true
+      [] -> false
+    end
+  end
+
+  defp ok_new_game_response(new_state) do
+    {:reply, {:ok, new_state}, new_state}
   end
 
   defp error_old_game_response(old_game, reason) do
-    {{:error, reason}, old_game}
+    {:reply, {:error, reason}, old_game}
+  end
+
+
+  def handle_call(:state, _from, game) do
+    ok_new_game_response(game)
   end
 
   def handle_call({:add_player, player}, _from, game) do

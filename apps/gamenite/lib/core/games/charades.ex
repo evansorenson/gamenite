@@ -115,4 +115,9 @@ defmodule Gamenite.Games.Charades do
   defp update_deck(game, new_deck) do
     %{game | deck: new_deck}
   end
+
+  def new_turn(game) do
+    game
+    |> Map.put(:current_turn, CharadesTurn.new(game.current_player.id))
+  end
 end

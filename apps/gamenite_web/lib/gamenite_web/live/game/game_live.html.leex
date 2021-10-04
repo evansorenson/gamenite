@@ -71,9 +71,13 @@
   <% true -> %>
     <%= cond do %>
       <% Gamenite.TeamGame.current_player?(@game, @user.id) -> %>
-        <h1><%= @game.current_player.card.face %></h1>
-        <button phx-click="correct" phx-target="<%= @myself %>">Correct</button>
-        <button phx-click="skip" phx-target="<%= @myself %>">Skip</button>
+        <%= if is_nil(@game.current_turn.started_at) do %>
+          <button phx-click="start_turn" phx-target="<%= @myself %>">Start Turn</button>
+        <% else %>
+          <h1><%= @game.current_player.card.face %></h1>
+          <button phx-click="correct" phx-target="<%= @myself %>">Correct</button>
+          <button phx-click="skip" phx-target="<%= @myself %>">Skip</button>
+        <% end %>
 
       <% Gamenite.TeamGame.on_current_team?(@game, @user.id) -> %>
         <h1><%= "Your guessing clues from #{@game.current_player.name}." %><h1>
