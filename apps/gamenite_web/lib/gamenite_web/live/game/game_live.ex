@@ -106,6 +106,21 @@ defmodule GameniteWeb.GameLive do
   end
 
   @impl true
+  def handle_event("start_turn", _params, socket) do
+    {:ok, game} = SaladBowlAPI.start_turn(socket.assigns.slug)
+    broadcast_game_update(socket.assigns.slug, game)
+
+
+    :timer.apply_interval(1000, __MODULE__, &read_timer/1, [socket.assigns.slug] )
+    {:noreply, assign(socket, game: game)}
+  end
+
+  defp read_timer(slug) do
+
+  end
+
+
+  @impl true
   def handle_event("skip", _params, socket) do
     case SaladBowlAPI.skip_card(socket.assigns.slug) do
       {:ok, game} ->

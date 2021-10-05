@@ -15,7 +15,7 @@ defmodule Gamenite.Games.Charades do
     |> TeamGame.new_turn(&CharadesTurn.new/1)
   end
 
-  def draw_card (%{ current_player: current_player, deck: deck } = game) do
+  def draw_card(%{ current_player: current_player, deck: deck } = game) do
     case Cards.draw(deck) do
       {:error, reason} ->
         {:error, reason}
@@ -59,6 +59,7 @@ defmodule Gamenite.Games.Charades do
   defp draw_or_review_cards(%{ deck: deck } = game)
   when length(deck) == 0 do
     game
+    |> stop_timer
     |> put_in([:current_turn, :needs_review], true)
   end
   defp draw_or_review_cards(game), do: draw_card(game)
@@ -74,6 +75,32 @@ defmodule Gamenite.Games.Charades do
 
     game
     |> update_deck(new_deck)
+  end
+
+  def start_timer(%{turn_length: turn_length, current_turn: %{time_remaining_in_ms: nil }} = game, client_pid) do
+    timeout = DateTime.diff(end_at, now, :millisecond)
+    do_start_timer(game, client_pid, timeout)
+  end
+  def start_timer(%{xcurrent_turn: %{time_remaining_in_ms: time_remaining }} = game, client_pid) do
+    do_start_timer(game, client_pid, time_remaining)
+  end
+  defp do_start_timer(game, client_pid, timeout) do
+    timer = Process.send_after(client_pid, :end_turn, timeout)
+
+    game
+    |> put_in([:current_turn, :timer], timer)
+  end
+
+  def time_left(%{current_turn: current_turn} = _game) do
+    Process.read_timer(current_turn.timer)
+  end
+
+  defp stop_timer(%{timer: timer, current_turn: current_turn} = game) do
+    new_turn = %{current_turn | time_remaining_in_ms: time_left(game)}
+    Process.cancel_timer(timer)
+
+    game
+    |> Map.put(:current_turn, new_turn)
   end
 
   def add_cards_to_deck(%{ deck: deck } = game, cards) do

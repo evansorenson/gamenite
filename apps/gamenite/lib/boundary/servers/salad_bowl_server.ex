@@ -65,22 +65,17 @@ defmodule Gamenite.SaladBowlServer do
     end
   end
 
-  def handle_call(:start_turn, client, %{ turn_length: turn_length } = game) do
-    now = DateTime.utc_now()
-    end_at = DateTime.add(now, turn_length)
-    timeout = DateTime.diff(now, end_at, :millisecond)
-    Process.send_after(client, :end_turn, timeout)
+  def handle_call(:start_turn, {pid, _alias} = _client, game) do
+    {:ok, timer} = :timer.send_interval(1000, self(), {:tick, pid})
 
     game
     |> Charades.draw_card
     |> ok_new_game_response
   end
 
-  def handle_call(:stop_turn, _form, %{ turn_length: turn_length } = game) do
-    ## fix todo
 
-    game
-    |> ok_new_game_response
+  def handle_call(:time, _from, game) do
+    {:reply, {:ok, Charades.time_left(game)}, game}
   end
 
   def handle_call(:draw_card, _from, game) do
@@ -121,10 +116,13 @@ defmodule Gamenite.SaladBowlServer do
 
   end
 
-  # def handle_info({ :end_turn, turn }, game)
-  # when game.turn.player == turn.player
-  # do
-  #   { :ok, TeamGame.end_turn(game)})
-  # end
-  # def handle_info({ :end_turn, _turn}, game), do: {:noreply, game}
+  def handle_info({:tick, pid}, %{current_turn: %{time_remaining_in_sec: 1}} = game) do
+    Process.send(pid, :turn_ended)
+    new_game = put_in(game, [:current_turn, :time_remaining_in_sec], 0)
+    {:noreply, game}
+  end
+  def handle_info({:tick, pid}, game) do
+    Process.send(pid, :tick)
+    new_game = update_in(game, [:current_turn, :time_remaining_in_sec], &(&1 - 1))
+  end
 end

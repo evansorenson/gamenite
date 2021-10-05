@@ -72,6 +72,7 @@
     <%= cond do %>
       <% Gamenite.TeamGame.current_player?(@game, @user.id) -> %>
         <%= if is_nil(@game.current_turn.started_at) do %>
+          <h1><%= @game.timer %>
           <button phx-click="start_turn" phx-target="<%= @myself %>">Start Turn</button>
         <% else %>
           <h1><%= @game.current_player.card.face %></h1>
