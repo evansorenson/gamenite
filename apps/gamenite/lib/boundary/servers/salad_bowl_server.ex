@@ -4,6 +4,7 @@ defmodule Gamenite.SaladBowlServer do
   alias Gamenite.Cards
   alias Gamenite.TeamGame
   alias Gamenite.Games.Charades
+  alias Gamenite.Games.CharadesTurn
 
   def init({game, room_uuid}) do
     {:ok, Charades.new_turn(game)}
@@ -43,73 +44,56 @@ defmodule Gamenite.SaladBowlServer do
     end
   end
 
-  defp ok_new_game_response(new_state) do
-    {:reply, {:ok, new_state}, new_state}
+  defp game_response({:error, reason}, old_state) do
+    {:reply, {:error, reason}, old_state}
   end
 
-  defp error_old_game_response(old_game, reason) do
-    {:reply, {:error, reason}, old_game}
+  defp game_response(new_state, _old_state) do
+    {:reply, {:ok, new_state}, new_state}
   end
 
 
   def handle_call(:state, _from, game) do
-    ok_new_game_response(game)
+    game_response(game, game)
   end
 
   def handle_call({:add_player, player}, _from, game) do
-    case TeamGame.add_player(game) do
-      {:error, reason} ->
-        error_old_game_response(game, reason)
-      new_game ->
-        ok_new_game_response(new_game)
-    end
+    game_response(TeamGame.add_player(game, player), game)
   end
 
   def handle_call(:start_turn, {pid, _alias} = _client, game) do
     {:ok, timer} = :timer.send_interval(1000, self(), {:tick, pid})
+    new_game = %{game | timer: timer}
 
-    game
+    new_game
     |> Charades.draw_card
-    |> ok_new_game_response
+    |> game_response(new_game)
   end
-
 
   def handle_call(:time, _from, game) do
     {:reply, {:ok, Charades.time_left(game)}, game}
   end
 
   def handle_call(:draw_card, _from, game) do
-    case Charades.draw_card(game) do
-      {:error, reason} ->
-        error_old_game_response(game, reason)
-      new_game ->
-        ok_new_game_response(new_game)
-    end
+    game_response(Charades.draw_card(game), game)
   end
 
   def handle_call(:shuffle, _from, %{ options: %{ deck: deck } = options} = game) do
     %{ game | options: %{ options | deck: Cards.shuffle(deck)}}
-    |> ok_new_game_response
+    |> game_response(game)
   end
 
   def handle_call(:next_player, _from, %{team_game: team_game} = game) do
-    %{game | team_game: TeamGame.end_turn(team_game) }
-    |> ok_new_game_response()
+    %{game | team_game: TeamGame.end_turn(team_game, &CharadesTurn.new/1) }
+    |> game_response(game)
   end
 
   def handle_call(:correct_card, _from, game) do
-    game
-    |> Charades.card_is_correct
-    |> ok_new_game_response
+    game_response(Charades.card_is_correct(game), game)
   end
 
   def handle_call(:skip_card, _from, game) do
-    case Charades.skip_card(game) do
-      {:error, reason} ->
-        error_old_game_response(game, reason)
-      new_game ->
-        ok_new_game_response(new_game)
-    end
+    game_response(Charades.skip_card(game), game)
   end
 
   def handle_call(:reviewed_cards, _from, game) do

@@ -26,11 +26,11 @@ defmodule Gamenite.TeamGame.Player do
     |> validate_length(:name, min: 2, max: 15)
   end
 
-
   def update_name(player, name) do
     name_changeset(player, %{name: name})
     |> apply_action(:update)
   end
+
 
   def new(attrs) do
     id = Ecto.UUID.generate()

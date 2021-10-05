@@ -9,15 +9,16 @@ defmodule Gamenite.TeamGame.Team do
     field :color, :string
     field :turns, {:array, :map}, default: []
     field :players, {:array, :map}
+    field :current_player, :map
   end
-  @fields [:id, :name, :score, :color, :turns, :players]
+  @fields [:id, :name, :score, :color, :turns, :players, :current_player]
 
   @team_colors ["C0392B", "2980B9", "27AE60", "884EA0", "D35400", "FF33B8", "F1C40F"]
   def changeset(team, fields) do
     team
     |> name_changeset(fields)
     |> cast(fields, @fields)
-    |> validate_required([:players, :color])
+    |> validate_required([:players, :color, :current_player])
     |> validate_number(:score, greater_than_or_equal_to: 0)
     |> validate_inclusion(:color, @team_colors)
     |> validate_length(:players, min: 2, message: "Not enough players to start game.")
@@ -30,13 +31,14 @@ defmodule Gamenite.TeamGame.Team do
     |> validate_length(:name, min: 1, max: 15)
   end
 
-  def new(players, index) do
+  def new(players, index) when players > 0 do
     id = Ecto.UUID.generate()
     name = "Team #{Integer.to_string(index)}"
     color = Enum.at(@team_colors, index - 1)
 
-    %{color: color, name: name, id: id, players: players}
+    %{color: color, name: name, id: id, players: players, current_player: hd(players)}
   end
+
 
   def update_name(team, name) do
     team

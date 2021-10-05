@@ -6,20 +6,36 @@ defmodule Gamenite.TeamGame do
   alias Gamenite.Lists
   alias Gamenite.TeamGame.Team
 
-  @max_teams Application.get_env(:gamenite, :max_teams)
-  def changeset(team_game, %{teams: teams} = fields) do
-    current_team = hd(teams)
-    current_player = hd(current_team.players)
+  embedded_schema do
+    field :current_turn, :map
+    embeds_one :current_team, Team
+    embeds_many :teams, Team
+  end
 
+  @max_teams Application.get_env(:gamenite, :max_teams)
+  def changeset(team_game, %{teams: [current_team | _tail] = teams } = fields) when length(teams) > 0 do
     team_game
     |> Map.put(:current_team, current_team)
-    |> Map.put(:current_player, current_player)
-    |> cast(fields, [])
-    |> cast_embed(:teams)
+    |> team_changeset(fields)
+  end
+  def changeset(team_game, fields) do
+    team_game
+    |> team_changeset(fields)
+  end
+
+  def team_changeset(team_game, fields) do
+    team_game
+    |> cast(fields, [:current_turn])
     |> cast_embed(:current_team)
-    |> cast_embed(:current_player)
-    |> validate_required([:teams, :current_team, :current_player])
+    |> cast_embed(:teams)
+    |> validate_required([:teams, :current_team])
     |> validate_length(:teams, min: 2, max: @max_teams)
+  end
+
+  def new(fields) do
+    %__MODULE__{}
+    |> changeset(fields)
+    |> apply_action(:update)
   end
 
   def end_turn(game, turn_constructor) do
@@ -35,11 +51,11 @@ defmodule Gamenite.TeamGame do
     |> replace_current_team(Team.add_turn(current_team, current_turn))
   end
 
-  defp inc_player(%{ current_team: current_team, current_player: current_player } = game) do
+  defp inc_player(%{ current_team: current_team } = game) do
     update_current_item_and_increment_list(
       game,
       current_team.players,
-      current_player,
+      current_team.current_player,
       &update_player/2,
       &replace_current_player/2)
   end
@@ -73,8 +89,8 @@ defmodule Gamenite.TeamGame do
     |> Map.replace!(:current_team, next_team)
   end
 
-  defp update_player(%{ current_team: current_team, current_player: current_player } = game, player) do
-    player_index = Lists.find_element_index_by_id(current_team.players, current_player.id)
+  defp update_player(%{ current_team: current_team, } = game, player) do
+    player_index = Lists.find_element_index_by_id(current_team.players, current_team.current_player.id)
 
     game
     |> put_in([:current_team, :players, Access.at(player_index)], player)
@@ -82,11 +98,11 @@ defmodule Gamenite.TeamGame do
 
   def replace_current_player(game, next_player) do
     game
-    |> Map.put(:current_player, next_player)
+    |> put_in([:current_team, :current_player], next_player)
   end
 
-  def new_turn(%{ current_player: current_player } = game, turn_constructor) do
-    turn = turn_constructor.(current_player)
+  def new_turn(%{ current_team: current_team } = game, turn_constructor) do
+    turn = turn_constructor.(current_team.current_player)
 
     game
     |> Map.replace!(:current_turn, turn)
@@ -129,7 +145,7 @@ defmodule Gamenite.TeamGame do
   defp player_exists?(%{teams: teams} = _game, player) do
     teams
     |> Enum.flat_map(fn team -> team.players end)
-    |> Enum.any?(fn current_player -> current_player.id == player.id end)
+    |> Enum.any?(fn team_player -> team_player.id == player.id end)
   end
 
   def start_turn(%{ current_turn: current_turn } = game) do
@@ -141,7 +157,7 @@ defmodule Gamenite.TeamGame do
     Enum.any?(current_team.players, fn player -> player.id == id end)
   end
 
-  def current_player?(%{current_player: current_player} = _game, id) do
-    current_player.id == id
+  def current_player?(%{current_team: current_team} = _game, id) do
+    current_team.current_player.id == id
   end
 end
