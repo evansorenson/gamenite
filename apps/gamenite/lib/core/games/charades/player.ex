@@ -1,4 +1,4 @@
-defmodule Gamenite.Games.CharadesPlayer do
+defmodule Gamenite.Games.Charades.Player do
   use Accessible
   use Ecto.Schema
   import Ecto.Changeset
@@ -9,7 +9,6 @@ defmodule Gamenite.Games.CharadesPlayer do
     field :name, :string
     field :color, :string, default: nil
     field :turns, {:array, :map}
-    embeds_one :card, Card
   end
 
   def changeset(charades_player, attrs) do

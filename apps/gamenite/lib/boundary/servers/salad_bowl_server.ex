@@ -89,7 +89,14 @@ defmodule Gamenite.SaladBowlServer do
   end
 
   def handle_call(:correct_card, _from, game) do
-    game_response(Charades.card_is_correct(game), game)
+    case Charades.card_is_correct(game) do
+      {:review_cards, new_game} ->
+        new_game
+        |> stop_timer
+        |> game_response(game)
+      new_game ->
+        game_response(new_game, game)
+    end
   end
 
   def handle_call(:skip_card, _from, game) do
@@ -105,8 +112,13 @@ defmodule Gamenite.SaladBowlServer do
     new_game = put_in(game, [:current_turn, :time_remaining_in_sec], 0)
     {:noreply, game}
   end
+
   def handle_info({:tick, pid}, game) do
     Process.send(pid, :tick)
     new_game = update_in(game, [:current_turn, :time_remaining_in_sec], &(&1 - 1))
+  end
+
+  defp stop_timer(%{timer: timer, current_turn: current_turn} = game) do
+    Process.cancel_timer(timer)
   end
 end

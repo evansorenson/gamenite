@@ -14,8 +14,8 @@ defmodule Gamenite.TeamGame.Player do
   def changeset(player, attrs) do
     player
     |> name_changeset(attrs)
-    |> cast(attrs, [:id, :color, :turns])
-    |> validate_required([:id, :name, :color])
+    |> cast(attrs, [:color, :turns])
+    |> validate_required([:name, :color])
     |> validate_length(:name, min: 2, max: 15)
   end
 

@@ -13,28 +13,28 @@ defmodule Gamenite.TeamGame do
   end
 
   @max_teams Application.get_env(:gamenite, :max_teams)
-  def changeset(team_game, %{teams: [current_team | _tail] = teams } = fields) when length(teams) > 0 do
+  def changeset(team_game, %{teams: teams } = params) when length(teams) > 0 do
     team_game
-    |> Map.put(:current_team, current_team)
-    |> team_changeset(fields)
+    |> Map.put(:current_team, hd(teams))
+    |> team_changeset(params)
   end
-  def changeset(team_game, fields) do
+  def changeset(team_game, params) do
     team_game
-    |> team_changeset(fields)
+    |> team_changeset(params)
   end
 
-  def team_changeset(team_game, fields) do
+  def team_changeset(team_game, params) do
     team_game
-    |> cast(fields, [:current_turn])
+    |> cast(params, [])
     |> cast_embed(:current_team)
     |> cast_embed(:teams)
     |> validate_required([:teams, :current_team])
     |> validate_length(:teams, min: 2, max: @max_teams)
   end
 
-  def new(fields) do
+  def new(params) do
     %__MODULE__{}
-    |> changeset(fields)
+    |> changeset(params)
     |> apply_action(:update)
   end
 
@@ -101,9 +101,7 @@ defmodule Gamenite.TeamGame do
     |> put_in([:current_team, :current_player], next_player)
   end
 
-  def new_turn(%{ current_team: current_team } = game, turn_constructor) do
-    turn = turn_constructor.(current_team.current_player)
-
+  def new_turn(game, turn) do
     game
     |> Map.replace!(:current_turn, turn)
   end
@@ -159,5 +157,10 @@ defmodule Gamenite.TeamGame do
 
   def current_player?(%{current_team: current_team} = _game, id) do
     current_team.current_player.id == id
+  end
+
+  def add_score(game, score) do
+    game
+    |> update_in([:current_team, :score], &(&1 + score))
   end
 end

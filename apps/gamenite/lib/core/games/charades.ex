@@ -2,7 +2,7 @@ defmodule Gamenite.Games.Charades do
   alias Gamenite.TeamGame
   alias Gamenite.Cards
   alias Gamenite.Lists
-  alias Gamenite.Games.CharadesTurn
+  alias Gamenite.Games.Charades.{Turn}
 
   @doc """
   Moves to next player's and team's turn.
@@ -12,18 +12,23 @@ defmodule Gamenite.Games.Charades do
   def end_turn(game) do
     game
     |> move_cards_after_review
-    |> TeamGame.new_turn(&CharadesTurn.new/1)
+    |> score_correct_cards
+    |> new_turn
   end
 
-  def draw_card(%{ current_player: current_player, deck: deck } = game) do
+  def new_turn(%{current_team: current_team} = game) do
+  game
+  |> TeamGame.new_turn(
+    Turn.new(%{player_name: current_team.current_player.name}))
+  end
+
+  def draw_card(%{ current_team: current_team, deck: deck } = game) do
     case Cards.draw(deck) do
       {:error, reason} ->
         {:error, reason}
       { drawn_cards, remaining_deck } ->
-        new_player = %{current_player | card: hd(drawn_cards)}
-
         game
-        |> TeamGame.replace_current_player(new_player)
+        |> put_in([:current_turn, :card], hd(drawn_cards))
         |> Map.put(:deck, remaining_deck)
     end
   end
@@ -50,24 +55,33 @@ defmodule Gamenite.Games.Charades do
     |> draw_or_review_cards
   end
 
-  defp update_turn_cards(%{current_player: current_player} = game, card_key) do
+  def move_card_during_review(game, card) do
+    ## move from correct to incorrect
+  end
+
+  defp update_turn_cards(%{current_turn: current_turn} = game, _card_key)
+  when is_nil(current_turn.card) do
     game
-    |> update_in([:current_turn, card_key], fn cards -> [current_player.card | cards] end)
-    |> put_in([:current_player, :card], nil)
+  end
+  defp update_turn_cards(%{current_turn: current_turn} = game, card_key) do
+    game
+    |> update_in([:current_turn, card_key], fn cards -> [current_turn.card | cards] end)
+    |> put_in([:current_turn, :card], nil)
   end
 
   defp draw_or_review_cards(%{ deck: deck } = game)
   when length(deck) == 0 do
-    game
-    |> stop_timer
+    new_game = game
     |> put_in([:current_turn, :needs_review], true)
+
+    {:review_cards, new_game}
   end
   defp draw_or_review_cards(game), do: draw_card(game)
 
   defp move_cards_after_review(game) do
     game
     |> update_turn_cards(:skipped_cards)
-    |> move_incorrect_back_to_deck()
+    |> move_incorrect_back_to_deck
   end
 
   defp move_incorrect_back_to_deck(%{ deck: deck, current_turn: current_turn } = game) do
@@ -77,30 +91,11 @@ defmodule Gamenite.Games.Charades do
     |> update_deck(new_deck)
   end
 
-  def start_timer(%{turn_length: turn_length, current_turn: %{time_remaining_in_ms: nil }} = game, client_pid) do
-    timeout = DateTime.diff(end_at, now, :millisecond)
-    do_start_timer(game, client_pid, timeout)
-  end
-  def start_timer(%{xcurrent_turn: %{time_remaining_in_ms: time_remaining }} = game, client_pid) do
-    do_start_timer(game, client_pid, time_remaining)
-  end
-  defp do_start_timer(game, client_pid, timeout) do
-    timer = Process.send_after(client_pid, :end_turn, timeout)
+  defp score_correct_cards(%{current_turn: current_turn} = game) do
+    turn_score = length(current_turn.correct_cards)
 
     game
-    |> put_in([:current_turn, :timer], timer)
-  end
-
-  def time_left(%{current_turn: current_turn} = _game) do
-    Process.read_timer(current_turn.timer)
-  end
-
-  defp stop_timer(%{timer: timer, current_turn: current_turn} = game) do
-    new_turn = %{current_turn | time_remaining_in_ms: time_left(game)}
-    Process.cancel_timer(timer)
-
-    game
-    |> Map.put(:current_turn, new_turn)
+    |> TeamGame.add_score(turn_score)
   end
 
   def add_cards_to_deck(%{ deck: deck } = game, cards) do
@@ -139,7 +134,7 @@ defmodule Gamenite.Games.Charades do
     |> update_deck(starting_deck)
   end
 
-  defp update_deck(game, new_deck) do
+  def update_deck(game, new_deck) do
     %{game | deck: new_deck}
   end
 end

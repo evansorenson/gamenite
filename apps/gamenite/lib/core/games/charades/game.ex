@@ -1,5 +1,6 @@
-defmodule Gamenite.Games.CharadesGame do
+defmodule Gamenite.Games.Charades.Game do
   use Ecto.Schema
+  use Accessible
   import Ecto.Changeset
   alias Gamenite.TeamGame
   alias Gamenite.TeamGame.Team
@@ -23,7 +24,6 @@ defmodule Gamenite.Games.CharadesGame do
     charades_game
     |> TeamGame.changeset(params)
     |> cast(params, @fields)
-    |> validate_required([:starting_deck])
     |> validate_number(:turn_length, less_than_or_equal_to: 120)
     |> validate_number(:turn_length, greater_than_or_equal_to: 30)
     |> validate_number(:skip_limit, greater_than_or_equal_to: 0)
