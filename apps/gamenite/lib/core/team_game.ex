@@ -14,16 +14,14 @@ defmodule Gamenite.TeamGame do
 
   @max_teams Application.get_env(:gamenite, :max_teams)
   def changeset(team_game, %{teams: teams } = params) when length(teams) > 0 do
-    team_game
-    |> Map.put(:current_team, hd(teams))
-    |> team_changeset(params)
+    team_changeset(team_game, Map.put(params, :current_team, hd(teams)))
   end
   def changeset(team_game, params) do
-    team_game
-    |> team_changeset(params)
+    team_changeset(team_game, params)
   end
 
   def team_changeset(team_game, params) do
+
     team_game
     |> cast(params, [])
     |> cast_embed(:current_team)
@@ -38,12 +36,11 @@ defmodule Gamenite.TeamGame do
     |> apply_action(:update)
   end
 
-  def end_turn(game, turn_constructor) do
+  def end_turn(game) do
     game
     |> append_turn_to_team
     |> inc_player
     |> inc_team
-    |> new_turn(turn_constructor)
   end
 
   defp append_turn_to_team(%{ current_team: current_team, current_turn: current_turn } = game) do

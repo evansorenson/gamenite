@@ -5,8 +5,7 @@
   <% is_nil(@game) -> %>
     <table class="table">
       <tbody>
-        <%= form_for @game_changeset, "#", [phx_change: :validate], fn f -> %>
-
+        <%= form_for @game_changeset, "#", [phx_change: :validate, phx_submit: :start], fn f -> %>
           <tr class="rounded-t-3xl">
             <td class="options-column">
               <%= label f, :skip_limit, "Skip Limit" %>
@@ -58,11 +57,11 @@
               <%= select f, :cards_per_player, 2..10 %>
             </td>
           </tr>
+
+          <%= submit "Start Game" %>
         <% end %>
       </tbody>
     </table>
-
-    <button phx-click="start_game" phx-target="<%= @myself %>">Start Game</button>
 
   <% @game.finished? -> %>
     <h1>Game is finished!</h1>

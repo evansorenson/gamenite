@@ -1,58 +1,53 @@
 defmodule Gamenite.Games.Charades do
-  alias Gamenite.TeamGame
-  alias Gamenite.Cards
-  alias Gamenite.Lists
-  alias Gamenite.Games.Charades.{Turn}
+  alias Gamenite.Games.Charades.{Turn, Game}
+  import Ecto.Changeset
 
-  @doc """
-  Moves to next player's and team's turn.
-
-  Returns %__MODULE__{}.
-  """
-  def end_turn(game) do
-    game
-    |> move_cards_after_review
-    |> score_correct_cards
-    |> new_turn
+  def create_charades_game(attrs \\ %{}) do
+    %Game{}
+    |> Game.changeset(attrs)
+    |> apply_action(:update)
   end
 
-  def new_turn(%{current_team: current_team} = game) do
-  game
-  |> TeamGame.new_turn(
-    Turn.new(%{player_name: current_team.current_player.name}))
+  def create_salad_bowl_game(attrs \\ %{}) do
+    %Game{}
+    |> Game.salad_bowl_changeset(attrs)
+    |> apply_action(:update)
   end
 
-  def draw_card(%{ current_team: current_team, deck: deck } = game) do
-    case Cards.draw(deck) do
-      {:error, reason} ->
-        {:error, reason}
-      { drawn_cards, remaining_deck } ->
-        game
-        |> put_in([:current_turn, :card], hd(drawn_cards))
-        |> Map.put(:deck, remaining_deck)
-    end
+  def create_turn(attrs \\ %{}) do
+    Turn.new(attrs)
   end
 
-  def skip_card(%{ current_turn: current_turn, skip_limit: skip_limit } = _game, _card)
+  def new_turn(%{current_team: current_team} = _game) do
+    Turn.new(%{player_name: current_team.current_player.name})
+  end
+
+  def skip_card(%{ current_turn: current_turn, skip_limit: skip_limit } = _game)
   when length(current_turn.skipped_cards) >= skip_limit
   do
-    {:error, "You have reached skip limit of #{current_turn.skip_limit}"}
+    {:error, "You have reached skip limit of #{skip_limit}."}
   end
-  def skip_card(%{ deck: deck} = _game, _card)
+  def skip_card(%{ deck: deck} = _game)
   when length(deck) == 0
   do
     {:error, "Cannot skip card. No cards left in deck."}
   end
+  def skip_card(%{current_turn: current_turn} = _game)
+  when is_nil(current_turn.card) do
+    {:error, "Card is nil."}
+  end
   def skip_card(game) do
     game
     |> update_turn_cards(:skipped_cards)
-    |> draw_or_review_cards
   end
 
-  def card_is_correct(game) do
+  def correct_card(%{current_turn: current_turn} = _game)
+  when is_nil(current_turn.card) do
+    {:error, "Card in nil."}
+  end
+  def correct_card(game) do
     game
     |> update_turn_cards(:correct_cards)
-    |> draw_or_review_cards
   end
 
   def move_card_during_review(game, card) do
@@ -69,16 +64,7 @@ defmodule Gamenite.Games.Charades do
     |> put_in([:current_turn, :card], nil)
   end
 
-  defp draw_or_review_cards(%{ deck: deck } = game)
-  when length(deck) == 0 do
-    new_game = game
-    |> put_in([:current_turn, :needs_review], true)
-
-    {:review_cards, new_game}
-  end
-  defp draw_or_review_cards(game), do: draw_card(game)
-
-  defp move_cards_after_review(game) do
+  def move_cards_after_review(game) do
     game
     |> update_turn_cards(:skipped_cards)
     |> move_incorrect_back_to_deck
@@ -89,13 +75,6 @@ defmodule Gamenite.Games.Charades do
 
     game
     |> update_deck(new_deck)
-  end
-
-  defp score_correct_cards(%{current_turn: current_turn} = game) do
-    turn_score = length(current_turn.correct_cards)
-
-    game
-    |> TeamGame.add_score(turn_score)
   end
 
   def add_cards_to_deck(%{ deck: deck } = game, cards) do

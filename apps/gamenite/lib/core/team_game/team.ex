@@ -1,4 +1,4 @@
-defmodule Gamenite.TeamGame.Team do
+ defmodule Gamenite.TeamGame.Team do
   use Accessible
   use Ecto.Schema
   import Ecto.Changeset

@@ -3,19 +3,17 @@ defmodule CharadesCoreTest do
   use GameBuilders
 
   alias Gamenite.Games.Charades
-  alias Gamenite.Games.Charades.{Game, Player, Turn}
 
   defp working_game(context) do
     teams = build_teams([2,2], %Player{})
     deck = build_deck(3)
 
-    game = Game.new(%{teams: teams, deck: deck, skip_limit: 1})
-    |> Game.create()
+    game = Charades.create_charades_game(%{teams: teams, deck: deck, skip_limit: 3})
     |> elem(1)
-    |> Map.put(:current_turn, Turn.new(%{}))
+    |> Map.put(:current_turn, Charades.create_turn(%{card: 1, correct_cards: [4, 5], skipped_cards: [6, 7]}))
 
     new_context = context
-    |> Map.put(:charades, game)
+    |> Map.put(:game, game)
     {:ok , new_context}
   end
 
@@ -23,10 +21,8 @@ defmodule CharadesCoreTest do
     teams = build_teams([2,2], %Player{})
     deck = build_deck(3)
 
-    salad_bowl = Game.new(%{teams: teams, deck: deck, skip_limit: 1, rounds: ["Catchphrase", "Password", "Charades"]})
-    |> Game.create()
+    salad_bowl = Charades.create_salad_bowl_game(%{teams: teams, deck: deck, skip_limit: 1, rounds: ["Catchphrase", "Password", "Charades"]})
     |> elem(1)
-    |> Map.put(:current_turn, Turn.new(%{}))
 
     {:ok, Map.put(context, :salad_bowl, salad_bowl)}
   end
@@ -40,46 +36,61 @@ defmodule CharadesCoreTest do
   end
 
   describe "end turn" do
-    test "skipped or incorrect cards back to deck" do
+    setup [:working_game]
 
+    test "skipped or incorrect cards back to deck", %{game: game} do
+      new_game = Charades.move_cards_after_review(game)
+
+      assert length(new_game.deck) == 6
+      assert Enum.member?(new_game.deck, 1)
+      assert Enum.member?(new_game.deck, 6)
+      assert Enum.member?(new_game.deck, 7)
+      refute Enum.member?(new_game.deck, 4)
+      refute Enum.member?(new_game.deck, 5)
     end
 
-    test "score correct cards and add to team score" do
-
+    test "new turn created", %{game: game} do
+      turn = Charades.new_turn(game)
+      assert turn.player_name == game.current_team.current_player.name
     end
+  end
 
-    test "new turn created" do
+  describe "update fields" do
+    setup [:working_game]
 
+    test "update deck", %{game: game} do
+      game_with_new_deck = Charades.update_deck(game, [1, 2, 3])
+      assert game_with_new_deck.deck == [1, 2, 3]
     end
   end
 
   describe "card logic"  do
     setup [:working_game]
 
-    test "drawing card puts card into current player until deck is empty", %{charades: charades} do
-      charades
-      |> Charades.draw_card()
-      |> assert_card_drawn("1")
-      |> Charades.draw_card()
-      |> assert_card_drawn("2")
-      |> Charades.draw_card()
-      |> assert_card_drawn("3")
-      |> Charades.draw_card()
-      |> assert_not_enough_in_deck()
+    test "card is added to correct cards in turn when correct", %{game: game} do
+      game
+      |> Charades.correct_card
+      |> assert_card_moved(:correct_cards, 3)
+      |> assert_card_nil
     end
 
-    test "card is added to correct cards in turn when correct", %{charades: charades} do
-      charades
-      |> Charades.draw_card()
-      |> Charades.card_is_correct()
-      |> assert_card_moved(:correct_cards, 1)
-      |> assert_card_drawn("2")
-      |> Charades.card_is_correct()
-      |> assert_card_moved(:correct_cards, 2)
-      |> assert_card_drawn("3")
-      |> Charades.card_is_correct()
-      |> assert_needs_review
-      |> assert_card_moved(:correct_cards, 3)
+    test "skips card successfully", %{game: game} do
+      game
+      |> Charades.skip_card
+      |> assert_card_moved(:skipped_cards, 3)
+      |> assert_card_nil
+    end
+
+    test "skip cart but limit is reached", %{game: game} do
+      %{game | skip_limit: 0}
+      |> Charades.skip_card
+      |> assert_skip_limit_reached(0)
+    end
+
+    test "skip cart but deck is empty", %{game: game} do
+      error = %{game | deck: []}
+      |> Charades.skip_card
+      assert error = {:error, "Cannot skip card. No cards left in deck."}
     end
 
     defp assert_card_moved(game, pile, length_of_cards ) do
@@ -92,50 +103,13 @@ defmodule CharadesCoreTest do
       game
     end
 
-    defp assert_skip_limit_reached(error, charades) do
-      assert error = {:error, "You have reached skip limit of #{charades.skip_limit}"}
+    defp assert_skip_limit_reached(error, skip_limit) do
+      assert error == {:error, "You have reached skip limit of #{skip_limit}."}
     end
 
-    test "skips cards and reaches limit", %{charades: charades} do
-      charades
-      |> Charades.draw_card()
-      |> Charades.skip_card()
-      |> assert_card_moved(:skipped_cards, 1)
-      |> assert_card_drawn("2")
-      |> Charades.skip_card()
-      |> assert_skip_limit_reached(charades)
-    end
-
-    test "skip cards and deck is depleted", %{charades: charades} do
-      charades
-      |> Charades.draw_card()
-      |> Charades.skip_card()
-      |> assert_card_moved(:skipped_cards, 1)
-      |> assert_card_drawn("2")
-      |> Charades.skip_card()
-      |> assert_card_moved(:skipped_cards, 2)
-      |> assert_card_drawn("3")
-      |> Charades.skip_card()
-      |> assert_needs_review
-      |> assert_card_moved(:skipped_cards, 3)
-    end
-  end
-
-  defp assert_card_drawn(%{current_turn: current_turn} = game, card) do
-    assert current_turn.card.face == card
-    game
-  end
-
-  defp assert_not_enough_in_deck(error) do
-    assert error == {:error, "Not enough cards in deck."}
-  end
-
-  describe "update fields" do
-    setup [:working_game]
-
-    test "update deck", %{charades: charades} do
-      game_with_new_deck = Charades.update_deck(charades, [1, 2, 3])
-      assert game_with_new_deck.deck == [1, 2, 3]
+    defp assert_card_nil(%{current_turn: current_turn} = game) do
+      assert is_nil(current_turn.card)
+      game
     end
   end
 end

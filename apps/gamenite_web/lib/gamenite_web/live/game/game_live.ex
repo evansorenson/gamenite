@@ -3,7 +3,8 @@ defmodule GameniteWeb.GameLive do
 
   alias Phoenix.Socket.Broadcast
   alias GamenitePersistance.Accounts
-  alias Gamenite.Games.{Charades, CharadesGame, CharadesPlayer}
+  alias Gamenite.Games.Charades
+  alias Gamenite.Games.Charades.{Game, Player}
   alias Gamenite.TeamGame
   alias Gamenite.SaladBowlAPI
 
@@ -23,17 +24,7 @@ defmodule GameniteWeb.GameLive do
     }
   end
 
-  defp initialize_game(socket, slug) do
-    cond do
-      SaladBowlAPI.exists?(slug) ->
-        {:ok, game } = SaladBowlAPI.state(slug)
-        assign(socket, game: game)
-      true ->
-        IO.puts "nooooo king"
-        assign(socket, game: nil)
-    end
-  end
-
+  @impl true
   def update(%{ game: game } = _assigns, socket) do
     {:ok,
     socket
@@ -41,35 +32,26 @@ defmodule GameniteWeb.GameLive do
     }
   end
 
-  @impl true
-  def handle_event("start_game", _payload, socket) do
-    if SaladBowlAPI.exists?(socket.assigns.slug) do
-      {:noreply, put_flash(socket, :error, "Game already started.")}
-    else
-      case CharadesGame.create(socket.assigns.game_changeset) do
-        {:ok, game} ->
-          SaladBowlAPI.start_game(game, socket.assigns.slug)
-          broadcast_game_update(socket.assigns.slug, game)
-          {:noreply,
-          socket
-          |> assign(:game, game)
-          |> put_flash(:info, "Game created successfully.")}
-        {:error, _reason} ->
-          {:noreply, put_flash(socket, :error, "Error creating game.")}
-      end
+  defp initialize_game(socket, slug) do
+    cond do
+      SaladBowlAPI.exists?(slug) ->
+        {:ok, game } = SaladBowlAPI.state(slug)
+        assign(socket, game: game)
+      true ->
+        assign(socket, game: nil)
     end
   end
+
+
 
   defp game_changeset(connected_users, params) do
     teams = connected_users
     |> users_to_players
-    |> Enum.map(fn player -> CharadesPlayer.new(player) end)
+    |> Enum.map(fn player -> Player.new(player) end)
     |> TeamGame.Team.split_teams(2)
 
-    params
-    |> Map.put(:teams, teams)
-    |> CharadesGame.new_salad_bowl()
-    |> Map.put(:action, :update)
+    %Game{}
+    |> Game.salad_bowl_changeset(Map.put(params, :teams, teams))
   end
 
   defp users_to_players(connected_users) do
@@ -88,14 +70,32 @@ defmodule GameniteWeb.GameLive do
     )
   end
 
+  @impl true
+  def handle_event("start", %{"game_changeset" => params}, socket) do
+    IO.inspect params
+
+
+    if SaladBowlAPI.exists?(socket.assigns.slug) do
+      {:noreply, put_flash(socket, :error, "Game already started.")}
+    else
+      case socket.assigns.game_changeset do
+        {:ok, game} ->
+          SaladBowlAPI.start_game(game, socket.assigns.slug)
+          broadcast_game_update(socket.assigns.slug, game)
+          {:noreply,
+          socket
+          |> assign(:game, game)
+          |> put_flash(:info, "Game created successfully.")}
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, "Error creating game.")}
+      end
+    end
+  end
 
   @impl true
   def handle_event("validate", %{"game_changeset" => params}, socket) do
-    game_changeset =
-      %CharadesGame{}
-      |> CharadesGame.salad_bowl_changeset(params)
-
-    {:noreply, assign(socket, game_changeset: game_changeset)}
+    IO.inspect "hello world!!!!"
+    {:noreply, assign(socket, game_changeset: game_changeset(socket.assigns.connected_users, params))}
   end
 
   @impl true
@@ -110,15 +110,8 @@ defmodule GameniteWeb.GameLive do
     {:ok, game} = SaladBowlAPI.start_turn(socket.assigns.slug)
     broadcast_game_update(socket.assigns.slug, game)
 
-
-    :timer.apply_interval(1000, __MODULE__, &read_timer/1, [socket.assigns.slug] )
     {:noreply, assign(socket, game: game)}
   end
-
-  defp read_timer(slug) do
-
-  end
-
 
   @impl true
   def handle_event("skip", _params, socket) do

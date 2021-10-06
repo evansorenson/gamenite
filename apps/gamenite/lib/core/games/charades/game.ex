@@ -30,10 +30,14 @@ defmodule Gamenite.Games.Charades.Game do
     |> validate_number(:skip_limit, less_than_or_equal_to: 5)
   end
 
-
   def salad_bowl_changeset(salad_bowl_game, %{rounds: rounds} = params) do
+    params = Map.put(params, :current_round, hd(rounds))
+
     salad_bowl_game
-    |> Map.put(:current_round, hd(rounds))
+    |> salad_bowl_changeset(params)
+  end
+  def salad_bowl_changeset(salad_bowl_game, params) do
+    salad_bowl_game
     |> TeamGame.changeset(params)
     |> changeset(params)
     |> cast(params, [:rounds, :cards_per_player])
@@ -43,18 +47,4 @@ defmodule Gamenite.Games.Charades.Game do
     |> validate_number(:cards_per_player, greater_than: 2, less_than_or_equal_to: 10)
   end
 
-  def create(changeset) do
-    changeset
-    |> apply_action(:update)
-  end
-
-  def new_salad_bowl(params) do
-    %__MODULE__{}
-    |> salad_bowl_changeset(params)
-  end
-
-  def new(fields) do
-    %__MODULE__{}
-    |> changeset(fields)
-  end
 end
