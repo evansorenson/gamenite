@@ -1,6 +1,9 @@
 defmodule SaladBowlTest do
   use ExUnit.Case
   use GameBuilders
+
+  alias Gamenite.SaladBowlAPI
+
   alias Gamenite.Games.Charades
   alias Gamenite.Games.Charades.{Game, Player}
 
@@ -8,92 +11,54 @@ defmodule SaladBowlTest do
     teams = build_teams([2,2], %Player{})
     deck = build_deck(3)
 
-    salad_bowl = Charades.create_salad_bowl_game(%{teams: teams, deck: deck, skip_limit: 1, rounds: ["Catchphrase", "Password", "Charades"]})
+    salad_bowl = Charades.create_salad_bowl(%{teams: teams, deck: deck, skip_limit: 1, rounds: ["Catchphrase", "Password", "Charades"]})
     |> elem(1)
 
     {:ok, Map.put(context, :salad_bowl, salad_bowl)}
   end
 
-  test "score correct cards and add to team score", %{turn_over: game} do
-    new_game = Charades.end_turn(game)
-    assert hd(new_game.teams).score == 2
+  defp start_game(game) do
+    room_slug = Gamenite.RoomAPI.generate_slug
+    SaladBowlAPI.start_game(game, room_slug)
+    room_slug
   end
 
-
-  describe "card logic"  do
+  describe "integration testing" do
     setup [:build_salad_bowl]
 
-    test "drawing card puts card into current player until deck is empty", %{charades: charades} do
-      charades
-      |> SaladBowlAPI.draw_card()
-      |> assert_card_drawn("1")
-      |> SaladBowlAPI.draw_card()
-      |> assert_card_drawn("2")
-      |> SaladBowlAPI.draw_card()
-      |> assert_card_drawn("3")
-      |> SaladBowlAPI.draw_card()
-      |> assert_not_enough_in_deck()
-    end
+    # test "score correct cards and add to team score", %{salad_bowl: salad_bowl} do
+    #   new_game = Charades.end_turn(salad_bowl)
+    #   assert hd(new_game.teams).score == 2
+    # end
 
-    test "card is added to correct cards in turn when correct", %{charades: charades} do
-      charades
-      |> SaladBowlAPI.draw_card()
-      |> SaladBowlAPI.card_is_correct()
-      |> assert_card_moved(:correct_cards, 1)
-      |> assert_card_drawn("2")
-      |> SaladBowlAPI.card_is_correct()
-      |> assert_card_moved(:correct_cards, 2)
-      |> assert_card_drawn("3")
-      |> SaladBowlAPI.card_is_correct()
-      |> assert_needs_review
-      |> assert_card_moved(:correct_cards, 3)
-    end
+    test "start turn, get cards correct and skip, run out of deck prompting review", %{salad_bowl: salad_bowl} do
+      slug = start_game(salad_bowl)
+      {:ok, game } = SaladBowlAPI.start_turn(slug)
+      assert game.current_turn.card.face == "1"
 
-    defp assert_card_moved(game, pile, length_of_cards ) do
-      assert length(get_in(game, [:current_turn, pile])) == length_of_cards
-      game
-    end
+      {:ok, game } = SaladBowlAPI.card_completed(slug, :correct)
+      assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :correct) == 1
+      assert game.current_turn.card.face == "2"
 
-    defp assert_needs_review({:review_cards, game}) do
+      {:ok, game } = SaladBowlAPI.card_completed(slug, :skipped)
+      assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :skipped) == 1
+      assert game.current_turn.card.face == "3"
+
+      {:error, reason } = SaladBowlAPI.card_completed(slug, :skipped)
+      assert {:error, reason } == {:error, "You have reached skip limit of #{game.skip_limit}."}
+
+      {:ok, game} = SaladBowlAPI.card_completed(slug, :correct)
+      assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :correct) == 2
       assert game.current_turn.needs_review
-      game
     end
 
-    defp assert_skip_limit_reached(error, charades) do
-      assert error == {:error, "You have reached skip limit of #{SaladBowlAPI.skip_limit}"}
+    test "timer runs out during turn", %{salad_bowl: salad_bowl} do
+      slug = start_game(%{salad_bowl | turn_length: 1})
+      {:ok, game} = SaladBowlAPI.start_turn(slug)
+      :timer.sleep(1100)
+      {:ok, game} = SaladBowlAPI.state(slug)
+      assert game.current_turn.time_remaining_in_sec == 0
+      assert game.current_turn.needs_review
     end
-
-    test "skips cards and reaches limit", %{charades: charades} do
-      charades
-      |> SaladBowlAPI.draw_card
-      |> SaladBowlAPI.skip_card
-      |> assert_card_moved(:skipped_cards, 1)
-      |> assert_card_drawn("2")
-      |> SaladBowlAPI.skip_card
-      |> assert_skip_limit_reached(charades)
-    end
-
-    test "skip cards and deck is depleted", %{charades: charades} do
-      charades
-      |> SaladBowlAPI.draw_card()
-      |> SaladBowlAPI.skip_card()
-      |> assert_card_moved(:skipped_cards, 1)
-      |> assert_card_drawn("2")
-      |> SaladBowlAPI.skip_card()
-      |> assert_card_moved(:skipped_cards, 2)
-      |> assert_card_drawn("3")
-      |> SaladBowlAPI.skip_card()
-      |> assert_needs_review
-      |> assert_card_moved(:skipped_cards, 3)
-    end
-  end
-
-  defp assert_card_drawn(%{current_turn: current_turn} = game, card) do
-    assert current_turn.card.face == card
-    game
-  end
-
-  defp assert_not_enough_in_deck(error) do
-    assert error == {:error, "Not enough cards in deck."}
   end
 end

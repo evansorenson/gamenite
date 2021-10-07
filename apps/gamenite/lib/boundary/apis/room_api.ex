@@ -31,7 +31,7 @@ defmodule Gamenite.RoomAPI do
     end
   end
 
-  defp generate_slug do
+  def generate_slug do
     slug = do_generate_slug()
     if slug_exists?(slug) do
        generate_slug()

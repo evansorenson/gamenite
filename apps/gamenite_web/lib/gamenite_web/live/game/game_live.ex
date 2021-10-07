@@ -35,7 +35,6 @@ defmodule GameniteWeb.GameLive do
     cond do
       SaladBowlAPI.exists?(slug) ->
         {:ok, game } = SaladBowlAPI.state(slug)
-        IO.inspect game
         assign(socket, game: game)
       true ->
         assign(socket, game: nil)
@@ -74,7 +73,6 @@ defmodule GameniteWeb.GameLive do
         |> put_flash(:info, "Game created successfully.")}
       else
         {:error, reason} ->
-          IO.inspect reason
           {:noreply, put_flash(socket, :error, "Error creating game.")}
       end
     end
@@ -134,6 +132,18 @@ defmodule GameniteWeb.GameLive do
         {:noreply, assign(socket, game: game)}
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, reason)}
+    end
+  end
+
+  def handle_event("submit_words", params, socket) do
+    word_list = Enum.map(params, fn {_k, v} -> v end)
+    IO.inspect word_list
+    case SaladBowlAPI.submit_cards(socket.assigns.slug, word_list, socket.assigns.user.id) do
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, reason)}
+      {:ok, game} ->
+        broadcast_game_update(socket.assigns.slug, game)
+        {:noreply, assign(socket, game: game)}
     end
   end
 

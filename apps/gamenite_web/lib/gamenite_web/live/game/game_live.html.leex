@@ -66,6 +66,23 @@
     <h1>Game is finished!</h1>
     <button>Return to lobby</button>
 
+  <% not Enum.any?(@game.deck) -> %>
+    <%= cond do %>
+
+      <% @user.id not in @game.submitted_users -> %>
+         <h1> Submit your words to be added to the Salad Bowl!</h1>
+          <form phx-target="<%= @myself%>" phx-submit="submit_words">
+            <%= for i <- 1..@game.cards_per_player do %>
+              <input type="text" name="<%= "word-#{i}" %>" />
+            <% end %>
+          <button>Submit Words</button>
+          </form>
+
+      <% true -> %>
+        <h1>Waiting for others!<h1>
+
+    <% end %>
+
   <% true -> %>
     <%= cond do %>
       <% Gamenite.TeamGame.current_player?(@game, @user.id) -> %>

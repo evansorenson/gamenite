@@ -16,7 +16,8 @@ defmodule Gamenite.Games.Charades.Game do
     field :cards_per_player, :integer, default: 4
     field :current_round, :string
     field :starting_deck, {:array, :map}
-    field :deck, {:array, :map}
+    field :deck, {:array, :map}, default: []
+    field :submitted_users, {:array, :binary_id}, default: []
     field :finished?, :boolean, default: false
   end
   @fields [:turn_length, :skip_limit, :deck]
