@@ -10,12 +10,12 @@ defmodule GameBuilders do
   alias Gamenite.TeamGame.{Team, Player}
   alias Gamenite.TeamGame
 
-  def build_game_changeset(number_of_players_on_each_team, player) do
+  def build_game_changeset(number_of_players_on_each_team, player \\ %{}) do
     teams = build_teams(number_of_players_on_each_team, player)
     TeamGame.changeset(%TeamGame{}, %{teams: teams})
   end
 
-  def build_game(number_of_players_on_each_team, player) do
+  def build_game(number_of_players_on_each_team, player \\ %{}) do
     teams = build_teams(number_of_players_on_each_team, player)
     TeamGame.new(%{teams: teams})
   end

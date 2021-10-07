@@ -6,6 +6,7 @@ defmodule Gamenite.SaladBowlServer do
   alias Gamenite.Games.Charades
 
   def init({game, _room_uuid}) do
+
     {:ok, Charades.new_turn(game)}
   end
 
@@ -61,31 +62,19 @@ defmodule Gamenite.SaladBowlServer do
   end
 
   def handle_call(:start_turn, {pid, _alias} = _client, game) do
-    {:ok, timer} = :timer.send_interval(1000, self(), {:tick, pid})
-    new_game = put_in(game, [:current_turn, :timer], timer)
-
-    new_game
-    |> Charades.draw_card
-    |> game_response(new_game)
+    game
+    |> start_timer(pid)
+    |> draw_card
+    |> game_response(game)
   end
 
   def handle_call(:end_turn, _from, game) do
     game
-    |> Charades.end_turn
+    |> Charades.move_cards_after_review
+    |> score_correct_cards
+    |> TeamGame.end_turn
+    |> Charades.new_turn
     |> game_response(game)
-  end
-
-  def handle_call(:draw_card, _from, game) do
-    game_response(Charades.draw_card(game), game)
-  end
-
-  def handle_call(:shuffle, _from, %{ options: %{ deck: deck } = options} = game) do
-    %{ game | options: %{ options | deck: Cards.shuffle(deck)}}
-    |> game_response(game)
-  end
-
-  def handle_call(:next_player, _from, game) do
-    game_response(Charades.end_turn(game), game)
   end
 
   def handle_call(:correct_card, _from, game) do
@@ -116,6 +105,11 @@ defmodule Gamenite.SaladBowlServer do
     new_game = update_in(game, [:current_turn, :time_remaining_in_sec], &(&1 - 1))
     Process.send(pid, {:tick, game}, [])
     game_response(new_game, game)
+  end
+
+  defp start_timer(game, client) do
+    {:ok, timer} = :timer.send_interval(1000, self(), {:tick, client})
+    put_in(game, [:current_turn, :timer], timer)
   end
 
   defp stop_timer(%{current_turn: current_turn} = game) do
@@ -152,11 +146,19 @@ defmodule Gamenite.SaladBowlServer do
     |> TeamGame.add_score(turn_score)
   end
 
-  def end_turn(game) do
-    game
-    |> Charades.move_cards_after_review
-    |> score_correct_cards
-    |> TeamGame.end_turn
-    |> Charades.new_turn
+  def add_cards_to_deck(%{ deck: deck } = game, cards) do
+    errors = Enum.reduce(deck, fn card, acc ->
+      case Cards.card_in_deck?(cards, card) do
+      true  -> [ "#{card.face} already in deck." | acc ]
+      _ -> acc
+      end
+    end )
+
+    do_add_cards_to_deck(game, cards, errors)
   end
+  defp do_add_cards_to_deck(%{ deck: deck } = game, cards, []) do
+    game
+    |> Charades.update_deck(cards ++ deck)
+  end
+  defp do_add_cards_to_deck(_game, _cards, errors), do: {:error, errors}
 end

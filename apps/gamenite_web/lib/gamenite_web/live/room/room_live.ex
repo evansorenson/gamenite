@@ -79,7 +79,7 @@ defmodule GameniteWeb.RoomLive do
   end
 
   def handle_info(%Broadcast{event: "room_state_update", payload: room}, socket) do
-    {:noreply, assign(socket, room: room)}
+    {:noreply, assign(socket, room: room, connected_users: room.connected_users)}
   end
 
   def handle_info(%Broadcast{event: "game_state_update", payload: game}, socket) do

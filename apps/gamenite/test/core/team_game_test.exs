@@ -3,7 +3,7 @@ defmodule Gamenite.GameTest do
   use GameBuilders
 
   defp working_game(context) do
-    {:ok, game } =  build_game([2, 2])
+    {:ok, game } =  build_game([2, 2], %{})
 
     new_context = context
     |> Map.put(:game, game)
@@ -17,7 +17,7 @@ defmodule Gamenite.GameTest do
   @min_players_on_team Application.get_env(:gamenite, :min_players_on_team)
 
   defp add_player(context) do
-    {:ok, Map.put(context, :player_to_add, build_player("newbie"))}
+    {:ok, Map.put(context, :player_to_add, %{id: "not in game"})}
   end
 
   describe "new game" do

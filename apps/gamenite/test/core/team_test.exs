@@ -3,16 +3,16 @@ defmodule TeamTest do
   use GameBuilders
 
   defp create_team(context) do
-    {:ok, Map.put(context, :team, build_team())}
+    {:ok, Map.put(context, :team, build_team(3, %{}))}
   end
 
   defp seven_players(context) do
-    players = Enum.map(1..7, &build_player(&1))
+    players = Enum.map(1..7, %{})
     {:ok, Map.put(context, :seven_players, players)}
   end
 
   defp six_players(context) do
-    players = Enum.map(1..6, &build_player(&1))
+    players = Enum.map(1..6, %{})
     {:ok, Map.put(context, :six_players, players)}
   end
 

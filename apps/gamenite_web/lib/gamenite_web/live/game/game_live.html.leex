@@ -3,9 +3,9 @@
 <p class="alert alert-danger" role="alert"><%= live_flash(@flash, :error) %></p>
 <%= cond do %>
   <% is_nil(@game) -> %>
+    <%= form_for @game_changeset, "#", [phx_change: :validate, phx_submit: :start, phx_target: @myself], fn f -> %>
     <table class="table">
       <tbody>
-        <%= form_for @game_changeset, "#", [phx_change: :validate, phx_submit: :start], fn f -> %>
           <tr class="rounded-t-3xl">
             <td class="options-column">
               <%= label f, :skip_limit, "Skip Limit" %>
@@ -57,11 +57,10 @@
               <%= select f, :cards_per_player, 2..10 %>
             </td>
           </tr>
-
-          <%= submit "Start Game" %>
-        <% end %>
-      </tbody>
-    </table>
+          </tbody>
+        </table>
+          <%= submit "Start Game", phx_disable_with: "Starting...", disabled: !@game_changeset.valid? %>
+    <% end %>
 
   <% @game.finished? -> %>
     <h1>Game is finished!</h1>
@@ -70,17 +69,16 @@
   <% true -> %>
     <%= cond do %>
       <% Gamenite.TeamGame.current_player?(@game, @user.id) -> %>
-        <%= if is_nil(@game.current_turn.started_at) do %>
-          <h1><%= @game.timer %>
+        <%= if is_nil(@game.current_turn.time_remaining_in_sec) do %>
           <button phx-click="start_turn" phx-target="<%= @myself %>">Start Turn</button>
         <% else %>
-          <h1><%= @game.current_player.card.face %></h1>
+          <h1><%= @game.current_turn.card.face %></h1>
           <button phx-click="correct" phx-target="<%= @myself %>">Correct</button>
           <button phx-click="skip" phx-target="<%= @myself %>">Skip</button>
         <% end %>
 
       <% Gamenite.TeamGame.on_current_team?(@game, @user.id) -> %>
-        <h1><%= "Your guessing clues from #{@game.current_player.name}." %><h1>
+        <h1><%= "Your guessing clues from #{@game.current_team.current_player.name}." %><h1>
       <% true -> %>
         <h1><%= "Your team is chilling." %><h1>
     <% end %>

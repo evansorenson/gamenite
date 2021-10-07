@@ -16,7 +16,6 @@
   @team_colors ["C0392B", "2980B9", "27AE60", "884EA0", "D35400", "FF33B8", "F1C40F"]
   def changeset(team, fields) do
     team
-    |> name_changeset(fields)
     |> cast(fields, @fields)
     |> validate_required([:players, :color, :current_player])
     |> validate_inclusion(:color, @team_colors)

@@ -1,14 +1,24 @@
 defmodule Gamenite.Games.Charades do
   alias Gamenite.Games.Charades.{Turn, Game}
+  alias Gamenite.Lists
   import Ecto.Changeset
 
-  def create_charades_game(attrs \\ %{}) do
+  def change_charades(%Game{} = game, attrs \\ %{}) do
+    game
+    |> Game.changeset(attrs)
+  end
+
+  def change_salad_bowl(%Game{} = game, attrs \\ %{}) do
+    game
+    |> Game.salad_bowl_changeset(attrs)
+  end
+  def create_charades(attrs) do
     %Game{}
     |> Game.changeset(attrs)
     |> apply_action(:update)
   end
 
-  def create_salad_bowl_game(attrs \\ %{}) do
+  def create_salad_bowl(attrs) do
     %Game{}
     |> Game.salad_bowl_changeset(attrs)
     |> apply_action(:update)
@@ -18,8 +28,9 @@ defmodule Gamenite.Games.Charades do
     Turn.new(attrs)
   end
 
-  def new_turn(%{current_team: current_team} = _game) do
-    Turn.new(%{player_name: current_team.current_player.name})
+  def new_turn(%{current_team: current_team} = game) do
+    new_turn = Turn.new(%{player_name: current_team.current_player.name})
+    %{game | current_turn: new_turn}
   end
 
   def skip_card(%{ current_turn: current_turn, skip_limit: skip_limit } = _game)
@@ -77,21 +88,7 @@ defmodule Gamenite.Games.Charades do
     |> update_deck(new_deck)
   end
 
-  def add_cards_to_deck(%{ deck: deck } = game, cards) do
-    errors = Enum.reduce(deck, fn card, acc ->
-      case Cards.card_in_deck?(cards, card) do
-      true  -> [ "#{card.face} already in deck." | acc ]
-      _ -> acc
-      end
-    end )
 
-    do_add_cards_to_deck(game, cards, errors)
-  end
-  defp do_add_cards_to_deck(%{ deck: deck } = game, cards, []) do
-    game
-    |> update_deck(cards ++ deck)
-  end
-  defp do_add_cards_to_deck(_game, _cards, errors), do: {:error, errors}
 
 
   # Salad Bowl Logic
@@ -109,7 +106,6 @@ defmodule Gamenite.Games.Charades do
   def end_round(%{ starting_deck: starting_deck } = game) do
     game
     |> inc_round
-    |> move_cards_after_review
     |> update_deck(starting_deck)
   end
 

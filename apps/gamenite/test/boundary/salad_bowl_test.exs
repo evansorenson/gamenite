@@ -1,14 +1,27 @@
 defmodule SaladBowlTest do
+  use ExUnit.Case
+  use GameBuilders
+  alias Gamenite.Games.Charades
+  alias Gamenite.Games.Charades.{Game, Player}
 
+  defp build_salad_bowl(context) do
+    teams = build_teams([2,2], %Player{})
+    deck = build_deck(3)
 
+    salad_bowl = Charades.create_salad_bowl_game(%{teams: teams, deck: deck, skip_limit: 1, rounds: ["Catchphrase", "Password", "Charades"]})
+    |> elem(1)
+
+    {:ok, Map.put(context, :salad_bowl, salad_bowl)}
+  end
 
   test "score correct cards and add to team score", %{turn_over: game} do
     new_game = Charades.end_turn(game)
     assert hd(new_game.teams).score == 2
   end
 
+
   describe "card logic"  do
-    setup [:working_game]
+    setup [:build_salad_bowl]
 
     test "drawing card puts card into current player until deck is empty", %{charades: charades} do
       charades

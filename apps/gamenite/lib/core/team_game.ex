@@ -13,7 +13,7 @@ defmodule Gamenite.TeamGame do
   end
 
   @max_teams Application.get_env(:gamenite, :max_teams)
-  def changeset(team_game, %{teams: teams } = params) when length(teams) > 0 do
+  def changeset(team_game, %{ teams: teams } = params) when length(teams) > 0 do
     team_changeset(team_game, Map.put(params, :current_team, hd(teams)))
   end
   def changeset(team_game, params) do
@@ -21,7 +21,6 @@ defmodule Gamenite.TeamGame do
   end
 
   def team_changeset(team_game, params) do
-
     team_game
     |> cast(params, [])
     |> cast_embed(:current_team)

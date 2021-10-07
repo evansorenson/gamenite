@@ -14,8 +14,8 @@ defmodule Gamenite.TeamGame.Player do
   def changeset(player, attrs) do
     player
     |> name_changeset(attrs)
-    |> cast(attrs, [:color, :turns])
-    |> validate_required([:name, :color])
+    |> cast(attrs, [:color, :turns, :id])
+    |> validate_required([:name, :color, :id])
     |> validate_length(:name, min: 2, max: 15)
   end
 
@@ -33,10 +33,8 @@ defmodule Gamenite.TeamGame.Player do
 
 
   def new(attrs) do
-    id = Ecto.UUID.generate()
-
     %__MODULE__{}
-    |> changeset(Map.put(attrs, :id, id))
+    |> changeset(attrs)
     |> apply_action(:update)
   end
 

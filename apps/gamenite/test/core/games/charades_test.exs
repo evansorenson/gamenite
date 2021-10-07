@@ -8,7 +8,7 @@ defmodule CharadesCoreTest do
     teams = build_teams([2,2], %Player{})
     deck = build_deck(3)
 
-    game = Charades.create_charades_game(%{teams: teams, deck: deck, skip_limit: 3})
+    game = Charades.create_charades(%{teams: teams, deck: deck, skip_limit: 3})
     |> elem(1)
     |> Map.put(:current_turn, Charades.create_turn(%{card: 1, correct_cards: [4, 5], skipped_cards: [6, 7]}))
 
@@ -21,7 +21,7 @@ defmodule CharadesCoreTest do
     teams = build_teams([2,2], %Player{})
     deck = build_deck(3)
 
-    salad_bowl = Charades.create_salad_bowl_game(%{teams: teams, deck: deck, skip_limit: 1, rounds: ["Catchphrase", "Password", "Charades"]})
+    salad_bowl = Charades.create_salad_bowl(%{teams: teams, deck: deck, skip_limit: 1, rounds: ["Catchphrase", "Password", "Charades"]})
     |> elem(1)
 
     {:ok, Map.put(context, :salad_bowl, salad_bowl)}

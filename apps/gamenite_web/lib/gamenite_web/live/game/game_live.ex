@@ -1,7 +1,6 @@
 defmodule GameniteWeb.GameLive do
   use GameniteWeb, :live_component
 
-  alias Phoenix.Socket.Broadcast
   alias GamenitePersistance.Accounts
   alias Gamenite.Games.Charades
   alias Gamenite.Games.Charades.{Game, Player}
@@ -11,7 +10,7 @@ defmodule GameniteWeb.GameLive do
   def update(%{slug: slug, game_id: game_id, connected_users: connected_users, user: user } = _assigns, socket) do
     game_info = GamenitePersistance.Gaming.get_game!(game_id)
 
-    game_changeset = game_changeset(connected_users, %{})
+    game_changeset = create_game_changeset(%{}, connected_users)
 
     {:ok,
     socket
@@ -36,22 +35,11 @@ defmodule GameniteWeb.GameLive do
     cond do
       SaladBowlAPI.exists?(slug) ->
         {:ok, game } = SaladBowlAPI.state(slug)
+        IO.inspect game
         assign(socket, game: game)
       true ->
         assign(socket, game: nil)
     end
-  end
-
-
-
-  defp game_changeset(connected_users, params) do
-    teams = connected_users
-    |> users_to_players
-    |> Enum.map(fn player -> Player.new(player) end)
-    |> TeamGame.Team.split_teams(2)
-
-    %Game{}
-    |> Game.salad_bowl_changeset(Map.put(params, :teams, teams))
   end
 
   defp users_to_players(connected_users) do
@@ -71,31 +59,56 @@ defmodule GameniteWeb.GameLive do
   end
 
   @impl true
-  def handle_event("start", %{"game_changeset" => params}, socket) do
-    IO.inspect params
-
+  def handle_event("start", %{"game" => params}, socket) do
+    params = convert_changeset_params(params, socket.assigns.connected_users)
 
     if SaladBowlAPI.exists?(socket.assigns.slug) do
       {:noreply, put_flash(socket, :error, "Game already started.")}
     else
-      case socket.assigns.game_changeset do
-        {:ok, game} ->
-          SaladBowlAPI.start_game(game, socket.assigns.slug)
-          broadcast_game_update(socket.assigns.slug, game)
-          {:noreply,
-          socket
-          |> assign(:game, game)
-          |> put_flash(:info, "Game created successfully.")}
-        {:error, _reason} ->
+      with {:ok, game } <-  Charades.create_salad_bowl(params),
+          {:ok, _pid } <- SaladBowlAPI.start_game(game, socket.assigns.slug) do
+        broadcast_game_update(socket.assigns.slug, game)
+        {:noreply,
+        socket
+        |> assign(:game, game)
+        |> put_flash(:info, "Game created successfully.")}
+      else
+        {:error, reason} ->
+          IO.inspect reason
           {:noreply, put_flash(socket, :error, "Error creating game.")}
       end
     end
   end
 
   @impl true
-  def handle_event("validate", %{"game_changeset" => params}, socket) do
-    IO.inspect "hello world!!!!"
-    {:noreply, assign(socket, game_changeset: game_changeset(socket.assigns.connected_users, params))}
+  def handle_event("validate", %{"game" => params}, socket) do
+    {:noreply,
+    assign(socket, game_changeset: create_game_changeset(params, socket.assigns.connected_users))}
+  end
+
+  defp convert_changeset_params(params, connected_users) do
+    teams = connected_users
+    |> users_to_players
+    |> Enum.map(fn player -> Player.new(player) end)
+    |> TeamGame.Team.split_teams(2)
+
+    params = key_to_atom(params)
+    |> Map.put(:teams, teams)
+  end
+
+  defp create_game_changeset(params, connected_users) do
+    game_changeset = %Game{}
+    |> Game.salad_bowl_changeset(convert_changeset_params(params, connected_users))
+  end
+
+  defp key_to_atom(map) do
+    Enum.reduce(map, %{}, fn
+      # String.to_existing_atom saves us from overloading the VM by
+      # creating too many atoms. It'll always succeed because all the fields
+      # in the database already exist as atoms at runtime.
+      {key, value}, acc when is_atom(key) -> Map.put(acc, key, value)
+      {key, value}, acc when is_binary(key) -> Map.put(acc, String.to_existing_atom(key), value)
+    end)
   end
 
   @impl true
