@@ -9,18 +9,18 @@ defmodule Gamenite.Games.Charades.Game do
   embedded_schema do
     embeds_one :current_team, Team
     embeds_many :teams, Team
-    embeds_one :current_turn, CharadesTurn
+    field :current_turn, :map
     field :turn_length, :integer, default: 60
     field :skip_limit, :integer, default: 1
     field :rounds, {:array, :string}, default: @default_rounds
     field :cards_per_player, :integer, default: 4
     field :current_round, :string
     field :starting_deck, {:array, :map}
-    field :deck, {:array, :map}, default: []
+    field :deck, {:array, :string}, default: []
     field :submitted_users, {:array, :binary_id}, default: []
     field :finished?, :boolean, default: false
   end
-  @fields [:turn_length, :skip_limit, :deck]
+  @fields [:turn_length, :skip_limit, :deck, :current_turn]
   @salad_bowl_fields [:rounds, :current_round, :starting_deck, :cards_per_player]
   def changeset(charades_game, attrs) do
     charades_game

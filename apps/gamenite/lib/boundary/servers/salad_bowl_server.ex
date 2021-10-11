@@ -6,8 +6,7 @@ defmodule Gamenite.SaladBowlServer do
   alias Gamenite.Games.Charades
 
   def init({game, _room_uuid}) do
-
-    {:ok, Charades.new_turn(game)}
+    {:ok, game}
   end
 
   def child_spec({game, room_uuid}) do
@@ -70,7 +69,7 @@ defmodule Gamenite.SaladBowlServer do
 
   def handle_call(:end_turn, _from, game) do
     game
-    |> Charades.move_cards_after_review
+    |> Charades.move_incorrect_back_to_deck
     |> score_correct_cards
     |> TeamGame.end_turn
     |> Charades.new_turn
@@ -85,8 +84,10 @@ defmodule Gamenite.SaladBowlServer do
         |> game_response(game)
       {:error, reason} ->
           game_response({:error, reason}, game)
+      {:use_skipped, new_game} ->
+          new_game
+          |> game_response(game)
       new_game ->
-        IO.puts "hi"
         new_game
         |> draw_card
         |> game_response(game)
@@ -116,7 +117,7 @@ defmodule Gamenite.SaladBowlServer do
   end
 
   def handle_info({:tick, pid}, game) do
-    new_game = update_in(game, [:current_turn, :time_remaining_in_sec], &(&1 - 1))
+    new_game = update_in(game.current_turn.time_remaining_in_sec, &(&1 - 1))
     Process.send(pid, {:tick, game}, [])
     {:noreply, new_game}
   end
@@ -127,12 +128,10 @@ defmodule Gamenite.SaladBowlServer do
   end
 
   defp stop_timer(%{current_turn: current_turn} = game) do
-    IO.inspect current_turn.timer
     Process.cancel_timer(current_turn.timer)
     game
     |> put_in([:current_turn, :needs_review], true)
   end
-
 
   defp draw_card(%{ deck: deck } = game) do
     case Cards.draw(deck) do
@@ -146,7 +145,7 @@ defmodule Gamenite.SaladBowlServer do
   end
 
   defp score_correct_cards(%{current_turn: current_turn} = game) do
-    turn_score = length(current_turn.correct_cards)
+    turn_score = Charades.count_cards_with_outcome(current_turn.completed_cards, :correct)
 
     game
     |> TeamGame.add_score(turn_score)

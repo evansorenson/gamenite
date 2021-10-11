@@ -33,8 +33,8 @@ defmodule Gamenite.SaladBowlAPI do
     GenServer.call(via(room_slug), {:completed_card, outcome})
   end
 
-  def review_cards(room_slug) do
-    GenServer.call(via(room_slug), :review_cards )
+  def end_turn(room_slug) do
+    GenServer.call(via(room_slug), :end_turn)
   end
 
   def submit_cards(room_slug, word_list, user_id) do

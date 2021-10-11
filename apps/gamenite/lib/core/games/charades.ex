@@ -1,8 +1,6 @@
 defmodule Gamenite.Games.Charades do
   alias Gamenite.Games.Charades.{Turn, Game}
   alias Gamenite.Lists
-  alias Gamenite.Cards.Card
-  alias Gamenite.Cards
   import Ecto.Changeset
 
   def change_charades(%Game{} = game, attrs \\ %{}) do
@@ -35,21 +33,36 @@ defmodule Gamenite.Games.Charades do
     %{game | current_turn: new_turn}
   end
 
-  def card_completed(%{deck: deck, current_turn: current_turn, skip_limit: skip_limit} = game, card_outcome) do
+  def card_completed(%{current_turn: current_turn} = _game, _card_outcome)
+  when is_nil(current_turn.card) do
+    {:error, "Card is nil."}
+  end
+  def card_completed(%{deck: deck, current_turn: current_turn, skip_limit: skip_limit} = game, :skipped = card_outcome) do
     skipped_card_count = count_cards_with_outcome(current_turn.completed_cards, :skipped)
     cond do
-      card_outcome == :skipped and skipped_card_count >= skip_limit ->
+      skipped_card_count >= skip_limit ->
         {:error, "You have reached skip limit of #{skip_limit}."}
-      card_outcome == :skipped and deck == [] ->
+
+      deck == [] ->
         {:error, "Cannot skip card. No cards left in deck."}
-      is_nil(current_turn.card) ->
-        {:error, "Current card is nil."}
-      deck == [] and skipped_card_count == 0 ->
-        {:review, do_card_completed(game, card_outcome)}
+
+      true ->
+        do_card_completed(game, card_outcome)
+    end
+  end
+  def card_completed(%{deck: deck, current_turn: current_turn } = game, card_outcome) do
+    skipped_card_count = count_cards_with_outcome(current_turn.completed_cards, :skipped)
+    cond do
       deck == [] and skipped_card_count > 0 ->
+        { :use_skipped,
         game
         |> do_card_completed(card_outcome)
         |> move_skipped_to_card
+        }
+
+      deck == [] and skipped_card_count == 0 ->
+        {:review, do_card_completed(game, card_outcome)}
+
       true ->
         do_card_completed(game, card_outcome)
     end
@@ -66,10 +79,10 @@ defmodule Gamenite.Games.Charades do
   end
 
   defp move_skipped_to_card(%{current_turn: current_turn} = game) do
-    first_skipped = Enum.find(current_turn.completed_cards, fn {outcome, _card} -> outcome == :skipped end)
+    first_skipped = {:skipped, card} = Enum.find(current_turn.completed_cards, fn {outcome, _card} -> outcome == :skipped end)
 
     game
-    |> put_in([:current_turn, :card], first_skipped)
+    |> put_in([:current_turn, :card], card)
     |> update_in([:current_turn, :completed_cards], &List.delete(&1, first_skipped))
   end
 
@@ -79,12 +92,7 @@ defmodule Gamenite.Games.Charades do
     |> put_in([:current_turn, :completed_cards], completed_cards)
   end
 
-  def move_cards_after_review(game) do
-    game
-    |> move_incorrect_back_to_deck
-  end
-
-  defp move_incorrect_back_to_deck(%{ deck: deck, current_turn: current_turn } = game) do
+  def move_incorrect_back_to_deck(%{ deck: deck, current_turn: current_turn } = game) do
     incorrect_cards = current_turn.completed_cards
     |> Enum.reduce(
       [],
@@ -99,33 +107,48 @@ defmodule Gamenite.Games.Charades do
     |> update_deck(new_deck)
   end
 
-  def list_of_words_to_cards(word_list) do
-    Enum.map(word_list, &Card.new(%{face: &1}))
+  defp check_words_unique_in_list(word_list) do
+    if Enum.uniq(word_list) != word_list do
+      {:error, "Duplicate cards sumbitted. Must all be unique."}
+    else
+      :ok
+    end
   end
 
-  def add_cards_to_deck(%{ deck: [] } = game, word_list, user_id) do
-    cards = list_of_words_to_cards(word_list)
-    do_add_cards_to_deck(game, cards, user_id, [])
-  end
-  def add_cards_to_deck(%{ deck: deck } = game, word_list, user_id) do
-    cards = list_of_words_to_cards(word_list)
-    errors = Enum.reduce(deck, fn card, acc ->
-      case Cards.card_in_deck?(cards, card) do
-      true  -> [ "#{card.face} already in deck." | acc ]
-      _ -> acc
+  defp check_words_unique_in_deck([] = _deck, _word_list), do: :ok
+  defp check_words_unique_in_deck(deck, word_list) do
+    errors = Enum.reduce(word_list, [], fn word, acc ->
+      if word in deck do
+        [ "#{word} was submitted by another player.\n" | acc ]
+      else
+        acc
       end
     end )
 
-    do_add_cards_to_deck(game, cards, user_id, errors)
+    if Enum.any?(errors) do
+      {:error, errors}
+    else
+      :ok
+    end
   end
-  defp do_add_cards_to_deck(%{ deck: deck } = game, cards, user_id, []) do
+
+  def add_cards_to_deck(%{ deck: deck} = game, word_list, user_id) do
+    with :ok <- check_words_unique_in_list(word_list),
+    :ok <- check_words_unique_in_deck(deck, word_list) do
+      do_add_cards_to_deck(game, word_list, user_id)
+    else
+      {:error, errors} ->
+        {:error, errors}
+    end
+
+
+  end
+
+  defp do_add_cards_to_deck(%{ deck: deck } = game, cards, user_id) do
     game
     |> Map.update(:submitted_users, [user_id], fn users -> [user_id | users] end)
     |> update_deck(cards ++ deck)
   end
-  defp do_add_cards_to_deck(_game, _cards,_user_id, errors), do: {:error, errors}
-
-
 
 
   # Salad Bowl Logic

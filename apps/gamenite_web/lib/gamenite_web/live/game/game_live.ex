@@ -57,45 +57,18 @@ defmodule GameniteWeb.GameLive do
     )
   end
 
-  @impl true
-  def handle_event("start", %{"game" => params}, socket) do
-    params = convert_changeset_params(params, socket.assigns.connected_users)
-
-    if SaladBowlAPI.exists?(socket.assigns.slug) do
-      {:noreply, put_flash(socket, :error, "Game already started.")}
-    else
-      with {:ok, game } <-  Charades.create_salad_bowl(params),
-          {:ok, _pid } <- SaladBowlAPI.start_game(game, socket.assigns.slug) do
-        broadcast_game_update(socket.assigns.slug, game)
-        {:noreply,
-        socket
-        |> assign(:game, game)
-        |> put_flash(:info, "Game created successfully.")}
-      else
-        {:error, reason} ->
-          {:noreply, put_flash(socket, :error, "Error creating game.")}
-      end
-    end
-  end
-
-  @impl true
-  def handle_event("validate", %{"game" => params}, socket) do
-    {:noreply,
-    assign(socket, game_changeset: create_game_changeset(params, socket.assigns.connected_users))}
-  end
-
   defp convert_changeset_params(params, connected_users) do
     teams = connected_users
     |> users_to_players
     |> Enum.map(fn player -> Player.new(player) end)
     |> TeamGame.Team.split_teams(2)
 
-    params = key_to_atom(params)
+    key_to_atom(params)
     |> Map.put(:teams, teams)
   end
 
   defp create_game_changeset(params, connected_users) do
-    game_changeset = %Game{}
+    _game_changeset = %Game{}
     |> Game.salad_bowl_changeset(convert_changeset_params(params, connected_users))
   end
 
@@ -109,42 +82,90 @@ defmodule GameniteWeb.GameLive do
     end)
   end
 
+
+  defp card_completed(socket, outcome) do
+    case SaladBowlAPI.card_completed(socket.assigns.slug, outcome) do
+      {:ok, game} ->
+        broadcast_game_update(socket.assigns.slug, game)
+        {:noreply, assign(socket, game: game)}
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, reason)}
+    end
+  end
+
+  @impl true
+  def handle_event("start", %{"game" => params}, socket) do
+    params = convert_changeset_params(params, socket.assigns.connected_users)
+
+    if SaladBowlAPI.exists?(socket.assigns.slug) do
+      {:noreply, put_flash(socket, :error, "Game already started.")}
+    else
+      with {:ok, game } <-  Charades.create_salad_bowl(params),
+          game_with_first_turn <- Charades.new_turn(game),
+          {:ok, _pid } <- SaladBowlAPI.start_game(game_with_first_turn, socket.assigns.slug) do
+
+        broadcast_game_update(socket.assigns.slug, game)
+        {:noreply,
+        socket
+        |> assign(:game, game)}
+      else
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, "Error creating game.")}
+      end
+    end
+  end
+
+  @impl true
+  def handle_event("validate", %{"game" => params}, socket) do
+    {:noreply,
+    assign(socket, game_changeset: create_game_changeset(params, socket.assigns.connected_users))}
+  end
+
   @impl true
   def handle_event("correct", _params, socket) do
-    {:ok, game} = SaladBowlAPI.correct_card(socket.assigns.slug)
-    broadcast_game_update(socket.assigns.slug, game)
-    {:noreply, assign(socket, game: game)}
+    card_completed(socket, :correct)
+  end
+
+  @impl true
+  def handle_event("incorrect", _params, socket) do
+    card_completed(socket, :incorrect)
+  end
+
+  @impl true
+  def handle_event("skip", _params, socket) do
+    card_completed(socket, :skipped)
   end
 
   @impl true
   def handle_event("start_turn", _params, socket) do
     {:ok, game} = SaladBowlAPI.start_turn(socket.assigns.slug)
-    broadcast_game_update(socket.assigns.slug, game)
-
-    {:noreply, assign(socket, game: game)}
+    broadcast_and_assign_game(game, socket)
   end
 
   @impl true
-  def handle_event("skip", _params, socket) do
-    case SaladBowlAPI.skip_card(socket.assigns.slug) do
-      {:ok, game} ->
-        broadcast_game_update(socket.assigns.slug, game)
-        {:noreply, assign(socket, game: game)}
-      {:error, reason} ->
-        {:noreply, put_flash(socket, :error, reason)}
-    end
+  def handle_event("end_turn", _params, socket) do
+    {:ok, game} = SaladBowlAPI.end_turn(socket.assigns.slug)
+    broadcast_and_assign_game(game, socket)
   end
 
   def handle_event("submit_words", params, socket) do
     word_list = Enum.map(params, fn {_k, v} -> v end)
-    IO.inspect word_list
     case SaladBowlAPI.submit_cards(socket.assigns.slug, word_list, socket.assigns.user.id) do
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, reason)}
       {:ok, game} ->
-        broadcast_game_update(socket.assigns.slug, game)
-        {:noreply, assign(socket, game: game)}
+        broadcast_and_assign_game(game, socket)
     end
   end
 
+
+  def handle_info({:tick, game}, socket) do
+    IO.puts "hey"
+    broadcast_and_assign_game(game, socket)
+  end
+
+  defp broadcast_and_assign_game(game, socket) do
+    broadcast_game_update(socket.assigns.slug, game)
+    {:noreply, assign(socket, game: game)}
+  end
 end

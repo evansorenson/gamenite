@@ -23,14 +23,11 @@ defmodule Gamenite.Cards do
   @doc """
   Returns { drawn_cards, remaining_deck}.
   """
-  def draw(deck, num \\ 1, face_up? \\ true)
-  def draw(_, num, _) when num < 1 or not is_integer(num), do: {:error, "Number of cards drawn must be positive integer."}
-  def draw(deck, num, _) when num > Kernel.length(deck), do: {:error, "Not enough cards in deck."}
-  def draw(deck, num, face_up?) do
-    {drawn_cards, remaining_deck} = Enum.split(deck, num)
-
-    drawn_flipped_cards = Enum.map(drawn_cards, &(flip(&1, face_up?)))
-    { drawn_flipped_cards, remaining_deck }
+  def draw(deck, num \\ 1)
+  def draw(_, num) when num < 1 or not is_integer(num), do: {:error, "Number of cards drawn must be positive integer."}
+  def draw(deck, num) when num > Kernel.length(deck), do: {:error, "Not enough cards in deck."}
+  def draw(deck, num) do
+    Enum.split(deck, num)
   end
 
   @doc """
@@ -39,25 +36,25 @@ defmodule Gamenite.Cards do
 
   Returns { drawn_cards, remaining_deck, discard_pile }
   """
-  def draw_with_reshuffle(deck, discard_pile, num, face_up? \\ true)
-  def draw_with_reshuffle(deck, discard_pile, num, _) when num > Kernel.length(discard_pile) + Kernel.length(deck) do
+  def draw_with_reshuffle(deck, discard_pile, num)
+  def draw_with_reshuffle(deck, discard_pile, num) when num > Kernel.length(discard_pile) + Kernel.length(deck) do
     { :error, "Number of cards drawn must be less than left in deck and discard pile combined."}
   end
-  def draw_with_reshuffle(deck, discard_pile, num, face_up?) when num <= Kernel.length(deck) do
-    { drawn_cards, remaining_deck } = draw(deck, num, face_up?)
+  def draw_with_reshuffle(deck, discard_pile, num) when num <= Kernel.length(deck) do
+    { drawn_cards, remaining_deck } = draw(deck, num)
     { drawn_cards, remaining_deck, discard_pile }
   end
-  def draw_with_reshuffle(deck, discard_pile, num, face_up?) when Kernel.length(deck) == 0 do
+  def draw_with_reshuffle(deck, discard_pile, num) when Kernel.length(deck) == 0 do
     replenished_deck = Enum.shuffle(discard_pile)
-    { drawn_after_reshuffle, remaining_deck } = draw(replenished_deck, num, face_up?)
+    { drawn_after_reshuffle, remaining_deck } = draw(replenished_deck, num)
     { drawn_after_reshuffle , remaining_deck, [] }
   end
-  def draw_with_reshuffle(deck, discard_pile, num, face_up?) do
+  def draw_with_reshuffle(deck, discard_pile, num) do
     cards_left = Kernel.length(deck)
-    { initial_drawn_cards, _ } = draw(deck, cards_left, face_up?)
+    { initial_drawn_cards, _ } = draw(deck, cards_left)
 
     replenished_deck = Enum.shuffle(discard_pile)
-    { drawn_after_reshuffle, remaining_deck } = draw(replenished_deck, num - cards_left, face_up?)
+    { drawn_after_reshuffle, remaining_deck } = draw(replenished_deck, num - cards_left)
     { initial_drawn_cards ++ drawn_after_reshuffle, remaining_deck, [] }
   end
 
