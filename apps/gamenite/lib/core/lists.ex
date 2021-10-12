@@ -1,14 +1,18 @@
 defmodule Gamenite.Lists do
 
   def next_list_element(list, element) do
-    curr_idx = find_element_index(list, element)
-    next_idx = next_list_index(list, curr_idx)
+    next_idx = next_list_index(list, element)
     Enum.at(list, next_idx)
+  end
+
+  def next_list_index(list, element) do
+    curr_idx = find_element_index(list, element)
+    _next_list_index(list, curr_idx)
   end
 
   def next_list_element_by_id(list, id) do
     curr_idx = find_element_index_by_id(list, id)
-    next_idx = next_list_index(list, curr_idx)
+    next_idx = _next_list_index(list, curr_idx)
     Enum.at(list, next_idx)
   end
 
@@ -24,6 +28,6 @@ defmodule Gamenite.Lists do
   end
 
 
-  defp next_list_index(list, index) when index >= 0 and index < Kernel.length(list), do: rem(index + 1, length(list))
-  defp next_list_index(_, _), do: {:error, "Index must be between 0 (inclusive) and length of list "}
+  defp _next_list_index(list, index) when index >= 0 and index < Kernel.length(list), do: rem(index + 1, length(list))
+  defp _next_list_index(_, _), do: {:error, "Index must be between 0 (inclusive) and length of list "}
 end

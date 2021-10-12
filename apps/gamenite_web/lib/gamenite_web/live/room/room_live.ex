@@ -181,4 +181,19 @@ defmodule GameniteWeb.RoomLive do
         |> assign(:answers, socket.assigns.answers ++ [payload])
       }
     end
+
+    def handle_info({:tick, game}, socket) do
+      IO.puts "hiiiiiii"
+      broadcast_game_update(socket.assigns.slug, game)
+      {:noreply, socket}
+    end
+
+    defp broadcast_game_update(room_id, game) do
+      GameniteWeb.Endpoint.broadcast_from(
+        self(),
+        "game:" <> room_id,
+        "game_state_update",
+        game
+      )
+    end
 end

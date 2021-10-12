@@ -158,12 +158,6 @@ defmodule GameniteWeb.GameLive do
     end
   end
 
-
-  def handle_info({:tick, game}, socket) do
-    IO.puts "hey"
-    broadcast_and_assign_game(game, socket)
-  end
-
   defp broadcast_and_assign_game(game, socket) do
     broadcast_game_update(socket.assigns.slug, game)
     {:noreply, assign(socket, game: game)}

@@ -62,34 +62,26 @@ defmodule Gamenite.SaladBowlServer do
 
   def handle_call(:start_turn, {pid, _alias} = _client, game) do
     game
-    |> draw_card
+    |> Charades.draw_card
     |> start_timer(pid)
     |> game_response(game)
   end
 
   def handle_call(:end_turn, _from, game) do
     game
-    |> Charades.move_incorrect_back_to_deck
-    |> score_correct_cards
-    |> TeamGame.end_turn
-    |> Charades.new_turn
+    |> Charades.end_turn
     |> game_response(game)
   end
 
   def handle_call({:completed_card, outcome}, _from, game) do
-    case Charades.card_completed(game, outcome) do
+    case Charades.add_card_to_completed(game, outcome) do
       {:review, new_game} ->
         new_game
         |> stop_timer
         |> game_response(game)
-      {:error, reason} ->
-          game_response({:error, reason}, game)
-      {:use_skipped, new_game} ->
-          new_game
-          |> game_response(game)
+
       new_game ->
         new_game
-        |> draw_card
         |> game_response(game)
     end
   end
@@ -100,18 +92,9 @@ defmodule Gamenite.SaladBowlServer do
     |> game_response(game)
   end
 
-  defp draw_or_review_cards(%{ deck: deck } = game)
-  when length(deck) == 0 do
-    {:error, "Review Cards"}
-  end
-  defp draw_or_review_cards(game), do: draw_card(game)
-
-
-  def handle_info({:tick, pid}, %{current_turn: %{time_remaining_in_sec: time}} = game)
-  when time <= 1 do
-    Process.send(pid, :turn_ended, [])
+  def handle_info({:tick, _pid}, %{current_turn: %{time_remaining_in_sec: time}} = game)
+  when time <= 0 do
     new_game = game
-    |> put_in([:current_turn, :time_remaining_in_sec], 0)
     |> stop_timer
     {:noreply, new_game}
   end
@@ -124,30 +107,12 @@ defmodule Gamenite.SaladBowlServer do
 
   defp start_timer(game, client) do
     {:ok, {:interval, timer}} = :timer.send_interval(1000, self(), {:tick, client})
-    put_in(game, [:current_turn, :timer], timer)
+    Map.put(game, :timer, timer)
   end
 
-  defp stop_timer(%{current_turn: current_turn} = game) do
-    Process.cancel_timer(current_turn.timer)
+  defp stop_timer(%{timer: timer} = game) do
+    Process.cancel_timer(timer)
     game
     |> put_in([:current_turn, :needs_review], true)
-  end
-
-  defp draw_card(%{ deck: deck } = game) do
-    case Cards.draw(deck) do
-      {:error, reason} ->
-        {:error, reason}
-      { drawn_cards, remaining_deck } ->
-        game
-        |> put_in([:current_turn, :card], hd(drawn_cards))
-        |> Map.put(:deck, remaining_deck)
-    end
-  end
-
-  defp score_correct_cards(%{current_turn: current_turn} = game) do
-    turn_score = Charades.count_cards_with_outcome(current_turn.completed_cards, :correct)
-
-    game
-    |> TeamGame.add_score(turn_score)
   end
 end

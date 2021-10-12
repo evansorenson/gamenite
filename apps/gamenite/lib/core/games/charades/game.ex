@@ -15,10 +15,11 @@ defmodule Gamenite.Games.Charades.Game do
     field :rounds, {:array, :string}, default: @default_rounds
     field :cards_per_player, :integer, default: 4
     field :current_round, :string
-    field :starting_deck, {:array, :map}
+    field :starting_deck, {:array, :string}
     field :deck, {:array, :string}, default: []
     field :submitted_users, {:array, :binary_id}, default: []
     field :finished?, :boolean, default: false
+    field :timer
   end
   @fields [:turn_length, :skip_limit, :deck, :current_turn]
   @salad_bowl_fields [:rounds, :current_round, :starting_deck, :cards_per_player]
