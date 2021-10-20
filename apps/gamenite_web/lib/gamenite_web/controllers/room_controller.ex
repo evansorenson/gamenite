@@ -4,9 +4,8 @@ defmodule GameniteWeb.RoomController do
   import Phoenix.LiveView.Controller
   plug :authenticate_user_or_create_guest when action in [:new]
 
-  def new(conn, %{ "slug" => slug }) do
+  def new(conn, %{"slug" => slug}) do
     conn
-    |> live_render(GameniteWeb.RoomLive, session: %{"slug" => slug })
+    |> live_render(GameniteWeb.RoomLive, session: %{"slug" => slug})
   end
-
 end

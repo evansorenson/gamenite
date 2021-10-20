@@ -5,9 +5,10 @@ defmodule GameniteWeb.Endpoint do
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
   @session_options [
-    store: :cookie,
-    key: "_gamenite_key",
-    signing_salt: "OoQoTAPW"
+      store: PhoenixLiveSession,
+      pub_sub: GamenitePersistance.PubSub,
+      signing_salt: "OoQoTAPW",
+      key: "session"
   ]
 
   socket "/socket", GameniteWeb.UserSocket,

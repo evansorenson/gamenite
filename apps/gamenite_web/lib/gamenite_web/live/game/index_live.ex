@@ -9,14 +9,14 @@ defmodule GameniteWeb.Game.IndexLive do
     sorted_games = Enum.sort(games, &(Map.get(&1, :play_count) <= Map.get(&2, :play_count)))
 
     {:ok,
-    socket
-    |> assign(:games, sorted_games)
-    }
+     socket
+     |> assign(:games, sorted_games)}
   end
 
   def handle_event("search", %{"search_field" => %{"query" => nil}}, socket) do
     {:noreply, assign(socket, :games, Gaming.list_games())}
   end
+
   def handle_event("search", %{"search_field" => %{"query" => query}}, socket) do
     games_search = Gaming.search_games(query)
     {:noreply, assign(socket, :games, games_search)}
@@ -26,14 +26,13 @@ defmodule GameniteWeb.Game.IndexLive do
     with {:ok, room_slug} <- RoomAPI.start_room(),
          :ok <- RoomAPI.set_game(room_slug, game_id) do
       {:noreply,
-      socket
-      |> push_redirect(to: Routes.room_path(socket, :new, room_slug))}
+       socket
+       |> push_redirect(to: Routes.room_path(socket, :new, room_slug))}
     else
       {:error, _reason} ->
         {:noreply,
-          socket
-          |> put_flash(:error, "Could not start the room.")
-        }
+         socket
+         |> put_flash(:error, "Could not start the room.")}
     end
   end
 end

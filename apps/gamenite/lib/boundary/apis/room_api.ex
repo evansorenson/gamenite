@@ -1,6 +1,6 @@
 defmodule Gamenite.RoomAPI do
   use GenServer
-  import Gamenite.RoomServer, only: [ via: 1, start_child: 1 ]
+  import Gamenite.RoomServer, only: [via: 1, start_child: 1]
   alias Gamenite.Rooms
 
   def start_room do
@@ -33,16 +33,17 @@ defmodule Gamenite.RoomAPI do
 
   def generate_slug do
     slug = do_generate_slug()
+
     if slug_exists?(slug) do
-       generate_slug()
+      generate_slug()
     end
 
     slug
   end
 
   defp do_generate_slug() do
-    :random.seed(:erlang.now)
-    letters_numbers = Enum.map(Enum.to_list(?A..?Z) ++ Enum.to_list(?0..?9), fn(n) -> <<n>> end)
+    :random.seed(:erlang.now())
+    letters_numbers = Enum.map(Enum.to_list(?A..?Z) ++ Enum.to_list(?0..?9), fn n -> <<n>> end)
     slug = Enum.take_random(letters_numbers, 6)
     Enum.join(slug, "")
   end

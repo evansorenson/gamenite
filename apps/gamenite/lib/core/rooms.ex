@@ -1,22 +1,19 @@
 defmodule Gamenite.Rooms do
   @max_room_size 8
-  @spec join(%{:connected_users => map, optional(any) => any}, any) ::
-          {:error, <<_::104>>} | %{:connected_users => map, optional(any) => any}
   def join(%{connected_users: connected_users}, _player)
-  when map_size(connected_users) >= @max_room_size
-  do
+      when map_size(connected_users) >= @max_room_size do
     {:error, "Room is full."}
   end
   def join(%{connected_users: %{}} = room, player) do
     do_join(room, Map.put(player, :host?, true))
   end
   def join(room, player), do: do_join(room, player)
-  def do_join(%{connected_users: connected_users} = room, %{user_id: id} = player) do
-    %{ room | connected_users: Map.put_new(connected_users, id, player)}
+  defp do_join(%{connected_users: connected_users} = room, %{user_id: id} = player) do
+    %{room | connected_users: Map.put_new(connected_users, id, player)}
   end
 
   def leave(%{connected_users: connected_users} = room, user_id) do
-    %{ room | connected_users: Map.delete(connected_users, user_id)}
+    %{room | connected_users: Map.delete(connected_users, user_id)}
   end
 
   def invert_mute(room, %{muted?: muted?} = player) do
@@ -40,11 +37,12 @@ defmodule Gamenite.Rooms do
   end
 
   defp do_mute_all(%{connected_users: connected_users} = room, mute?) do
-   users = for {k, v} <- connected_users, into: %{} do
-     {k, %{v | muted?: mute?}}
-   end
+    users =
+      for {k, v} <- connected_users, into: %{} do
+        {k, %{v | muted?: mute?}}
+      end
 
-   %{ room | connected_users: users}
+    %{room | connected_users: users}
   end
 
   def set_game(room, game_id) do

@@ -22,10 +22,12 @@ defmodule GameniteWeb.UserController do
         |> GameniteWeb.Auth.login(user)
         |> put_flash(:info, "#{user.username} created!")
         |> redirect(to: Routes.user_path(conn, :show, user))
+
       {:error, %Ecto.Changeset{} = changeset} ->
         render(conn, "new.html", changeset: changeset)
     end
   end
+
   def show(conn, _params) do
     render(conn, "show.html", user: conn.assigns.current_user)
   end

@@ -39,7 +39,7 @@ defmodule GameniteWeb.Auth do
     if conn.assigns.current_user do
       conn
     else
-      {:ok, guest_user } = Accounts.create_user(%{username: "Guest#{:rand.uniform(1000000)}"})
+      {:ok, guest_user} = Accounts.create_user(%{username: "Guest#{:rand.uniform(1_000_000)}"})
       login(conn, guest_user)
     end
   end

@@ -26,7 +26,6 @@ defmodule GameniteWeb.Router do
 
     resources "/games", GameController, only: [:create, :index, :new, :show, :edit]
 
-
     get "/:slug", RoomController, :new
   end
 

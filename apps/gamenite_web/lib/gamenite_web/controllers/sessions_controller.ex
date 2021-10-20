@@ -12,6 +12,7 @@ defmodule GameniteWeb.SessionController do
         |> GameniteWeb.Auth.login(user)
         |> put_flash(:info, "Welcome back, #{user.username}!")
         |> redirect(to: Routes.game_path(conn, :index))
+
       {:error, _reason} ->
         conn
         |> put_flash(:error, "Invalid username/password combination.")

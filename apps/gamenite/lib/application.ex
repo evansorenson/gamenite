@@ -8,14 +8,11 @@ defmodule Gamenite.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      { Registry,
-      [ name: Gamenite.Registry.Game, keys: :unique] },
-      { DynamicSupervisor,
-      [name: Gamenite.Supervisor.Game, strategy: :one_for_one]},
-      { Registry,
-      [ name: Gamenite.Registry.Room, keys: :unique] },
-      { DynamicSupervisor,
-      [ name: Gamenite.Supervisor.Room, strategy: :one_for_one]}
+      {Phoenix.PubSub, name: Gamenite.PubSub},
+      {Registry, [name: Gamenite.Registry.Game, keys: :unique]},
+      {DynamicSupervisor, [name: Gamenite.Supervisor.Game, strategy: :one_for_one]},
+      {Registry, [name: Gamenite.Registry.Room, keys: :unique]},
+      {DynamicSupervisor, [name: Gamenite.Supervisor.Room, strategy: :one_for_one]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html
