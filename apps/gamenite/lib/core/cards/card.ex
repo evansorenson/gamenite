@@ -3,17 +3,18 @@ defmodule Gamenite.Cards.Card do
   import Ecto.Changeset
 
   embedded_schema do
-    field :face, :string
-    field :back, :string
-    field :face_image, :string
-    field :back_image, :string
-    field :face_up?, :boolean, default: false
+    field(:face, :string)
+    field(:back, :string)
+    field(:face_image, :string)
+    field(:back_image, :string)
+    field(:face_up?, :boolean, default: false)
   end
+
   @fields [:face, :back, :face_image, :back_image, :face_up?]
 
   def changeset(card, fields) do
     card
-    |> cast(fields,  @fields)
+    |> cast(fields, @fields)
     |> validate_required(:face)
   end
 
@@ -24,6 +25,5 @@ defmodule Gamenite.Cards.Card do
   end
 
   def persistant_card_to_new() do
-
   end
 end

@@ -7,26 +7,29 @@ defmodule Gamenite.Games.Charades.Game do
 
   @default_rounds Application.get_env(:gamenite, :salad_bowl_default_rounds)
   embedded_schema do
-    embeds_one :current_team, Team
-    embeds_many :teams, Team
-    field :current_turn, :map
-    field :turn_length, :integer, default: 60
-    field :skip_limit, :integer, default: 1
-    field :rounds, {:array, :string}, default: @default_rounds
-    field :cards_per_player, :integer, default: 4
-    field :current_round, :string
-    field :starting_deck, {:array, :string}
-    field :deck, {:array, :string}, default: []
-    field :submitted_users, {:array, :binary_id}, default: []
-    field :finished?, :boolean, default: false
-    field :timer
+    embeds_one(:current_team, Team)
+    embeds_many(:teams, Team)
+    field(:room_slug, :string)
+    field(:current_turn, :map)
+    field(:turn_length, :integer, default: 60)
+    field(:skip_limit, :integer, default: 1)
+    field(:rounds, {:array, :string}, default: @default_rounds)
+    field(:cards_per_player, :integer, default: 4)
+    field(:current_round, :string)
+    field(:starting_deck, {:array, :string})
+    field(:deck, {:array, :string}, default: [])
+    field(:submitted_users, {:array, :binary_id}, default: [])
+    field(:finished?, :boolean, default: false)
+    field(:timer)
   end
-  @fields [:turn_length, :skip_limit, :deck, :current_turn]
+
+  @fields [:room_slug, :turn_length, :skip_limit, :deck, :current_turn]
   @salad_bowl_fields [:rounds, :current_round, :starting_deck, :cards_per_player]
   def changeset(charades_game, attrs) do
     charades_game
     |> TeamGame.changeset(attrs)
     |> cast(attrs, @fields)
+    |> validate_required(:room_slug)
     |> validate_number(:turn_length, less_than_or_equal_to: 120)
     |> validate_number(:turn_length, greater_than_or_equal_to: 30)
     |> validate_number(:skip_limit, greater_than_or_equal_to: 0)
@@ -46,5 +49,4 @@ defmodule Gamenite.Games.Charades.Game do
     |> validate_length(:rounds, min: 1)
     |> validate_number(:cards_per_player, greater_than: 2, less_than_or_equal_to: 10)
   end
-
 end

@@ -1,5 +1,6 @@
 defmodule Gamenite.SaladBowlServer do
   use GenServer
+  alias Phoenix.PubSub
 
   alias Gamenite.Cards
   alias Gamenite.TeamGame
@@ -48,9 +49,13 @@ defmodule Gamenite.SaladBowlServer do
   end
 
   defp game_response(new_state, _old_state) do
-    {:reply, {:ok, new_state}, new_state}
+    broadcast_game_update(new_state)
+    {:reply, :ok, new_state}
   end
 
+  defp broadcast_game_update(game) do
+    PubSub.broadcast(Gamenite.PubSub, "room:" <> game.room_slug, {:game_update, game})
+  end
 
   def handle_call(:state, _from, game) do
     game_response(game, game)
@@ -60,10 +65,10 @@ defmodule Gamenite.SaladBowlServer do
     game_response(TeamGame.add_player(game, player), game)
   end
 
-  def handle_call(:start_turn, {pid, _alias} = _client, game) do
+  def handle_call(:start_turn, _from, game) do
     game
     |> Charades.draw_card
-    |> start_timer(pid)
+    |> start_timer
     |> game_response(game)
   end
 
@@ -99,14 +104,14 @@ defmodule Gamenite.SaladBowlServer do
     {:noreply, new_game}
   end
 
-  def handle_info({:tick, pid}, game) do
+  def handle_info(:tick, game) do
     new_game = update_in(game.current_turn.time_remaining_in_sec, &(&1 - 1))
-    Process.send(pid, {:tick, game}, [])
+    broadcast_game_update(new_game)
     {:noreply, new_game}
   end
 
-  defp start_timer(game, client) do
-    {:ok, {:interval, timer}} = :timer.send_interval(1000, self(), {:tick, client})
+  defp start_timer(game) do
+    {:ok, {:interval, timer}} = :timer.send_interval(1000, self(), :tick)
     Map.put(game, :timer, timer)
   end
 
@@ -115,4 +120,6 @@ defmodule Gamenite.SaladBowlServer do
     game
     |> put_in([:current_turn, :needs_review], true)
   end
+
+
 end

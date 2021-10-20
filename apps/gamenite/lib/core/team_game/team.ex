@@ -1,16 +1,17 @@
- defmodule Gamenite.TeamGame.Team do
+defmodule Gamenite.TeamGame.Team do
   use Accessible
   use Ecto.Schema
   import Ecto.Changeset
 
   embedded_schema do
-    field :name, :string
-    field :score, :integer, default: 0
-    field :color, :string
-    field :turns, {:array, :map}, default: []
-    field :players, {:array, :map}
-    field :current_player, :map
+    field(:name, :string)
+    field(:score, :integer, default: 0)
+    field(:color, :string)
+    field(:turns, {:array, :map}, default: [])
+    field(:players, {:array, :map})
+    field(:current_player, :map)
   end
+
   @fields [:id, :name, :score, :color, :turns, :players, :current_player]
 
   @team_colors ["C0392B", "2980B9", "27AE60", "884EA0", "D35400", "FF33B8", "F1C40F"]
@@ -36,13 +37,11 @@
     |> Map.merge(%{current_player: hd(players), id: id})
   end
 
-
   def update_name(team, name) do
     team
-    |> name_changeset(%{ name: name})
+    |> name_changeset(%{name: name})
     |> apply_action(:update)
   end
-
 
   @doc """
   Splits players into n number of teams.
@@ -64,27 +63,32 @@
   def split_teams(players, n) do
     _split_teams([], Enum.shuffle(players), n)
   end
+
   defp _split_teams(teams, players, 1 = n) do
-  team = new(%{players: players})
-  |> assign_color(n - 1)
+    team =
+      new(%{players: players})
+      |> assign_color(n - 1)
 
-  [ team | teams ]
+    [team | teams]
   end
+
   defp _split_teams(teams, players, n) do
-    { team_players, remaining_players } = Enum.split(players, div(length(players), n))
-    team = new(%{players: players})
-    |> assign_color(n - 1)
+    {team_players, remaining_players} = Enum.split(players, div(length(players), n))
 
-    _split_teams([ team | teams ], remaining_players, n - 1)
+    team =
+      new(%{players: players})
+      |> assign_color(n - 1)
+
+    _split_teams([team | teams], remaining_players, n - 1)
   end
 
-  def team_length(%__MODULE__{ players: players }) do
+  def team_length(%__MODULE__{players: players}) do
     length(players)
   end
 
   def add_player(team, player) do
     team
-    |> Map.update(:players, [ player ], fn players -> [ player | players ] end)
+    |> Map.update(:players, [player], fn players -> [player | players] end)
   end
 
   def remove_player(team, player) do
@@ -94,6 +98,6 @@
 
   def add_turn(team, turn) do
     team
-    |> Map.update(:turns, [ turn ], fn turns -> [ turn | turns ] end)
+    |> Map.update(:turns, [turn], fn turns -> [turn | turns] end)
   end
 end

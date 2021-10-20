@@ -71,9 +71,9 @@
 
       <% @user.id not in @game.submitted_users -> %>
          <h1> Submit your words to be added to the Salad Bowl!</h1>
-          <form phx-target="<%= @myself%>" phx-submit="submit_words">
+          <form phx-target={@myself} phx-submit={submit_words}>
             <%= for i <- 1..@game.cards_per_player do %>
-              <input type="text" name="<%= "word-#{i}" %>" />
+              <input type="text" name={word-#{i}} %>" />.
             <% end %>
           <button>Submit Words</button>
           </form>

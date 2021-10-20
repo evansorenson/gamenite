@@ -24,5 +24,4 @@ defmodule Gamenite.PlayerTest do
       assert player.name == "Johnny"
     end
   end
-
 end

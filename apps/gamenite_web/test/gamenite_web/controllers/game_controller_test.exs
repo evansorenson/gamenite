@@ -4,7 +4,11 @@ defmodule GameniteWeb.GameControllerTest do
   alias GamenitePersistance.Gaming
 
   @create_attrs %{description: "some description", play_count: 42, title: "some title"}
-  @update_attrs %{description: "some updated description", play_count: 43, title: "some updated title"}
+  @update_attrs %{
+    description: "some updated description",
+    play_count: 43,
+    title: "some updated title"
+  }
   @invalid_attrs %{description: nil, play_count: nil, title: nil}
 
   def fixture(:game) do
@@ -75,6 +79,7 @@ defmodule GameniteWeb.GameControllerTest do
     test "deletes chosen game", %{conn: conn, game: game} do
       conn = delete(conn, Routes.game_path(conn, :delete, game))
       assert redirected_to(conn) == Routes.game_path(conn, :index)
+
       assert_error_sent 404, fn ->
         get(conn, Routes.game_path(conn, :show, game))
       end

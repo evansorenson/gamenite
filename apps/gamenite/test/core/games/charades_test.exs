@@ -5,24 +5,36 @@ defmodule CharadesCoreTest do
   alias Gamenite.Games.Charades
 
   defp working_game(context) do
-    teams = build_teams([2,2], %Player{})
+    teams = build_teams([2, 2], %Player{})
     deck = build_deck(3)
 
-    game = Charades.create_charades(%{teams: teams, deck: deck, skip_limit: 3})
-    |> elem(1)
-    |> Map.put(:current_turn, Charades.create_turn(%{card: 1, correct_cards: [4, 5], skipped_cards: [6, 7]}))
+    game =
+      Charades.create_charades(%{teams: teams, deck: deck, skip_limit: 3})
+      |> elem(1)
+      |> Map.put(
+        :current_turn,
+        Charades.create_turn(%{card: 1, correct_cards: [4, 5], skipped_cards: [6, 7]})
+      )
 
-    new_context = context
-    |> Map.put(:game, game)
-    {:ok , new_context}
+    new_context =
+      context
+      |> Map.put(:game, game)
+
+    {:ok, new_context}
   end
 
   defp build_salad_bowl(context) do
-    teams = build_teams([2,2], %Player{})
+    teams = build_teams([2, 2], %Player{})
     deck = build_deck(3)
 
-    salad_bowl = Charades.create_salad_bowl(%{teams: teams, deck: deck, skip_limit: 1, rounds: ["Catchphrase", "Password", "Charades"]})
-    |> elem(1)
+    salad_bowl =
+      Charades.create_salad_bowl(%{
+        teams: teams,
+        deck: deck,
+        skip_limit: 1,
+        rounds: ["Catchphrase", "Password", "Charades"]
+      })
+      |> elem(1)
 
     {:ok, Map.put(context, :salad_bowl, salad_bowl)}
   end
@@ -64,36 +76,38 @@ defmodule CharadesCoreTest do
     end
   end
 
-  describe "card logic"  do
+  describe "card logic" do
     setup [:working_game]
 
     test "card is added to correct cards in turn when correct", %{game: game} do
       game
-      |> Charades.correct_card
+      |> Charades.correct_card()
       |> assert_card_moved(:correct_cards, 3)
       |> assert_card_nil
     end
 
     test "skips card successfully", %{game: game} do
       game
-      |> Charades.skip_card
+      |> Charades.skip_card()
       |> assert_card_moved(:skipped_cards, 3)
       |> assert_card_nil
     end
 
     test "skip cart but limit is reached", %{game: game} do
       %{game | skip_limit: 0}
-      |> Charades.skip_card
+      |> Charades.skip_card()
       |> assert_skip_limit_reached(0)
     end
 
     test "skip cart but deck is empty", %{game: game} do
-      error = %{game | deck: []}
-      |> Charades.skip_card
+      error =
+        %{game | deck: []}
+        |> Charades.skip_card()
+
       assert error = {:error, "Cannot skip card. No cards left in deck."}
     end
 
-    defp assert_card_moved(game, pile, length_of_cards ) do
+    defp assert_card_moved(game, pile, length_of_cards) do
       assert length(get_in(game, [:current_turn, pile])) == length_of_cards
       game
     end

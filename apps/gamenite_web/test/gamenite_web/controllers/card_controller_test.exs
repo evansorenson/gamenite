@@ -75,6 +75,7 @@ defmodule GameniteWeb.CardControllerTest do
     test "deletes chosen card", %{conn: conn, card: card} do
       conn = delete(conn, Routes.card_path(conn, :delete, card))
       assert redirected_to(conn) == Routes.card_path(conn, :index)
+
       assert_error_sent 404, fn ->
         get(conn, Routes.card_path(conn, :show, card))
       end

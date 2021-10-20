@@ -38,7 +38,6 @@ defmodule TeamTest do
     end
   end
 
-
   describe "splitting into two teams" do
     setup [:six_players, :seven_players]
 
@@ -74,7 +73,6 @@ defmodule TeamTest do
       assert length(team_one.players) == 3
       assert length(team_two.players) == 2
       assert length(team_three.players) == 2
-
     end
 
     test "splitting even number of players", %{six_players: players} do

@@ -6,9 +6,9 @@ defmodule Gamenite.Games.Charades.Player do
   alias Gamenite.TeamGame.Player
 
   embedded_schema do
-    field :name, :string
-    field :color, :string, default: nil
-    field :turns, {:array, :map}
+    field(:name, :string)
+    field(:color, :string, default: nil)
+    field(:turns, {:array, :map})
   end
 
   def changeset(charades_player, attrs) do
