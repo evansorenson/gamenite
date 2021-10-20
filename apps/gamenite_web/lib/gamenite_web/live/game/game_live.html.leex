@@ -1,111 +1,147 @@
-<h1><%= "Game: #{@game_info.title}" %></h1>
 <p class="alert alert-info" role="alert"><%= live_flash(@flash, :info) %></p>
 <p class="alert alert-danger" role="alert"><%= live_flash(@flash, :error) %></p>
 <%= cond do %>
   <% is_nil(@game) -> %>
-    <%= form_for @game_changeset, "#", [phx_change: :validate, phx_submit: :start, phx_target: @myself], fn f -> %>
-    <table class="table">
-      <tbody>
-          <tr class="rounded-t-3xl">
-            <td class="options-column">
-              <%= label f, :skip_limit, "Skip Limit" %>
-              <%= error_tag f, :skip_limit %>
-            </td>
-            <td class="value-column">
-              <%= select f, :skip_limit, 0..5 %>
-            </td>
-          </tr>
-
-          <tr>
-            <td class="options-column">
-              <%= label f, :turn_length, "Turn Length" %>
-              <%= error_tag f, :turn_length %>
-            </td>
-            <td class="value-column">
-              <%= select f, :turn_length, [30, 45, 60, 90, 120] %>
-            </td>
-          </tr>
-
-          <tr class="rounded-b-3xl">
-            <td class="options-column">
-
-            <div class="flex items-start">
-              <div class="box-content border-2 place-content-start">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div class="px-2 flex text-center h-14 text-8xl">
-                <%= label f, :rounds, "Rounds" %>
-                <%= error_tag f, :rounds %>
-              </div>
-
+  <%= form_for @game_changeset, "#", [phx_change: :validate, phx_submit: :start, phx_target: @myself], fn f -> %>
+  <table class="table">
+    <tbody>
+      <tr class="rounded-t-3xl">
+        <td class="options-column">
+          <%= label f, :skip_limit, "Skip Limit" %>
+          <%= error_tag f, :skip_limit %>
+        </td>
+        <td class="value-column">
+          <%= select f, :skip_limit, 0..5 %>
+        </td>
+      </tr>
+      <tr>
+        <td class="options-column">
+          <%= label f, :turn_length, "Turn Length" %>
+          <%= error_tag f, :turn_length %>
+        </td>
+        <td class="value-column">
+          <%= select f, :turn_length, [30, 45, 60, 90, 120] %>
+        </td>
+      </tr>
+      <tr class="rounded-b-3xl">
+        <td class="options-column">
+          <div class="flex items-start">
+            <div class="box-content border-2 place-content-start">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
             </div>
-            </td>
-            <td class="value-column">
-              <%= array_input f, :rounds, options: Application.get_env(:gamenite, :salad_bowl_all_rounds) %>
-              <%= array_add_button f, :rounds, options: Application.get_env(:gamenite, :salad_bowl_all_rounds) %>
-            </td>
-          </tr>
-
-          <tr>
-            <td class="options-column">
-              <%= label f, :cards_per_player, "Cards Written Per Player" %>
-              <%= error_tag f, :cards_per_player %>
-            </td>
-            <td class="value-column">
-              <%= select f, :cards_per_player, 2..10 %>
-            </td>
-          </tr>
-          </tbody>
-        </table>
-          <%= submit "Start Game", phx_disable_with: "Starting...", disabled: !@game_changeset.valid? %>
-    <% end %>
-
-  <% @game.finished? -> %>
-    <h1>Game is finished!</h1>
-    <button>Return to lobby</button>
-
-  <% length(@game.submitted_users) != map_size(@connected_users) -> %>
-    <%= cond do %>
-
-      <% @user.id not in @game.submitted_users -> %>
-         <h1> Submit your words to be added to the Salad Bowl!</h1>
-          <form phx-target="<%= @myself%>" phx-submit="submit_words">
+            <div class="px-2 flex text-center h-14 text-8xl">
+              <%= label f, :rounds, "Rounds" %>
+              <%= error_tag f, :rounds %>
+            </div>
+          </div>
+        </td>
+        <td class="value-column">
+          <%= array_input f, :rounds, options: Application.get_env(:gamenite, :salad_bowl_all_rounds) %>
+          <%= array_add_button f, :rounds, options: Application.get_env(:gamenite, :salad_bowl_all_rounds) %>
+        </td>
+      </tr>
+      <tr>
+        <td class="options-column">
+          <%= label f, :cards_per_player, "Cards Written Per Player" %>
+          <%= error_tag f, :cards_per_player %>
+        </td>
+        <td class="value-column">
+          <%= select f, :cards_per_player, 2..10 %>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <%= submit "Start Game", phx_disable_with: "Starting...", disabled: !@game_changeset.valid? %>
+<% end %>
+<% @game.finished? -> %>
+<h1>Game is finished!</h1>
+<button>Return to lobby</button>
+<% length(@game.submitted_users) != map_size(@connected_users) -> %>
+<%= if  @user.id not in @game.submitted_users -%> do %>
+  <div class="container items-center justify-center max-w-max py-10">
+    <h1 class="py-8 text-4xl font-bold"> Enter your words to be added to the Salad Bowl!</h1>
+    <form phx-target="<%= @myself%>" phx-submit="submit_words">
+            <div class="flex-wrap">
             <%= for i <- 1..@game.cards_per_player do %>
-              <input type="text" name="<%= "word-#{i}" %>" />
-            <% end %>
-          <button>Submit Words</button>
-          </form>
-
-      <% true -> %>
-        <h1>Waiting for others!<h1>
-
+                <input class="mx-2 my-2 shadow-md h-48 text-center" name="<%= "word-#{i}" %>"/>
+  <% end %>
+</div>
+<button class="my-8 px-4 rounded-md bg-blurple text-white border-0">Submit</button>
+</form>
+</div>
+<% else %>
+  <h1 class="py-8 text-4xl font-bold text-center">Waiting for others to submit their words...</h1>
+  <div class="flex items-center justify-center">
+    <%= for {user_id, user} <- Map.to_list(@connected_users) do %>
+      <%= if user_id in @game.submitted_users do %>
+        <div class="px-4">
+          <h1 class="px-4 bg-green-400 rounded-lg shadow-md"> <%= user.display_name %> </h1>
+        </div>
+      <% else %>
+        <div class="px-4">
+          <h1 class="px-4 bg-red-400 rounded-lg shadow-md"> <%= user.display_name %> </h1>
+        </div>
+      <% end %>
     <% end %>
-
-  <% true -> %>
-    <h1>Turn time: <%= @game.current_turn.time_remaining_in_sec %></h1>
+  </div>
+<% end %>
+<% true -> %>
+<h1 class="text-center font-bold text-7xl text-gray-darkest pb-2 border-b-2"><%= "Round #{Enum.find_index(@game.rounds, &(&1 == @game.current_round)) + 1} - #{@game.current_round}" %></h1>
+<div class="grid grid-cols-4 py-8">
+  <div class="grid grid-cols-1 col-span-3 space-y-4 pr-8">
+    <div class="flex items-center justify-center">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <h1 class="text-7xl"><%= @game.current_turn.time_remaining_in_sec %></h1>
+    </div>
+    <div class="flex items-center">
+      <h1 class="pr-4 text-3xl">Who's up?</h1>
+      <h1 style="color:#<%= @game.current_team.color %>" class="px-4 rounded-lg shadow-md font-semibold border-2"><%= @game.current_team.current_player.name %></h1>
+    </div>
     <%= cond do %>
       <% Gamenite.TeamGame.current_player?(@game, @user.id) -> %>
-        <%= cond do %>
-          <% @game.current_turn.time_remaining_in_sec == @game.turn_length -> %>
-            <button phx-click="start_turn" phx-target="<%= @myself %>">Start Turn</button>
-
-          <% @game.current_turn.needs_review -> %>
-            <%= for {_outcome, word} <- @game.current_turn.completed_cards do %>
-              <h1><%= word %></h1>
-            <% end %>
-            <button phx-click="end_turn" phx-target="<%= @myself %>">End Turn</button>
-
-
-          <% true -> %>
-              <h1><%= @game.current_turn.card %></h1>
-            <button phx-click="correct" phx-target="<%= @myself %>">Correct</button>
-            <button phx-click="skip" phx-target="<%= @myself %>">Skip</button>
+      <%= cond do %>
+        <% @game.current_turn.time_remaining_in_sec == @game.turn_length -> %>
+        <button class="bg-black text-white  border-0 px-4" phx-click="start_turn" phx-target="<%= @myself %>">Start Turn</button>
+        <% @game.current_turn.needs_review -> %>
+        <button phx-click="end_turn" phx-target="<%= @myself %>">End Turn</button>
+        <%= for {_outcome, word} <- @game.current_turn.completed_cards do %>
+          <h1><%= word %></h1>
+          <button class="bg-green-600 px-4">Correct</button>
+          <button class="bg-red-600 px-4">Incorrect</button>
+          <button>Skipped</button>
         <% end %>
-      <% Gamenite.TeamGame.on_current_team?(@game, @user.id) -> %>
-        <h1><%= "Your guessing clues from #{@game.current_team.current_player.name}." %><h1>
-      <% true -> %>
-        <h1><%= "Your team is chilling." %><h1>
-    <% end %>
-<% end %>
+        <% true -> %>
+        <div class="flex shadow-md w-1/2 h-48 items-center justify-center">
+          <h1 class="text-center text-6xl"><%= @game.current_turn.card %></h1>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" class="button h-24 w-24" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <button phx-target="<%= @myself%>" phx-click="incorrect" class="bg-red-600 px-4">
+          <button phx-target="<%= @myself%>" phx-click="correct" class="bg-green-600 px-4">
+            <button phx-target="<%= @myself%>" phx-click="skip" class="bg-yellow-600 px-4">
+            </button>
+          <% end %>
+          <% Gamenite.TeamGame.on_current_team?(@game, @user.id) -> %>
+          <h1 class="text-5xl py-10"><%= "Your team is up! You are guessing clues." %></h1>
+          <% true -> %>
+          <h1 class="text-5xl py-10"><%= "Your team is chilling. Sit back and relax." %></h1>
+        <% end %>
+      </div>
+      <div class="space-y-4">
+        <div class="grid grid-cols-<%= length(@game.teams) %>">
+          <%= for team <- @game.teams do %>
+            <div>
+              <h1 style="color:#<%= team.color %>" class="font-bold text-center text-5xl"><%= "Team #" %></h1>
+              <h1 style="color:#<%= team.color %>" class="py-2 font-bold text-center text-4xl"><%= team.score %></h1>
+            </div>
+          <% end %>
+        </div>
+        <h1><%= "Cards Left: #{length(@game.deck)}" %></h1>
+      </div>
+    </div>
+  <% end %>

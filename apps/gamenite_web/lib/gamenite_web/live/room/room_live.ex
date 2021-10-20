@@ -23,22 +23,23 @@ defmodule GameniteWeb.RoomLive do
       Phoenix.PubSub.subscribe(GamenitePersistance.PubSub, "game:" <> slug)
     end
 
-    if RoomAPI.slug_exists?(slug) do
-      {:ok, room} = join_room(slug, user)
+    with true <- RoomAPI.slug_exists?(slug),
+         {:ok, room } = RoomAPI.join(slug, Roommate.new_from_user(user)) do
       broadcast_room_update(room.id, room)
       {:ok,
       socket
       |> assign(room: room, user: user, game_id: room.game_id, slug: slug, connected_users: room.connected_users)
       |> assign(offer_requests: [], ice_candidate_offers: [], sdp_offers: [], answers: [])}
     else
-      {:ok, socket
-      |> put_flash(:error, "Room does not exist.")
-      |> push_redirect(to: Routes.game_path(socket, :index))}
+      false ->
+        {:ok, socket
+        |> put_flash(:error, "Room does not exist.")
+        |> push_redirect(to: Routes.game_path(socket, :index))}
+      {:error, reason} ->
+        {:ok, socket
+        |> put_flash(:error, reason)
+        |> push_redirect(to: Routes.game_path(socket, :index))}
     end
-  end
-
-  defp join_room(room_id, user) do
-    RoomAPI.join(room_id, Roommate.new_from_user(user))
   end
 
   defp broadcast_room_update(room_id, room) do

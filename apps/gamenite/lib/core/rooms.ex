@@ -1,14 +1,4 @@
 defmodule Gamenite.Rooms do
-
-  def join(room, player, password) do
-    cond do
-      Pbkdf2.verify_pass(password, room.password) ->
-        join(room, player)
-      true ->
-        {:error, "Invalid password."}
-    end
-  end
-
   @max_room_size 8
   @spec join(%{:connected_users => map, optional(any) => any}, any) ::
           {:error, <<_::104>>} | %{:connected_users => map, optional(any) => any}

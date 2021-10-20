@@ -61,7 +61,8 @@ defmodule GameniteWeb.MixProject do
   defp aliases do
     [
       setup: ["deps.get", "cmd npm install --prefix assets"],
-      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"]
+      test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
+      prettier: "cmd ./assets/node_modules/.bin/prettier --check . --color"
     ]
   end
 end

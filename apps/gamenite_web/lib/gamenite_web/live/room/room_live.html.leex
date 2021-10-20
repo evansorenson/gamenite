@@ -1,26 +1,14 @@
 <%= live_component @socket, GameniteWeb.GameLive, id: @game_id,  slug: @slug, game_id: @game_id,
                                                    user: @user, connected_users: @connected_users %>
 
-<h1 class="text-6xl font-bold text-center py-4">Users</h1>
-<div class="table bg-blurple rounded-3xl flex-wrap items-center">
-  <%= for i <- 0..9 do %>
-          <%= case Enum.fetch(Map.to_list(@room.connected_users), i) do %>
-          <% {:ok, {_k, user}} -> %>
-            <div class="inline-grid px-8 py-8 w-1/5 center">
-              <div class="object-none object-bottom-center h-24 w-24 bg-black rounded-full"></div>
-              <h1 class="object-none object-bottom-center"><%= user.user_id %></h1>
-              <%= if not user.muted? do %>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                </svg>
-              <% end %>
-              <button phx-click="mute" phx-value-user_id="<%= user.user_id %>">Mute</button>
-            </div>
-          <% _ -> %>
-            <div class="inline-grid px-8 py-8 w-1/5 place-items-center">
-              <div class="object-none object-bottom-center h-24 w-24 bg-gray-light rounded-full"></div>
-            </div>
-          <% end %>
+<div class="fixed w-full left-0 bottom-0 bg-blurple flex">
+  <%= for {_id, user} <- Map.to_list(@room.connected_users) do %>
+    <div class="container px-4 py-4 items-center justify-center">
+      <div class="flex justify-center items-center">
+      <button class="block h-12 w-12 bg-black rounded-full border-0"></button>
+      </div>
+      <h1 class="text-center"><%= user.display_name %></h1>
+    </div>
   <% end %>
 </div>
 
