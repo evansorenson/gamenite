@@ -78,7 +78,7 @@ defmodule SaladBowlTest do
       {:ok, game} = SaladBowlAPI.card_completed(slug, :skipped)
       assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :skipped) == 1
       assert game.current_turn.card == "1"
-      refute game.current_turn.needs_review
+      refute game.current_turn.review?
     end
 
     test "skip card when at skip limit", %{salad_bowl: salad_bowl} do
@@ -93,7 +93,7 @@ defmodule SaladBowlTest do
       {:ok, game} = SaladBowlAPI.card_completed(slug, :correct)
       assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :correct) == 1
       assert game.current_turn.card == "1"
-      refute game.current_turn.needs_review
+      refute game.current_turn.review?
     end
 
     test "correct card when deck is out and no skipped cards, prompts review", %{
@@ -103,7 +103,7 @@ defmodule SaladBowlTest do
       {:ok, game} = SaladBowlAPI.start_turn(slug)
       {:ok, game} = SaladBowlAPI.card_completed(slug, :correct)
       assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :correct) == 1
-      assert game.current_turn.needs_review
+      assert game.current_turn.review?
     end
 
     test "correct card when deck is out and skipped cards, move first skipped card to current card",
@@ -119,7 +119,7 @@ defmodule SaladBowlTest do
       assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :correct) == 1
       assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :skipped) == 0
       assert game.current_turn.card == "9"
-      refute game.current_turn.needs_review
+      refute game.current_turn.review?
     end
   end
 
@@ -132,7 +132,7 @@ defmodule SaladBowlTest do
       :timer.sleep(1100)
       {:ok, game} = SaladBowlAPI.state(slug)
       assert game.current_turn.time_remaining_in_sec == 0
-      assert game.current_turn.needs_review
+      assert game.current_turn.review?
     end
   end
 

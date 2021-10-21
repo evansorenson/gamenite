@@ -112,8 +112,8 @@ defmodule CharadesCoreTest do
       game
     end
 
-    defp assert_needs_review({:review_cards, game}) do
-      assert game.current_turn.needs_review
+    defp assert_review?({:review_cards, game}) do
+      assert game.current_turn.review?
       game
     end
 

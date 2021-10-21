@@ -16,6 +16,7 @@ defmodule Gamenite.Games.Charades do
     |> Game.salad_bowl_changeset(attrs)
   end
 
+
   def create_charades(attrs) do
     %Game{}
     |> Game.changeset(attrs)
@@ -94,6 +95,13 @@ defmodule Gamenite.Games.Charades do
         do_add_card_to_completed(game, card_outcome)
         |> draw_card
     end
+  end
+
+  def change_card_outcome(game, card_index, outcome) do
+    game
+    |> update_in([:current_turn, :completed_cards], fn cards ->
+      List.update_at(cards, card_index, fn {_outcome, card} -> {outcome, card} end)
+    end)
   end
 
   defp do_add_card_to_completed(%{current_turn: current_turn} = game, card_outcome) do
@@ -197,7 +205,19 @@ defmodule Gamenite.Games.Charades do
   defp do_add_cards_to_deck(%{deck: deck} = game, cards, user_id) do
     game
     |> Map.update(:submitted_users, [user_id], fn users -> [user_id | users] end)
+    |> Map.put(:starting_deck, cards ++ deck)
     |> update_deck(cards ++ deck)
+  end
+
+  def start_turn(game) do
+    game
+    |> draw_card
+    |> set_turn_started?(true)
+  end
+
+  defp set_turn_started?(game, bool) do
+    game
+    |> put_in([:current_turn, :started?], bool)
   end
 
   def end_turn(game) do
@@ -247,6 +267,8 @@ defmodule Gamenite.Games.Charades do
     game
     |> inc_round
     |> update_deck(starting_deck)
+    |> set_turn_started?(false)
+    |> update_in([:current_turn, :review?], false)
   end
 
   def update_deck(game, new_deck) do

@@ -1,7 +1,7 @@
 <%= live_component @socket, GameniteWeb.GameLive, id: @game_id,  slug: @slug, game_id: @game_id,
                                                    user: @user, connected_users: @connected_users %>
 
-<div class="fixed w-full left-0 bottom-0 bg-blurple flex">
+<div class="relative w-full left-0 bottom-0 bg-blurple flex">
   <%= for {_id, user} <- Map.to_list(@room.connected_users) do %>
     <div class="container px-4 py-4 items-center justify-center">
       <div class="flex justify-center items-center">
@@ -10,28 +10,4 @@
       <h1 class="text-center"><%= user.display_name %></h1>
     </div>
   <% end %>
-</div>
-
-<div id="offer-requests">
-    <%= for request <- @offer_requests do %>
-    <span phx-hook="HandleOfferRequest" id="offer-request" data-from-username="<%= request.from_user.username %>"></span>
-    <% end %>
-</div>
-
-<div id="sdp-offers">
-    <%= for sdp_offer <- @sdp_offers do %>
-    <span phx-hook="HandleSdpOffer" data-from-username="<%= sdp_offer["from_user"] %>" data-sdp="<%= sdp_offer["description"]["sdp"] %>"></span>
-    <% end %>
-</div>
-
-<div id="sdp-answers">
-    <%= for answer <- @answers do %>
-    <span phx-hook="HandleAnswer" data-from-username="<%= answer["from_user"] %>" data-sdp="<%= answer["description"]["sdp"] %>"></span>
-    <% end %>
-</div>
-
-<div id="ice-candidates">
-    <%= for ice_candidate_offer <- @ice_candidate_offers do %>
-    <span phx-hook="HandleIceCandidateOffer" data-from-username="<%= ice_candidate_offer["from_user"] %>" data-ice-candidate="<%= Jason.encode!(ice_candidate_offer["candidate"]) %>"></span>
-    <% end %>
 </div>

@@ -17,7 +17,6 @@ defmodule GameniteWeb.Router do
 
   scope "/", GameniteWeb do
     pipe_through :browser
-    # plug :put_root_layout, {GameniteWeb.LayoutView, :root}
 
     get "/", GameController, :index
 

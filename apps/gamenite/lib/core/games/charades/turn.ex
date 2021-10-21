@@ -5,7 +5,8 @@ defmodule Gamenite.Games.Charades.Turn do
             completed_cards: [],
             player_name: nil,
             time_remaining_in_sec: nil,
-            needs_review: false
+            review?: false,
+            started?: false
 
   def new(params) do
     struct!(__MODULE__, params)

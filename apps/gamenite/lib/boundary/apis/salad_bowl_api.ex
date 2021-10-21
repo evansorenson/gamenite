@@ -40,4 +40,8 @@ defmodule Gamenite.SaladBowlAPI do
   def submit_cards(room_slug, word_list, user_id) do
     GenServer.call(via(room_slug), {:submit_cards, word_list, user_id})
   end
+
+  def change_card_outcome(room_slug, card_index, outcome) do
+    GenServer.call(via(room_slug), {:change_card_outcome, card_index, outcome})
+  end
 end

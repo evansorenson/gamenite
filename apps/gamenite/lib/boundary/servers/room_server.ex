@@ -64,11 +64,12 @@ defmodule Gamenite.RoomServer do
     end
   end
 
-  def handle_call({:leave, _player}, _from, %{connected_users: connected_users} = room)
+  def handle_call({:leave, user_id}, _from, %{connected_users: connected_users} = room)
       when map_size(connected_users) == 1 do
-    Logger.info("Exiting Room: #{room.slug}. No players connected.")
-    reason = "No players connected."
-    {:stop, reason, {:stop, reason}, room}
+    new_room = room
+    |> Rooms.leave(user_id)
+
+    {:reply, :ok, new_room, 300_000}
   end
 
   def handle_call({:leave, user_id}, _from, room) do
@@ -103,5 +104,10 @@ defmodule Gamenite.RoomServer do
     room
     |> Rooms.set_game(game_id)
     |> response(room)
+  end
+
+  def handle_info(:timeout, room) do
+    Logger.info "Room inactive. Shutting down."
+    {:stop, :normal, room}
   end
 end

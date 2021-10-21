@@ -13,7 +13,7 @@ defmodule GameniteWeb.GameLive do
       ) do
     game_info = GamenitePersistance.Gaming.get_game!(game_id)
 
-    game_changeset = create_game_changeset(%{}, connected_users)
+    game_changeset = create_game_changeset(%{}, connected_users, slug)
 
     {:ok,
      socket
@@ -59,7 +59,7 @@ defmodule GameniteWeb.GameLive do
     |> TeamGame.Player.new_players_from_users()
   end
 
-  defp convert_changeset_params(params, connected_users) do
+  defp convert_changeset_params(params, connected_users, slug) do
     teams =
       connected_users
       |> users_to_players
@@ -68,12 +68,13 @@ defmodule GameniteWeb.GameLive do
 
     key_to_atom(params)
     |> Map.put(:teams, teams)
+    |> Map.put(:room_slug, slug)
   end
 
-  defp create_game_changeset(params, connected_users) do
-    _game_changeset =
+  defp create_game_changeset(params, connected_users, slug) do
+    game_changeset =
       %Game{}
-      |> Game.salad_bowl_changeset(convert_changeset_params(params, connected_users))
+      |> Game.salad_bowl_changeset(convert_changeset_params(params, connected_users, slug))
   end
 
   defp key_to_atom(map) do
@@ -88,14 +89,14 @@ defmodule GameniteWeb.GameLive do
 
   @impl true
   def handle_event("start", %{"game" => params}, socket) do
-    params = convert_changeset_params(params, socket.assigns.connected_users)
+    params = convert_changeset_params(params, socket.assigns.connected_users, socket.assigns.slug)
 
     if SaladBowlAPI.exists?(socket.assigns.slug) do
       {:noreply, put_flash(socket, :error, "Game already started.")}
     else
       with {:ok, game} <- Charades.create_salad_bowl(params),
            game_with_first_turn <- Charades.new_turn(game),
-           {:ok, _pid} <- SaladBowlAPI.start_game(game_with_first_turn, socket.assigns.slug) do
+          :ok <- SaladBowlAPI.start_game(game_with_first_turn, socket.assigns.slug) do
 
         {:noreply,
          socket
@@ -110,7 +111,7 @@ defmodule GameniteWeb.GameLive do
   @impl true
   def handle_event("validate", %{"game" => params}, socket) do
     {:noreply,
-     assign(socket, game_changeset: create_game_changeset(params, socket.assigns.connected_users))}
+     assign(socket, game_changeset: create_game_changeset(params, socket.assigns.connected_users, socket.assigns.slug))}
   end
 
   @impl true
@@ -126,6 +127,21 @@ defmodule GameniteWeb.GameLive do
   @impl true
   def handle_event("skip", _params, socket) do
     card_completed(socket, :skipped)
+  end
+
+  @impl true
+  def handle_event("change_correct", %{"card_index" => card_index}, socket) do
+    change_card_outcome(socket, card_index, :correct)
+  end
+
+  @impl true
+  def handle_event("change_incorrect", %{"card_index" => card_index}, socket) do
+    change_card_outcome(socket, card_index, :incorrect)
+  end
+
+  @impl true
+  def handle_event("change_skip", %{"card_index" => card_index}, socket) do
+    change_card_outcome(socket, card_index, :skipped)
   end
 
   @impl true
@@ -156,6 +172,11 @@ defmodule GameniteWeb.GameLive do
 
   defp card_completed(socket, outcome) do
     SaladBowlAPI.card_completed(socket.assigns.slug, outcome)
+    |> game_callback(socket)
+  end
+
+  defp change_card_outcome(socket, card_index, outcome) do
+    SaladBowlAPI.change_card_outcome(socket.assigns.slug, String.to_integer(card_index), outcome)
     |> game_callback(socket)
   end
 end
