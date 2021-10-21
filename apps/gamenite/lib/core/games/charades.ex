@@ -268,7 +268,7 @@ defmodule Gamenite.Games.Charades do
     |> inc_round
     |> update_deck(starting_deck)
     |> set_turn_started?(false)
-    |> update_in([:current_turn, :review?], false)
+    |> put_in([:current_turn, :review?], false)
   end
 
   def update_deck(game, new_deck) do

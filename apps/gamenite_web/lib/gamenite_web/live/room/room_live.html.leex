@@ -1,11 +1,13 @@
+<div class="mb-24">
 <%= live_component @socket, GameniteWeb.GameLive, id: @game_id,  slug: @slug, game_id: @game_id,
                                                    user: @user, connected_users: @connected_users %>
+</div>
 
-<div class="relative w-full left-0 bottom-0 bg-blurple flex">
+<div class="fixed w-full h-24 left-0 bottom-0 bg-blurple flex">
   <%= for {_id, user} <- Map.to_list(@room.connected_users) do %>
     <div class="container px-4 py-4 items-center justify-center">
       <div class="flex justify-center items-center">
-      <button class="block h-12 w-12 bg-black rounded-full border-0"></button>
+      <button class="block h-10 w-10 bg-black rounded-full border-0"></button>
       </div>
       <h1 class="text-center"><%= user.display_name %></h1>
     </div>
