@@ -1,5 +1,4 @@
 defmodule Gamenite.TeamGame do
-  use Accessible
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -48,57 +47,30 @@ defmodule Gamenite.TeamGame do
     |> replace_current_team(Team.add_turn(current_team, current_turn))
   end
 
-  defp inc_player(%{current_team: current_team} = game) do
-    update_current_item_and_increment_list(
+  defp inc_player(game) do
+    Lists.update_current_item_and_increment_list(
       game,
-      current_team.players,
-      current_team.current_player,
-      &update_player/2,
-      &replace_current_player/2
+      [:current_team, :players],
+      [:current_team, :current_player]
     )
   end
 
-  defp inc_team(%{teams: teams, current_team: current_team} = game) do
-    update_current_item_and_increment_list(
+  defp inc_team(game) do
+    Lists.update_current_item_and_increment_list(
       game,
-      teams,
-      current_team,
-      &update_team/2,
-      &replace_current_team/2
+      [:teams],
+      [:current_team]
     )
   end
 
-  defp update_current_item_and_increment_list(game, list, current_item, update_func, replace_func) do
-    next_element = Lists.next_list_element_by_id(list, current_item.id)
-
-    game
-    |> update_func.(current_item)
-    |> replace_func.(next_element)
-  end
-
-  defp update_team(%{teams: teams} = game, team) do
-    team_index = Lists.find_element_index_by_id(teams, team.id)
-
-    game
-    |> put_in([:teams, Access.at(team_index)], team)
+  defp update_team(%{ teams: teams} = game, team) do
+    new_teams = Lists.replace_element_by_id(teams, team)
+    %{ game | teams: new_teams}
   end
 
   defp replace_current_team(game, next_team) do
     game
     |> Map.replace!(:current_team, next_team)
-  end
-
-  defp update_player(%{current_team: current_team} = game, player) do
-    player_index =
-      Lists.find_element_index_by_id(current_team.players, current_team.current_player.id)
-
-    game
-    |> put_in([:current_team, :players, Access.at(player_index)], player)
-  end
-
-  def replace_current_player(game, next_player) do
-    game
-    |> put_in([:current_team, :current_player], next_player)
   end
 
   def new_turn(game, turn) do

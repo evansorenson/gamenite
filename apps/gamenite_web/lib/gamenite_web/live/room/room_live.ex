@@ -96,6 +96,7 @@ defmodule GameniteWeb.RoomLive do
     |> room_response(socket)
   end
 
+  @impl true
   def handle_info({:room_update, room}, socket) do
     {:noreply, assign(socket, room: room, connected_users: room.connected_users)}
   end

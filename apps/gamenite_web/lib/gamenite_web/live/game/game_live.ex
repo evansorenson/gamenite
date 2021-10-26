@@ -72,7 +72,6 @@ defmodule GameniteWeb.GameLive do
   end
 
   defp create_game_changeset(params, connected_users, slug) do
-    game_changeset =
       %Game{}
       |> Game.salad_bowl_changeset(convert_changeset_params(params, connected_users, slug))
   end

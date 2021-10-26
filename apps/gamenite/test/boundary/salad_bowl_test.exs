@@ -3,9 +3,10 @@ defmodule SaladBowlTest do
   use GameBuilders
 
   alias Gamenite.SaladBowlAPI
-
   alias Gamenite.Games.Charades
   alias Gamenite.Games.Charades.{Game, Player, Turn}
+
+  alias Phoenix.PubSub
 
   defp build_salad_bowl(context) do
     teams = build_teams([2, 2], %Player{})
@@ -55,6 +56,7 @@ defmodule SaladBowlTest do
   defp start_game(game) do
     room_slug = Gamenite.RoomAPI.generate_slug()
     SaladBowlAPI.start_game(game, room_slug)
+    PubSub.subscribe(Gamenite.PubSub, "room:" <> room_slug)
     room_slug
   end
 
@@ -63,7 +65,9 @@ defmodule SaladBowlTest do
 
     test "start turn, draws card", %{salad_bowl: salad_bowl} do
       slug = start_game(salad_bowl)
-      {:ok, game} = SaladBowlAPI.start_turn(slug)
+      :ok = SaladBowlAPI.start_turn(slug)
+      assert_receive {:game_update, game}
+
       assert game.current_turn.card == "1"
     end
 
@@ -75,7 +79,9 @@ defmodule SaladBowlTest do
 
     test "skip card with cards left in deck and under skip limit", %{salad_bowl: salad_bowl} do
       slug = start_game(salad_bowl)
-      {:ok, game} = SaladBowlAPI.card_completed(slug, :skipped)
+      :ok = SaladBowlAPI.card_completed(slug, :skipped)
+      assert_receive {:game_update, game}
+
       assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :skipped) == 1
       assert game.current_turn.card == "1"
       refute game.current_turn.review?
@@ -89,8 +95,9 @@ defmodule SaladBowlTest do
 
     test "correct card with cards left in deck", %{salad_bowl: salad_bowl} do
       slug = start_game(salad_bowl)
+      :ok = SaladBowlAPI.card_completed(slug, :correct)
+      assert_receive {:game_update, game}
 
-      {:ok, game} = SaladBowlAPI.card_completed(slug, :correct)
       assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :correct) == 1
       assert game.current_turn.card == "1"
       refute game.current_turn.review?
@@ -100,8 +107,12 @@ defmodule SaladBowlTest do
       salad_bowl: salad_bowl
     } do
       slug = start_game(%{salad_bowl | deck: ["1"]})
-      {:ok, game} = SaladBowlAPI.start_turn(slug)
-      {:ok, game} = SaladBowlAPI.card_completed(slug, :correct)
+      :ok = SaladBowlAPI.start_turn(slug)
+      assert_receive {:game_update, game}
+
+      :ok = SaladBowlAPI.card_completed(slug, :correct)
+      assert_receive {:game_update, game}
+
       assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :correct) == 1
       assert game.current_turn.review?
     end
@@ -115,7 +126,9 @@ defmodule SaladBowlTest do
             current_turn: Turn.new(%{card: "0", completed_cards: [{:skipped, "9"}]})
         })
 
-      {:ok, game} = SaladBowlAPI.card_completed(slug, :correct)
+      :ok = SaladBowlAPI.card_completed(slug, :correct)
+      assert_receive {:game_update, game}
+
       assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :correct) == 1
       assert Charades.count_cards_with_outcome(game.current_turn.completed_cards, :skipped) == 0
       assert game.current_turn.card == "9"
@@ -128,9 +141,10 @@ defmodule SaladBowlTest do
 
     test "timer runs out during turn", %{salad_bowl: salad_bowl} do
       slug = start_game(salad_bowl)
-      {:ok, game} = SaladBowlAPI.start_turn(slug)
-      :timer.sleep(1100)
-      {:ok, game} = SaladBowlAPI.state(slug)
+      :ok = SaladBowlAPI.start_turn(slug)
+      assert_receive {:game_update, game}
+
+      assert_receive {:game_update, game}
       assert game.current_turn.time_remaining_in_sec == 0
       assert game.current_turn.review?
     end
@@ -160,22 +174,19 @@ defmodule SaladBowlTest do
                SaladBowlAPI.submit_cards(slug, ["banana", "apple"], 1)
     end
 
-    test "user already submitted cards", %{salad_bowl: salad_bowl} do
-      slug = start_game(%{salad_bowl | submitted_users: [0]})
-      SaladBowlAPI.submit_cards(slug, ["apple", "pear"], 0)
-    end
-
     test "successfully submission when cards in deck already", %{salad_bowl: salad_bowl} do
       slug = start_game(salad_bowl)
+      :ok = SaladBowlAPI.submit_cards(slug, ["apple", "pear"], 1)
+      assert_receive {:game_update, game}
 
-      {:ok, game} = SaladBowlAPI.submit_cards(slug, ["apple", "pear"], 1)
       assert length(game.deck) == 5
     end
 
     test "successfully submission when no cards in deck", %{salad_bowl: salad_bowl} do
       slug = start_game(%{salad_bowl | deck: []})
+      :ok = SaladBowlAPI.submit_cards(slug, ["apple", "pear"], 1)
+      assert_receive {:game_update, game}
 
-      {:ok, game} = SaladBowlAPI.submit_cards(slug, ["apple", "pear"], 1)
       assert length(game.deck) == 2
     end
   end
@@ -185,7 +196,9 @@ defmodule SaladBowlTest do
 
     test "score correct cards and add to team", %{finished_turn: salad_bowl} do
       slug = start_game(salad_bowl)
-      {:ok, game} = SaladBowlAPI.end_turn(slug)
+      :ok = SaladBowlAPI.end_turn(slug)
+      assert_receive {:game_update, game}
+
       assert hd(game.teams).score == 2
     end
 
@@ -193,7 +206,8 @@ defmodule SaladBowlTest do
       finished_turn: salad_bowl
     } do
       slug = start_game(salad_bowl)
-      {:ok, game} = SaladBowlAPI.end_turn(slug)
+      :ok = SaladBowlAPI.end_turn(slug)
+      assert_receive {:game_update, game}
 
       assert "0" in game.deck
       assert "3" in game.deck
@@ -204,14 +218,16 @@ defmodule SaladBowlTest do
 
     test "next team is going", %{finished_turn: salad_bowl} do
       slug = start_game(salad_bowl)
-      {:ok, game} = SaladBowlAPI.end_turn(slug)
+      :ok = SaladBowlAPI.end_turn(slug)
+      assert_receive {:game_update, game}
 
       assert game.current_team.id != salad_bowl.current_team.id
     end
 
     test "new turn is created", %{finished_turn: salad_bowl} do
       slug = start_game(salad_bowl)
-      {:ok, game} = SaladBowlAPI.end_turn(slug)
+      :ok = SaladBowlAPI.end_turn(slug)
+      assert_receive {:game_update, game}
 
       assert game.current_turn != salad_bowl.current_turn
       assert game.current_turn.time_remaining_in_sec == salad_bowl.turn_length
@@ -229,7 +245,9 @@ defmodule SaladBowlTest do
         %{salad_bowl | current_turn: finished_round_turn}
         |> start_game()
 
-      {:ok, game} = SaladBowlAPI.end_turn(slug)
+      :ok = SaladBowlAPI.end_turn(slug)
+      assert_receive {:game_update, game}
+
       assert game.current_round == "Password"
       assert game.deck == ["1", "2", "3"]
       assert game.current_turn.time_remaining_in_sec == 15
@@ -248,7 +266,8 @@ defmodule SaladBowlTest do
         %{salad_bowl | current_turn: finished_round_turn, current_round: "Charades"}
         |> start_game()
 
-      {:ok, game} = SaladBowlAPI.end_turn(slug)
+      :ok = SaladBowlAPI.end_turn(slug)
+      assert_receive {:game_update, game}
       assert game.finished?
     end
   end
