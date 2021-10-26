@@ -57,8 +57,18 @@
 <% end %>
 <% @game.finished? -> %>
 <h1>Game is finished!</h1>
+<div class="space-y-4 pt-0">
+    <div class="grid grid-cols-<%= length(@game.teams) %>">
+      <%= for team <- @game.teams do %>
+        <div>
+          <h1 style="color:#<%= team.color %>" class="font-bold text-center text-5xl"><%= "Team #" %></h1>
+          <h1 style="color:#<%= team.color %>" class="py-2 font-bold text-center text-4xl"><%= team.score %></h1>
+        </div>
+      <% end %>
+    </div>
+  </div>
 <button>Return to lobby</button>
-<% length(@game.submitted_users) < map_size(@connected_users) -> %>
+<% length(@game.submitted_users) < map_size(@roommates) -> %>
 <%= if  @user.id not in @game.submitted_users do %>
   <div class="container items-center justify-center max-w-max py-10">
     <h1 class="py-8 text-4xl font-bold"> Enter your words to be added to the Salad Bowl!</h1>
@@ -73,14 +83,14 @@
 </div>
 <% else %>
   <h1 class="py-8 text-4xl font-bold text-center">Waiting for others to submit their words...</h1>
-  <div class="flex items-center justify-center space-x-4">
-    <%= for {user_id, user} <- Map.to_list(@connected_users) do %>
+  <div class="flex flex-wrap items-center justify-evenly">
+    <%= for {user_id, user} <- Map.to_list(@roommates) do %>
       <%= if user_id in @game.submitted_users do %>
-        <div class="px-4">
+        <div class="px-4 py-4">
           <h1 class="px-4 bg-green-400 rounded-lg shadow-md"> <%= user.display_name %> </h1>
         </div>
       <% else %>
-        <div class="px-4">
+        <div class="px-4 py-4">
           <h1 class="px-4 bg-red-400 rounded-lg shadow-md"> <%= user.display_name %> </h1>
         </div>
       <% end %>
@@ -89,77 +99,105 @@
 <% end %>
 <% true -> %>
 <h1 class="text-center font-bold text-7xl text-gray-darkest pb-2 border-b-2"><%= "Round #{Enum.find_index(@game.rounds, &(&1 == @game.current_round)) + 1} - #{@game.current_round}" %></h1>
-<div class="container py-8">
-  <div class="grid grid-cols-1 space-y-4 pr-8">
-    <div class="flex items-center justify-center">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+<div class="container py-8 space-y-4">
+  <div class="flex items-center justify-evenly">
+    <div class="flex justify-start">
+      <h1 style="color:#<%= @game.current_team.color %>" class="px-4 text-4xl rounded-lg shadow-md font-semibold border-2"><%= @game.current_team.current_player.name %></h1>
+    </div>
+    <div class="">
+      <h1 class="-mb-4 text-center text-5xl"><%= "#{length(@game.deck)}" %></h1>
+      <svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
+	 width="45" height="45" viewBox="0 0 312.417 312.417" style="enable-background:new 0 0 312.417 312.417;"
+	 xml:space="preserve">
+            <path d="M308.442,139.671L145.218,94.811c-0.253-0.056-25.877-5.503-34.75-24.321c-0.749-1.595-2.228-2.719-3.963-3.019
+			c-1.738-0.309-3.504,0.264-4.746,1.511c-0.253,0.258-25.919,25.914-45.565,35.269L3.302,126.675
+			c-2.097,0.892-3.407,2.998-3.283,5.271s1.661,4.221,3.839,4.875l214.502,64.344c0.506,0.147,1.033,0.222,1.55,0.222
+			c0.949,0,1.894-0.243,2.732-0.744l87.106-51.1c1.872-1.097,2.905-3.211,2.621-5.36
+			C312.085,142.021,310.541,140.251,308.442,139.671z M219.205,190.133l-197.91-59.36l39.327-16.675
+			c16.195-7.704,34.966-24.363,43.772-32.647c12.943,18.473,37.478,23.701,38.314,23.862l150.541,41.391L219.205,190.133z"/>
+            <path d="M311.668,163.75c-1.513-2.573-4.83-3.438-7.388-1.92l-85.076,49.913L6.951,148.069c-2.85-0.852-5.864,0.762-6.721,3.623
+			c-0.859,2.858,0.765,5.866,3.623,6.724l216.754,65.014l89.137-52.292C312.318,169.63,313.177,166.318,311.668,163.75z"/>
+            <path d="M304.281,183.425l-85.076,49.908L6.951,169.672c-2.85-0.849-5.864,0.765-6.721,3.618
+			c-0.859,2.857,0.765,5.869,3.623,6.729l216.754,65.011l89.137-52.291c2.579-1.509,3.434-4.82,1.925-7.383
+			C310.156,182.776,306.843,181.911,304.281,183.425z"/>
+      </svg>
+    </div>
+    <div class="flex items-center justify-end">
+      <h1 class="text-5xl"><%= @game.current_turn.time_remaining_in_sec %></h1>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
-      <h1 class="text-7xl"><%= @game.current_turn.time_remaining_in_sec %></h1>
     </div>
-    <div class="flex items-center">
-      <h1 class="pr-4 text-3xl">Who's up?</h1>
-      <h1 style="color:#<%= @game.current_team.color %>" class="px-4 rounded-lg shadow-md font-semibold border-2"><%= @game.current_team.current_player.name %></h1>
-    </div>
-    <%= cond do %>
-      <% Gamenite.TeamGame.current_player?(@game, @user.id) -> %>
-      <%= cond do %>
-        <% not @game.current_turn.started? -> %>
-        <button class="bg-black text-white  border-0 px-4" phx-click="start_turn" phx-target="<%= @myself %>">Start Turn</button>
-        <% @game.current_turn.review? -> %>
-        <button phx-click="end_turn" phx-target="<%= @myself %>">End Turn</button>
-        <%= for {{outcome, word}, i} <- Enum.with_index(@game.current_turn.completed_cards) do %>
-          <div class="flex shadow-lg w-120 h-96 items-center justify-center">
-            <h1 class="text-center text-6xl"><%= word %></h1>
-          </div>
-          <%= case outcome do %>
-            <% :correct -> %>
-            <div class="lex justify-center items-center space-x-4">
-              <button phx-value-card_index="<%= i %>" phx-target="<%= @myself%>" phx-click="change_incorrect" class="bg-red-600 px-4 opacity-40 hover:opacity-100">Incorrect</button>
-              <button phx-value-card_index="<%= i %>" phx-target="<%= @myself%>" phx-click="change_skip" class="bg-yellow-600 px-4 opacity-40 hover:opacity-100">Skip</button>
-              <button disabled="disabled" class="bg-green-600 px-4 disabled:opacity-100">Correct</button>
-            </div>
-            <% :incorrect -> %>
-              <div class="lex justify-center items-center space-x-4">
-              <button disabled="disabled" class="bg-red-600 px-4 disabled:opacity-100">Incorrect</button>
-              <button phx-value-card_index="<%= i %>" phx-target="<%= @myself%>" phx-click="change_skip" class="bg-yellow-600 px-4 opacity-40 hover:opacity-100">Skip</button>
-              <button phx-value-card_index="<%= i %>" phx-target="<%= @myself%>" phx-click="change_correct" class="bg-green-600 px-4 opacity-40 hover:opacity-100">Correct</button>
-            </div>
-            <% :skipped -> %>
-              <div class="lex justify-center items-center space-x-4">
-              <button phx-value-card_index="<%= i %>" phx-target="<%= @myself%>" phx-click="change_incorrect" class="bg-red-600 px-4 opacity-40 hover:opacity-100">Incorrect</button>
-              <button disabled="disabled" class="bg-yellow-600 px-4 disabled:opacity-100">Skip</button>
-              <button phx-value-card_index="<%= i %>" phx-target="<%= @myself%>" phx-click="change_correct" class="bg-green-600 px-4 opacity-40 hover:opacity-100">Correct</button>
-            </div>
-          <% end %>
-        <% end %>
-        <% true -> %>
-        <div class="flex shadow-lg w-120 h-96 items-center justify-center">
-          <h1 class="text-center text-6xl"><%= @game.current_turn.card %></h1>
-        </div>
-        <div class="flex justify-center items-center space-x-4">
-          <button phx-target="<%= @myself%>" phx-click="incorrect" class="bg-red-600 px-4">Incorrect</button>
-          <button phx-target="<%= @myself%>" phx-click="skip" class="bg-yellow-600 px-4">Skip</button>
-          <button phx-target="<%= @myself%>" phx-click="correct" class="bg-green-600 px-4">Correct</button>
-        </div>
-      <% end %>
-      <% Gamenite.TeamGame.on_current_team?(@game, @user.id) -> %>
-      <h1 class="text-5xl py-10"><%= "Your team is up! You are guessing clues." %></h1>
-      <% true -> %>
-      <h1 class="text-5xl py-10"><%= "Your team is chilling. Sit back and relax." %></h1>
-    <% end %>
   </div>
-
-  <div class="space-y-4">
+  <%= cond do %>
+    <% Gamenite.TeamGame.current_player?(@game, @user.id) -> %>
+    <%= cond do %>
+      <% not @game.current_turn.started? -> %>
+      <div class="flex justify-center items-center">
+      <button class="bg-black text-white  border-0 px-12" phx-click="start_turn" phx-target="<%= @myself %>">Start Turn</button>
+      </div>
+      <h1 class="text-5xl text-center py-2"><%= "It's your time to shine. Click the button to begin turn." %></h1>
+      <% @game.current_turn.review? -> %>
+       <div class="flex justify-center items-center">
+      <button class="bg-black text-white  border-0 px-12" phx-click="end_turn" phx-target="<%= @myself %>">End Turn</button>
+      </div>
+      <h1 class="text-5xl text-center py-2"><%= "Review and change any contested cards. Click button to end turn." %></h1>
+      <%= for {{outcome, word}, i} <- Enum.with_index(@game.current_turn.completed_cards) do %>
+        <div class="flex shadow-lg top bg-white w-120 h-96 items-center justify-center">
+          <h1 class="text-center text-6xl"><%= word %></h1>
+        </div>
+        <%= case outcome do %>
+          <% :correct -> %>
+          <div class="flex justify-center items-center space-x-4">
+            <button phx-value-card_index="<%= i %>" phx-target="<%= @myself%>" phx-click="change_incorrect" class="bg-red-600 px-4 opacity-40 hover:opacity-100">Incorrect</button>
+            <button phx-value-card_index="<%= i %>" phx-target="<%= @myself%>" phx-click="change_skip" class="bg-yellow-600 px-4 opacity-40 hover:opacity-100">Skip</button>
+            <button disabled="disabled" class="bg-green-600 px-4 disabled:opacity-100">Correct</button>
+          </div>
+          <% :incorrect -> %>
+          <div class="flex justify-center items-center space-x-4">
+            <button disabled="disabled" class="bg-red-600 px-4 disabled:opacity-100">Incorrect</button>
+            <button phx-value-card_index="<%= i %>" phx-target="<%= @myself%>" phx-click="change_skip" class="bg-yellow-600 px-4 opacity-40 hover:opacity-100">Skip</button>
+            <button phx-value-card_index="<%= i %>" phx-target="<%= @myself%>" phx-click="change_correct" class="bg-green-600 px-4 opacity-40 hover:opacity-100">Correct</button>
+          </div>
+          <% :skipped -> %>
+          <div class="flex justify-center items-center space-x-4">
+            <button phx-value-card_index="<%= i %>" phx-target="<%= @myself%>" phx-click="change_incorrect" class="bg-red-600 px-4 opacity-40 hover:opacity-100">Incorrect</button>
+            <button disabled="disabled" class="bg-yellow-600 px-4 disabled:opacity-100">Skip</button>
+            <button phx-value-card_index="<%= i %>" phx-target="<%= @myself%>" phx-click="change_correct" class="bg-green-600 px-4 opacity-40 hover:opacity-100">Correct</button>
+          </div>
+        <% end %>
+      <% end %>
+      <% true -> %>
+      <div class="flex shadow-lg bg-white w-120 h-96 items-center justify-center">
+        <h1 class="text-center text-6xl"><%= @game.current_turn.card %></h1>
+      </div>
+      <div class="flex justify-center items-center space-x-4">
+        <button phx-target="<%= @myself%>" phx-click="incorrect" class="bg-red-600 px-4">Incorrect</button>
+        <button phx-target="<%= @myself%>" phx-click="skip" class="bg-yellow-600 px-4">Skip</button>
+        <button phx-target="<%= @myself%>" phx-click="correct" class="bg-green-600 px-4">Correct</button>
+      </div>
+    <% end %>
+    <% Gamenite.TeamGame.on_current_team?(@game, @user.id) -> %>
+    <h1 class="text-5xl py-10 text-center"><%= "Your team is up! You are guessing clues." %></h1>
+    <% true -> %>
+    <h1 class="text-5xl py-10 text-center"><%= "Your team is chilling. Sit back and relax." %></h1>
+  <% end %>
+  <div class="space-y-4 pt-16">
     <div class="grid grid-cols-<%= length(@game.teams) %>">
       <%= for team <- @game.teams do %>
+      <%= if team.id == @game.current_team.id do %>
+        <div>
+          <h1 style="color:#<%= team.color %>" class="font-bold text-center text-5xl"><%= "Team #" %></h1>
+          <h1 style="color:#<%= team.color %>" class="py-2 font-bold text-center text-4xl"><%= @game.current_team.score %></h1>
+        </div>
+      <% else %>
         <div>
           <h1 style="color:#<%= team.color %>" class="font-bold text-center text-5xl"><%= "Team #" %></h1>
           <h1 style="color:#<%= team.color %>" class="py-2 font-bold text-center text-4xl"><%= team.score %></h1>
         </div>
       <% end %>
+      <% end %>
     </div>
-    <h1><%= "Cards Left: #{length(@game.deck)}" %></h1>
   </div>
 </div>
 <% end %>

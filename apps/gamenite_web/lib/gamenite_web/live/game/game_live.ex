@@ -1,6 +1,7 @@
 defmodule GameniteWeb.GameLive do
   use GameniteWeb, :live_component
 
+  alias GameniteWeb.ParseHelpers
   alias GamenitePersistance.Accounts
   alias Gamenite.Games.Charades
   alias Gamenite.Games.Charades.{Game, Player}
@@ -8,12 +9,12 @@ defmodule GameniteWeb.GameLive do
   alias Gamenite.SaladBowlAPI
 
   def update(
-        %{slug: slug, game_id: game_id, connected_users: connected_users, user: user} = _assigns,
+        %{slug: slug, game_id: game_id, roommates: roommates, user: user} = _assigns,
         socket
       ) do
     game_info = GamenitePersistance.Gaming.get_game!(game_id)
 
-    game_changeset = create_game_changeset(%{}, connected_users, slug)
+    game_changeset = create_game_changeset(%{}, roommates, slug)
 
     {:ok,
      socket
@@ -22,7 +23,7 @@ defmodule GameniteWeb.GameLive do
      |> assign(user: user)
      |> assign(game_info: game_info)
      |> assign(slug: slug)
-     |> assign(connected_users: connected_users)}
+     |> assign(roommates: roommates)}
   end
 
   @impl true
@@ -50,8 +51,8 @@ defmodule GameniteWeb.GameLive do
     end
   end
 
-  defp users_to_players(connected_users) do
-    connected_users
+  defp users_to_players(roommates) do
+    roommates
     |> Map.to_list()
     |> Enum.map(fn {_k, %{user_id: user_id} = _roommate} ->
       Accounts.get_user_by(%{id: user_id})
@@ -59,43 +60,33 @@ defmodule GameniteWeb.GameLive do
     |> TeamGame.Player.new_players_from_users()
   end
 
-  defp convert_changeset_params(params, connected_users, slug) do
+  defp convert_changeset_params(params, roommates, slug) do
     teams =
-      connected_users
+      roommates
       |> users_to_players
       |> Enum.map(fn player -> Player.new(player) end)
-      |> TeamGame.Team.split_teams(2)
+      |> TeamGame.split_teams(2)
 
-    key_to_atom(params)
+    ParseHelpers.key_to_atom(params)
     |> Map.put(:teams, teams)
     |> Map.put(:room_slug, slug)
   end
 
-  defp create_game_changeset(params, connected_users, slug) do
+  defp create_game_changeset(params, roommates, slug) do
     game_changeset =
       %Game{}
-      |> Game.salad_bowl_changeset(convert_changeset_params(params, connected_users, slug))
-  end
-
-  defp key_to_atom(map) do
-    Enum.reduce(map, %{}, fn
-      # String.to_existing_atom saves us from overloading the VM by
-      # creating too many atoms. It'll always succeed because all the fields
-      # in the database already exist as atoms at runtime.
-      {key, value}, acc when is_atom(key) -> Map.put(acc, key, value)
-      {key, value}, acc when is_binary(key) -> Map.put(acc, String.to_existing_atom(key), value)
-    end)
+      |> Game.salad_bowl_changeset(convert_changeset_params(params, roommates, slug))
   end
 
   @impl true
   def handle_event("start", %{"game" => params}, socket) do
-    params = convert_changeset_params(params, socket.assigns.connected_users, socket.assigns.slug)
+    params = convert_changeset_params(params, socket.assigns.roommates, socket.assigns.slug)
 
     if SaladBowlAPI.exists?(socket.assigns.slug) do
       {:noreply, put_flash(socket, :error, "Game already started.")}
     else
       with {:ok, game} <- Charades.create_salad_bowl(params),
-           game_with_first_turn <- Charades.new_turn(game),
+           game_with_first_turn <- Charades.new_turn(game, game.turn_length),
           :ok <- SaladBowlAPI.start_game(game_with_first_turn, socket.assigns.slug) do
 
         {:noreply,
@@ -111,7 +102,7 @@ defmodule GameniteWeb.GameLive do
   @impl true
   def handle_event("validate", %{"game" => params}, socket) do
     {:noreply,
-     assign(socket, game_changeset: create_game_changeset(params, socket.assigns.connected_users, socket.assigns.slug))}
+     assign(socket, game_changeset: create_game_changeset(params, socket.assigns.roommates, socket.assigns.slug))}
   end
 
   @impl true

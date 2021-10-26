@@ -14,6 +14,16 @@ defmodule Gamenite.GameTest do
     {:ok, new_context}
   end
 
+  defp seven_players(context) do
+    players = Enum.map(1..7, fn _i -> %{} end)
+    {:ok, Map.put(context, :seven_players, players)}
+  end
+
+  defp six_players(context) do
+    players = Enum.map(1..6, fn _i -> %{} end)
+    {:ok, Map.put(context, :six_players, players)}
+  end
+
   @max_teams Application.get_env(:gamenite, :max_teams)
   @min_players_on_team Application.get_env(:gamenite, :min_players_on_team)
 
@@ -106,35 +116,33 @@ defmodule Gamenite.GameTest do
       team_one_id: team_one_id,
       team_two_id: team_two_id
     } do
-      turn_constructor = fn player -> %{} end
 
       game
-      |> TeamGame.end_turn(&turn_constructor/1)
+      |> TeamGame.end_turn
       |> assert_turns_appended(team_one_id, 1)
-      |> TeamGame.end_turn(&turn_constructor/1)
+      |> TeamGame.end_turn
       |> assert_turns_appended(team_two_id, 1)
-      |> TeamGame.end_turn(&turn_constructor/1)
+      |> TeamGame.end_turn
       |> assert_turns_appended(team_one_id, 2)
-      |> TeamGame.end_turn(&turn_constructor/1)
+      |> TeamGame.end_turn
       |> assert_turns_appended(team_two_id, 2)
     end
 
     test "end_turn/1 increments player on current team", %{game: game} do
-      turn_constructor = fn player -> %{} end
 
       game
-      |> TeamGame.end_turn(&turn_constructor/1)
-      |> assert_current_player("Player1")
-      |> TeamGame.end_turn(&turn_constructor/1)
-      |> assert_current_player("Player2")
-      |> TeamGame.end_turn(&turn_constructor/1)
-      |> assert_current_player("Player2")
-      |> TeamGame.end_turn(&turn_constructor/1)
-      |> assert_current_player("Player1")
-      |> TeamGame.end_turn(&turn_constructor/1)
-      |> assert_current_player("Player1")
-      |> TeamGame.end_turn(&turn_constructor/1)
-      |> assert_current_player("Player2")
+      |> TeamGame.end_turn
+      |> assert_current_player(1)
+      |> TeamGame.end_turn
+      |> assert_current_player(2)
+      |> TeamGame.end_turn
+      |> assert_current_player(2)
+      |> TeamGame.end_turn
+      |> assert_current_player(1)
+      |> TeamGame.end_turn
+      |> assert_current_player(1)
+      |> TeamGame.end_turn
+      |> assert_current_player(2)
     end
 
     test "end_turn/1 changes current team to next team in list", %{
@@ -143,28 +151,16 @@ defmodule Gamenite.GameTest do
       team_two_id: team_two_id
     } do
       game
-      |> TeamGame.end_turn(&turn_constructor/1)
+      |> TeamGame.end_turn
       |> assert_next_team(team_two_id)
-      |> TeamGame.end_turn(&turn_constructor/1)
+      |> TeamGame.end_turn
       |> assert_next_team(team_one_id)
-      |> TeamGame.end_turn(&turn_constructor/1)
+      |> TeamGame.end_turn
       |> assert_next_team(team_two_id)
-      |> TeamGame.end_turn(&turn_constructor/1)
+      |> TeamGame.end_turn
       |> assert_next_team(team_one_id)
-    end
-
-    test "end_turn/1 creates new turn", %{game: game} do
-      assert game.current_turn == nil
-
-      new_game =
-        game
-        |> TeamGame.end_turn(&turn_constructor/1)
-
-      assert new_game.current_turn != nil
     end
   end
-
-  defp turn_constructor(player), do: %{}
 
   defp assert_turns_appended(game, team_id, appended_length) do
     team = Gamenite.Lists.find_element_by_id(game.teams, team_id)
@@ -172,13 +168,63 @@ defmodule Gamenite.GameTest do
     game
   end
 
-  defp assert_current_player(game, player_name) do
-    assert game.current_team.current_player.name == player_name
+  defp assert_current_player(game, id) do
+    assert game.current_team.current_player.id == id
     game
   end
 
   defp assert_next_team(game, team_id) do
     assert game.current_team.id == team_id
     game
+  end
+
+  describe "splitting into two teams" do
+    setup [:six_players, :seven_players]
+
+    test "splitting odd number of players", %{seven_players: players} do
+      teams = TeamGame.split_teams(players, 2)
+      team_one = Enum.at(teams, 0)
+      team_two = Enum.at(teams, 1)
+      assert length(teams) == 2
+      assert length(team_one.players) == 4
+      assert length(team_two.players) == 3
+    end
+
+    test "splitting even number of players", %{six_players: players} do
+      teams = TeamGame.split_teams(players, 2)
+      team_one = Enum.at(teams, 0)
+      team_two = Enum.at(teams, 1)
+      assert length(teams) == 2
+      assert length(team_one.players) == 3
+      assert length(team_two.players) == 3
+    end
+  end
+
+  describe "splitting into three teams" do
+    setup [:six_players, :seven_players]
+
+    test "splitting odd number of players", %{seven_players: players} do
+      teams = TeamGame.split_teams(players, 3)
+      team_one = Enum.at(teams, 0)
+      team_two = Enum.at(teams, 1)
+      team_three = Enum.at(teams, 2)
+
+      assert length(teams) == 3
+      assert length(team_one.players) == 3
+      assert length(team_two.players) == 2
+      assert length(team_three.players) == 2
+    end
+
+    test "splitting even number of players", %{six_players: players} do
+      teams = TeamGame.split_teams(players, 3)
+      team_one = Enum.at(teams, 0)
+      team_two = Enum.at(teams, 1)
+      team_three = Enum.at(teams, 2)
+
+      assert length(teams) == 3
+      assert length(team_one.players) == 2
+      assert length(team_two.players) == 2
+      assert length(team_three.players) == 2
+    end
   end
 end

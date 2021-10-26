@@ -3,16 +3,16 @@ defmodule Gamenite do
   alias GamenitePersistance.Accounts
   alias Gamenite.{SaladBowlGameKeeper}
 
-  # def construct_game_data(game_info, game_options, connected_users, player_constructor_fn, opts \\ [])
-  # def construct_game_data(%{type: "Team Game"} = _game_info, game_options, connected_users, player_constructor_fn, [num_teams: num_teams]) do
-  #   connected_users
+  # def construct_game_data(game_info, game_options, roommates, player_constructor_fn, opts \\ [])
+  # def construct_game_data(%{type: "Team Game"} = _game_info, game_options, roommates, player_constructor_fn, [num_teams: num_teams]) do
+  #   roommates
   #   |> users_to_players
   #   |> Enum.map(fn player -> player_constructor_fn.(%{player: player }) end)
-  #   |> TeamGame.Team.split_teams(num_teams)
+  #   |> TeamGame.TeamGame.split_teams(num_teams)
   #   |> TeamGame.new(game_options)
   # end
-  # def construct_game_data(%{type: "Single Player"} = _game_info, game_options, connected_users, player_constructor_fn, _opts) do
-  #   connected_users
+  # def construct_game_data(%{type: "Single Player"} = _game_info, game_options, roommates, player_constructor_fn, _opts) do
+  #   roommates
   #   |> users_to_players
   #   |> Enum.map(fn player -> player_constructor_fn.(%{player: player }) end)
   #   |> SingleGame.new(game_options)

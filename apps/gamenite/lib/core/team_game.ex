@@ -165,4 +165,26 @@ defmodule Gamenite.TeamGame do
     game
     |> update_in([:current_team, :score], &(&1 + score))
   end
+
+  def split_teams(players, n) do
+    _split_teams([], Enum.shuffle(players), n)
+  end
+
+  defp _split_teams(teams, players, 1 = n) do
+    team =
+      Team.new(%{players: players})
+      |> Team.assign_color(n - 1)
+
+    [team | teams]
+  end
+
+  defp _split_teams(teams, players, n) do
+    {team_players, remaining_players} = Enum.split(players, div(length(players), n))
+
+    team =
+      Team.new(%{players: team_players})
+      |> Team.assign_color(n - 1)
+
+    _split_teams([team | teams], remaining_players, n - 1)
+  end
 end

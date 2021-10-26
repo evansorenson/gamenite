@@ -8,20 +8,24 @@ defmodule Gamenite.RoomAPI do
     |> start_child
   end
 
-  def join(room_id, player) do
-    GenServer.call(via(room_id), {:join, player})
+  def join(room_slug, player) do
+    GenServer.call(via(room_slug), {:join, player})
   end
 
-  def leave(room_id, user_id) do
-    GenServer.call(via(room_id), {:leave, user_id})
+  def leave(room_slug, user_id) do
+    GenServer.call(via(room_slug), {:leave, user_id})
   end
 
-  def invert_mute(room_id, player) do
-    GenServer.call(via(room_id), {:invert_mute, player})
+  def invert_mute(room_slug, player) do
+    GenServer.call(via(room_slug), {:invert_mute, player})
   end
 
-  def set_game(room_id, game_id) do
-    GenServer.call(via(room_id), {:set_game, game_id})
+  def set_game(room_slug, game_id) do
+    GenServer.call(via(room_slug), {:set_game, game_id})
+  end
+
+  def send_message(room_slug, message, user_id) do
+    GenServer.call(via(room_slug), {:send_message, message, user_id})
   end
 
   def slug_exists?(slug) do

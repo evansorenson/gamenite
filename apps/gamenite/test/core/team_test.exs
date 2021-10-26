@@ -6,16 +6,6 @@ defmodule TeamTest do
     {:ok, Map.put(context, :team, build_team(3, %{}))}
   end
 
-  defp seven_players(context) do
-    players = Enum.map(1..7, %{})
-    {:ok, Map.put(context, :seven_players, players)}
-  end
-
-  defp six_players(context) do
-    players = Enum.map(1..6, %{})
-    {:ok, Map.put(context, :six_players, players)}
-  end
-
   describe "new team constructor" do
     setup [:create_team]
 
@@ -35,56 +25,6 @@ defmodule TeamTest do
       new_name = "FeatherRufflers"
       team_with_new_name = Team.update_name(team, "FeatherRufflers")
       assert team_with_new_name.name == new_name
-    end
-  end
-
-  describe "splitting into two teams" do
-    setup [:six_players, :seven_players]
-
-    test "splitting odd number of players", %{seven_players: players} do
-      teams = Team.split_teams(players, 2)
-      team_one = Enum.at(teams, 0)
-      team_two = Enum.at(teams, 1)
-      assert length(teams) == 2
-      assert length(team_one.players) == 4
-      assert length(team_two.players) == 3
-    end
-
-    test "splitting even number of players", %{six_players: players} do
-      teams = Team.split_teams(players, 2)
-      team_one = Enum.at(teams, 0)
-      team_two = Enum.at(teams, 1)
-      assert length(teams) == 2
-      assert length(team_one.players) == 3
-      assert length(team_two.players) == 3
-    end
-  end
-
-  describe "splitting into three teams" do
-    setup [:six_players, :seven_players]
-
-    test "splitting odd number of players", %{seven_players: players} do
-      teams = Team.split_teams(players, 3)
-      team_one = Enum.at(teams, 0)
-      team_two = Enum.at(teams, 1)
-      team_three = Enum.at(teams, 2)
-
-      assert length(teams) == 3
-      assert length(team_one.players) == 3
-      assert length(team_two.players) == 2
-      assert length(team_three.players) == 2
-    end
-
-    test "splitting even number of players", %{six_players: players} do
-      teams = Team.split_teams(players, 3)
-      team_one = Enum.at(teams, 0)
-      team_two = Enum.at(teams, 1)
-      team_three = Enum.at(teams, 2)
-
-      assert length(teams) == 3
-      assert length(team_one.players) == 2
-      assert length(team_two.players) == 2
-      assert length(team_three.players) == 2
     end
   end
 end
