@@ -1,8 +1,8 @@
 defmodule Gamenite.SaladBowlServer do
   use GenServer
-  alias Phoenix.PubSub
 
-  alias Gamenite.Cards
+  import Gamenite.GameServer
+
   alias Gamenite.TeamGame
   alias Gamenite.Games.Charades
 
@@ -10,53 +10,11 @@ defmodule Gamenite.SaladBowlServer do
     {:ok, game}
   end
 
-  def child_spec({game, room_uuid}) do
-    %{
-      id: {__MODULE__, room_uuid},
-      start: {__MODULE__, :start_link, [{game, room_uuid}]},
-      restart: :temporary
-    }
-  end
-
   def start_link({game, room_uuid}) do
     GenServer.start_link(
       __MODULE__,
       {game, room_uuid},
       name: via(room_uuid))
-  end
-
-  def via(room_uuid) do
-    {:via,
-    Registry,
-    {Gamenite.Registry.Game, room_uuid}}
-  end
-
-  def start_child(game, room_uuid) do
-    DynamicSupervisor.start_child(
-      Gamenite.Supervisor.Game,
-      child_spec({game, room_uuid}))
-    broadcast_game_update(game)
-    :ok
-  end
-
-  def game_exists?(room_slug) do
-    case Registry.lookup(Gamenite.Registry.Game, room_slug) do
-      [{_pid, _val}] -> true
-      [] -> false
-    end
-  end
-
-  defp game_response({:error, reason}, old_state) do
-    {:reply, {:error, reason}, old_state}
-  end
-
-  defp game_response(new_state, _old_state) do
-    broadcast_game_update(new_state)
-    {:reply, :ok, new_state}
-  end
-
-  defp broadcast_game_update(game) do
-    PubSub.broadcast(Gamenite.PubSub, "room:" <> game.room_slug, {:game_update, game})
   end
 
   def handle_call(:state, _from, game) do

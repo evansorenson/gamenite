@@ -1,8 +1,8 @@
 defmodule Gamenite.SaladBowlAPI do
-  import Gamenite.SaladBowlServer, only: [via: 1, start_child: 2, game_exists?: 1]
+  import Gamenite.GameServer
 
   def start_game(game, room_slug) do
-    start_child(game, room_slug)
+    start_child(Gamenite.SaladBowlServer, game, room_slug)
   end
 
   def exists?(room_slug) do

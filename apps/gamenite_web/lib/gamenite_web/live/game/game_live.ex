@@ -72,7 +72,7 @@ defmodule GameniteWeb.GameLive do
     |> Map.put(:room_slug, slug)
   end
 
-  defp create_game_changeset(params, connected_users, slug) do
+  defp create_game_changeset(params, roommates, slug) do
       %Game{}
       |> Game.salad_bowl_changeset(convert_changeset_params(params, roommates, slug))
   end

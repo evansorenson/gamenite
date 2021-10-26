@@ -1,7 +1,5 @@
 defmodule Gamenite.RoomAPI do
-  use GenServer
   import Gamenite.RoomServer, only: [via: 1, start_child: 1]
-  alias Gamenite.Rooms
 
   def start_room do
     generate_slug()
