@@ -1,15 +1,52 @@
-<div class="mb-24">
-<%= live_component @socket, GameniteWeb.GameLive, id: @game_id,  slug: @slug, game_id: @game_id,
-                                                   user: @user, connected_users: @connected_users %>
-</div>
-
-<div class="fixed w-full h-24 left-0 bottom-0 bg-blurple flex">
-  <%= for {_id, user} <- Map.to_list(@room.connected_users) do %>
-    <div class="container px-4 py-4 items-center justify-center">
-      <div class="flex justify-center items-center">
-      <button class="block h-10 w-10 bg-black rounded-full border-0"></button>
+<div class="mb-28">
+  <div class="py-4">
+    <%= live_component @socket, GameniteWeb.GameLive, id: @game_id,  slug: @slug, game_id: @game_id,
+                                                   user: @user, roommates: @roommates %>
+  </div>
+  <div class="bg-white pt-4 shadow-md">
+    <%= for roommate_msgs <- Enum.chunk_by(@room.messages, &(&1.roommate.user_id)) do %>
+      <div class="pb-4">
+        <%= for message <- roommate_msgs do %>
+          <%= if message.roommate.user_id == @user.id do %>
+            <div class="flex w-full justify-end py-1">
+              <div class="flex w-3/4 justify-end px-4">
+                <h3 class="bg-blurple text-white rounded-lg px-4 text-right"><%= message.body %></h3>
+              </div>
+            </div>
+          <% else %>
+            <div class="flex w-full justify-start py-0.5">
+              <div class="flex w-3/4 justify-start px-4">
+                <div>
+                  <h3 class="bg-gray-dark text-gray-light text-right rounded-lg px-4"><%= message.body %></h3>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        <% end %>
+        <%= if hd(roommate_msgs).roommate.user_id != @user.id do %>
+          <h6 class="text-black text-lg px-4 text-left"><%= hd(roommate_msgs).roommate.display_name %></h2>
+        <% end %>
       </div>
-      <h1 class="text-center"><%= user.display_name %></h1>
+    <% end %>
+    <%= form_for @message, "#", [phx_submit: :send, phx_change: :validate, class: "flex w-full bg-gray-light items-center justify-center"], fn f -> %>
+    <div class="w-10/12 px-4">
+      <%= text_input f, :body %>
+      <%= error_tag f, :body %>
+    </div>
+    <div class="flex items-center justify-center pr-4">
+      <%= submit "Send", class: "button bg-black border-0 text-white text-center", phx_disable_with: "Sending...", disabled: !@message.valid? %>
     </div>
   <% end %>
 </div>
+<%= if not @room.game_in_progress? do %>
+  <div class="fixed w-full h-24 left-0 bottom-0 bg-blurple flex">
+    <%= for {_id, user} <- Map.to_list(@room.roommates) do %>
+      <div class="container px-4 py-4 items-center justify-center">
+        <div class="flex justify-center items-center">
+          <button class="block h-10 w-10 bg-black rounded-full border-0"></button>
+        </div>
+        <h1 class="text-center"><%= user.display_name %></h1>
+      </div>
+    <% end %>
+  </div>
+<% end %>

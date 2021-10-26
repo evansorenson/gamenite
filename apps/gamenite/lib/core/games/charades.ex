@@ -33,7 +33,7 @@ defmodule Gamenite.Games.Charades do
     Turn.new(attrs)
   end
 
-  def new_turn(%{current_team: current_team, turn_length: turn_length} = game) do
+  def new_turn(%{current_team: current_team} = game, turn_length) do
     new_turn =
       Turn.new(%{
         player_name: current_team.current_player.name,
@@ -82,27 +82,25 @@ defmodule Gamenite.Games.Charades do
   def add_card_to_completed(%{deck: deck, current_turn: current_turn} = game, card_outcome) do
     skipped_card_count = count_cards_with_outcome(current_turn.completed_cards, :skipped)
 
+    new_game = game
+      |> increment_score_if_correct(card_outcome)
+      |> do_add_card_to_completed(card_outcome)
+
     cond do
       deck == [] and skipped_card_count > 0 ->
-        game
-        |> do_add_card_to_completed(card_outcome)
+        new_game
         |> move_skipped_to_card
 
       deck == [] and skipped_card_count == 0 ->
-        {:review, do_add_card_to_completed(game, card_outcome)}
+        {:review, new_game}
 
       true ->
-        do_add_card_to_completed(game, card_outcome)
+        new_game
         |> draw_card
     end
   end
 
-  def change_card_outcome(game, card_index, outcome) do
-    game
-    |> update_in([:current_turn, :completed_cards], fn cards ->
-      List.update_at(cards, card_index, fn {_outcome, card} -> {outcome, card} end)
-    end)
-  end
+
 
   defp do_add_card_to_completed(%{current_turn: current_turn} = game, card_outcome) do
     game
@@ -127,6 +125,20 @@ defmodule Gamenite.Games.Charades do
   end
 
   def change_card_outcome(%{current_turn: current_turn} = game, index, new_outcome) do
+    {old_outcome, _old_card} = Enum.at(current_turn.completed_cards, index)
+    new_game = do_change_card_outcome(game, index, new_outcome)
+    cond do
+      old_outcome == :correct ->
+        new_game
+        |> add_to_team_score(-1)
+      new_outcome == :correct ->
+        new_game
+        |> add_to_team_score(1)
+      true ->
+        new_game
+    end
+  end
+  def do_change_card_outcome(%{current_turn: current_turn} = game, index, new_outcome) do
     completed_cards =
       List.update_at(current_turn.completed_cards, index, fn {_outcome, card} ->
         {new_outcome, card}
@@ -222,7 +234,6 @@ defmodule Gamenite.Games.Charades do
 
   def end_turn(game) do
     game
-    |> score_correct_cards
     |> move_incorrect_back_to_deck
     |> do_end_turn
   end
@@ -231,19 +242,25 @@ defmodule Gamenite.Games.Charades do
        when current_turn.time_remaining_in_sec != 0 do
     game
     |> maybe_end_round
+    |> new_turn(current_turn.time_remaining_in_sec)
   end
 
-  defp do_end_turn(game) do
+  defp do_end_turn(%{turn_length: turn_length} = game) do
     game
     |> TeamGame.end_turn()
-    |> new_turn
+    |> new_turn(turn_length)
   end
 
-  defp score_correct_cards(%{current_turn: current_turn} = game) do
-    turn_score = count_cards_with_outcome(current_turn.completed_cards, :correct)
-
+  defp increment_score_if_correct(game, :correct) do
     game
-    |> TeamGame.add_score(turn_score)
+    |> add_to_team_score(1)
+  end
+  defp increment_score_if_correct(game, _card_outcome), do: game
+
+
+  defp add_to_team_score(game, score) do
+    game
+    |> TeamGame.add_score(score)
   end
 
   # Salad Bowl Logic

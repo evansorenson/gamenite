@@ -1,13 +1,20 @@
 defmodule Gamenite.Rooms.Roommate do
   use Accessible
+  use Ecto.Schema
+  import Ecto.Changeset
 
-  defstruct user_id: nil, display_name: nil, muted?: false, host?: false
-
-  def new(attrs) do
-    struct!(__MODULE__, attrs)
+  embedded_schema do
+    field :user_id, :binary_id
+    field :display_name, :string
+    field :muted?, :boolean, default: false
+    field :host?, :boolean, default: false
+    field :connected?, :boolean, default: true
   end
+  @fields [:user_id, :display_name, :muted?, :host?]
 
-  def new_from_user(%{id: id, username: username} = user) do
-    struct!(__MODULE__, %{user_id: id, display_name: username})
+  def changeset(roommate, attrs) do
+    roommate
+    |> cast(attrs, @fields)
+    |> validate_required([:display_name])
   end
 end

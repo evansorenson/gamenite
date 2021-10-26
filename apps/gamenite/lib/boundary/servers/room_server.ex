@@ -64,8 +64,8 @@ defmodule Gamenite.RoomServer do
     end
   end
 
-  def handle_call({:leave, user_id}, _from, %{connected_users: connected_users} = room)
-      when map_size(connected_users) == 1 do
+  def handle_call({:leave, user_id}, _from, %{roommates: roommates} = room)
+      when map_size(roommates) == 1 do
     new_room = room
     |> Rooms.leave(user_id)
 
@@ -96,9 +96,11 @@ defmodule Gamenite.RoomServer do
   #   {:reply, :ok, Room.end_game(room)}
   # end
 
-  # def handle_call({:message, message}, _from, room) do
-  #   {:reply, :ok, Rooms.message(room, message)}
-  # end
+  def handle_call({:send_message, message, user_id}, _from, room) do
+    room
+    |> Rooms.send_message(message, user_id)
+    |> response(room)
+  end
 
   def handle_call({:set_game, game_id}, _from, room) do
     room
