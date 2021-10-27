@@ -25,7 +25,7 @@ defmodule Gamenite.GameTest do
   end
 
   @max_teams Application.get_env(:gamenite, :max_teams)
-  @min_players_on_team Application.get_env(:gamenite, :min_players_on_team)
+  @min_players Application.get_env(:gamenite, :min_players)
 
   defp add_player(context) do
     {:ok, Map.put(context, :player_to_add, %{id: "not in game"})}
@@ -56,13 +56,13 @@ defmodule Gamenite.GameTest do
     end
 
     test "games at max teams create successfully" do
-      changeset = build_game_changeset(Enum.map(1..@max_teams, &(&1 + @min_players_on_team)))
+      changeset = build_game_changeset(Enum.map(1..@max_teams, &(&1 + @min_players)))
       assert changeset.valid?
     end
 
     test "games above max teams are invalid" do
       changeset =
-        build_game_changeset(Enum.map(1..(@max_teams + 1), &(&1 + @min_players_on_team)))
+        build_game_changeset(Enum.map(1..(@max_teams + 1), &(&1 + @min_players)))
 
       refute changeset.valid?
     end

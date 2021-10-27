@@ -8,8 +8,6 @@ defmodule GameniteWeb.Application do
   def start(_type, _args) do
     children = [
       GameniteWeb.Endpoint,
-      # Start the STUN, server
-      GameniteWeb.Stun,
       # Start the Telemetry supervisor
       GameniteWeb.Telemetry,
       # Start our Presence module.

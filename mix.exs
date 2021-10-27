@@ -7,7 +7,16 @@ defmodule Gamenite.Umbrella.MixProject do
       version: "0.1.0",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      aliases: aliases()
+      aliases: aliases(),
+      releases: [
+        gamenite: [
+          applications: [
+            gamenite: :permanent,
+            gamenite_web: :permanent,
+            gamenite_persistance: :permanent
+          ]
+        ]
+      ]
     ]
   end
 

@@ -10,8 +10,15 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :gamenite_web, GameniteWeb.Endpoint,
-  url: [host: "example.com", port: 80],
+  url: [host: "gamenite.xyz", port: 80],
   cache_static_manifest: "priv/static/cache_manifest.json"
+
+config :gamenite,
+  max_teams: 4,
+  max_deck: 50,
+  min_players: 2,
+  salad_bowl_default_rounds: ["Catchphrase", "Password", "Charades"],
+  salad_bowl_all_rounds: ["Catchphrase", "Password", "Charades", "Pictionary"]
 
 # ## SSL Support
 #
@@ -49,7 +56,3 @@ config :gamenite_web, GameniteWeb.Endpoint,
 
 # Do not print debug messages in production
 config :logger, level: :info
-
-# Finally import the config/prod.secret.exs which loads secrets
-# and configuration from environment variables.
-import_config "prod.secret.exs"
