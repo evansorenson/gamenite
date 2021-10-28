@@ -58,6 +58,7 @@ defmodule Gamenite.RoomServer do
     case Rooms.join(room, player) do
       {:error, reason} ->
         {:reply, {:error, reason}, room}
+
       new_room ->
         broadcast_room_update(new_room)
         {:reply, {:ok, new_room}, new_room}
@@ -66,8 +67,9 @@ defmodule Gamenite.RoomServer do
 
   def handle_call({:leave, user_id}, _from, %{roommates: roommates} = room)
       when map_size(roommates) == 1 do
-    new_room = room
-    |> Rooms.leave(user_id)
+    new_room =
+      room
+      |> Rooms.leave(user_id)
 
     {:reply, :ok, new_room, 300_000}
   end
@@ -108,8 +110,13 @@ defmodule Gamenite.RoomServer do
     |> response(room)
   end
 
+  def handle_call({:set_game_in_progress, in_progress?}, _from, room) do
+    %{room | game_in_progress?: in_progress?}
+    |> response(room)
+  end
+
   def handle_info(:timeout, room) do
-    Logger.info "Room inactive. Shutting down."
+    Logger.info("Room inactive. Shutting down.")
     {:stop, :normal, room}
   end
 end

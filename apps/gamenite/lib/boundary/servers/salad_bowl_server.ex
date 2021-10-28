@@ -7,14 +7,17 @@ defmodule Gamenite.SaladBowlServer do
   alias Gamenite.Games.Charades
 
   def init({game, _room_uuid}) do
-    {:ok, game}
+    game_with_first_turn = Charades.new_turn(game, game.turn_length)
+    broadcast_game_update(game_with_first_turn)
+    {:ok, game_with_first_turn}
   end
 
   def start_link({game, room_uuid}) do
     GenServer.start_link(
       __MODULE__,
       {game, room_uuid},
-      name: via(room_uuid))
+      name: via(room_uuid)
+    )
   end
 
   def handle_call(:state, _from, game) do
@@ -27,14 +30,14 @@ defmodule Gamenite.SaladBowlServer do
 
   def handle_call(:start_turn, _from, game) do
     game
-    |> Charades.start_turn
+    |> Charades.start_turn()
     |> start_timer
     |> game_response(game)
   end
 
   def handle_call(:end_turn, _from, game) do
     game
-    |> Charades.end_turn
+    |> Charades.end_turn()
     |> game_response(game)
   end
 
@@ -64,17 +67,20 @@ defmodule Gamenite.SaladBowlServer do
   end
 
   def handle_info(:tick, %{current_turn: %{time_remaining_in_sec: time}} = game)
-  when time <= 0 do
-    new_game = game
-    |> stop_timer
+      when time <= 0 do
+    new_game =
+      game
+      |> stop_timer
+
     broadcast_game_update(new_game)
     {:noreply, new_game}
   end
 
   def handle_info(:tick, game) do
-    new_game = game
-    |> start_timer
-    |> decrement_time_remaining
+    new_game =
+      game
+      |> start_timer
+      |> decrement_time_remaining
 
     broadcast_game_update(new_game)
     {:noreply, new_game}
@@ -92,6 +98,7 @@ defmodule Gamenite.SaladBowlServer do
 
   defp stop_timer(%{timer: timer} = game) do
     Process.cancel_timer(timer)
+
     game
     |> put_in([:current_turn, :review?], true)
   end

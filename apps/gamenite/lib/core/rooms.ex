@@ -6,29 +6,36 @@ defmodule Gamenite.Rooms do
   @max_room_size 8
   def join(%{roommates: roommates} = room, player)
       when map_size(roommates) >= @max_room_size do
-      if Map.has_key?(roommates, player.user_id) do
-        do_join(player, room)
-      else
-        {:error, "Room is full."}
-      end
+    if Map.has_key?(roommates, player.user_id) do
+      do_join(player, room)
+    else
+      {:error, "Room is full."}
+    end
   end
+
   def join(%{roommates: %{}} = room, player) do
     player
     |> Map.put(:host?, true)
     |> do_join(room)
   end
+
   def join(room, player), do: do_join(player, room)
+
   defp do_join(%{user_id: user_id} = player, %{roommates: roommates} = room) do
     %{room | roommates: Map.put(roommates, user_id, player)}
   end
 
   def leave(%{roommates: roommates, game_in_progress?: true} = room, user_id) do
-    new_roommates = Map.update!(
-      roommates,
-      user_id,
-      fn roommate -> %{roommate | connected?: false} end)
+    new_roommates =
+      Map.update!(
+        roommates,
+        user_id,
+        fn roommate -> %{roommate | connected?: false} end
+      )
+
     %{room | roommates: new_roommates}
   end
+
   def leave(%{roommates: roommates} = room, user_id) do
     %{room | roommates: Map.delete(roommates, user_id)}
   end
@@ -85,9 +92,7 @@ defmodule Gamenite.Rooms do
     sent_at = DateTime.utc_now()
 
     %Message{}
-    |> Message.changeset(
-      Map.put(attrs, :sent_at, sent_at)
-    )
+    |> Message.changeset(Map.put(attrs, :sent_at, sent_at))
   end
 
   def create_message(attrs \\ %{}) do
@@ -96,25 +101,25 @@ defmodule Gamenite.Rooms do
   end
 
   def send_message(room, message, user_id)
-  when length(room.messages) == 100
-  do
+      when length(room.messages) == 100 do
     room
     |> Map.update!(
       :messages,
-      &(List.delete_at(&1, 99))
+      &List.delete_at(&1, 99)
     )
     |> do_send_message(message, user_id)
   end
+
   def send_message(room, message, user_id), do: do_send_message(room, message, user_id)
 
   defp do_send_message(room, message, user_id) do
     roommate = Map.get(room.roommates, user_id)
-    new_message = %{ message | roommate: roommate }
+    new_message = %{message | roommate: roommate}
 
     room
     |> Map.update!(
       :messages,
-      fn messages -> [ new_message | messages] end
+      fn messages -> [new_message | messages] end
     )
   end
 end

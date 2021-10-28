@@ -63,9 +63,9 @@ defmodule Gamenite.TeamGame do
     )
   end
 
-  defp update_team(%{ teams: teams} = game, team) do
+  defp update_team(%{teams: teams} = game, team) do
     new_teams = Lists.replace_element_by_id(teams, team)
-    %{ game | teams: new_teams}
+    %{game | teams: new_teams}
   end
 
   defp replace_current_team(game, next_team) do
@@ -144,7 +144,7 @@ defmodule Gamenite.TeamGame do
 
   defp _split_teams(teams, players, 1 = n) do
     team =
-      Team.new(%{players: players})
+      Team.new(%{players: players, name: "Team #{n}"})
       |> Team.assign_color(n - 1)
 
     [team | teams]
@@ -154,7 +154,7 @@ defmodule Gamenite.TeamGame do
     {team_players, remaining_players} = Enum.split(players, div(length(players), n))
 
     team =
-      Team.new(%{players: team_players})
+      Team.new(%{players: team_players, name: "Team #{n}"})
       |> Team.assign_color(n - 1)
 
     _split_teams([team | teams], remaining_players, n - 1)

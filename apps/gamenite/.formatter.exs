@@ -1,4 +1,6 @@
 # Used by "mix format"
 [
-  inputs: ["{mix,.formatter}.exs", "{config,lib,test}/**/*.{ex,exs}"]
+  import_deps: [:ecto, :phoenix, :surface],
+  surface_inputs: ["apps/*/{lib,test}/**/*.{ex,exs,sface}"],
+  inputs: ["*.{ex,exs}", "{config,lib,test}/**/*.{ex,exs}"]
 ]

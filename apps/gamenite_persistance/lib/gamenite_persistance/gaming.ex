@@ -36,6 +36,7 @@ defmodule GamenitePersistance.Gaming do
 
   """
   def get_game!(id), do: Repo.get!(Game, id)
+  def get_game(id), do: Repo.get(Game, id)
 
   @doc """
   Creates a game.
@@ -102,12 +103,13 @@ defmodule GamenitePersistance.Gaming do
     Game.changeset(game, attrs)
   end
 
-
   def search_games(search_term) do
     wildcard_search = "%#{search_term}%"
 
-    Repo.all(from game in Game,
-    where: ilike(game.title, ^wildcard_search),
-    or_where: ilike(game.description, ^wildcard_search))
+    Repo.all(
+      from game in Game,
+        where: ilike(game.title, ^wildcard_search),
+        or_where: ilike(game.description, ^wildcard_search)
+    )
   end
 end

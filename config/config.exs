@@ -25,6 +25,10 @@ config :gamenite_web, GameniteWeb.Endpoint,
   pubsub_server: GamenitePersistance.PubSub,
   live_view: [signing_salt: "Ku8IXljo"]
 
+  config :surface, :components, [
+    {Surface.Components.Form.ErrorTag, default_translator: {MyAppWeb.ErrorHelpers, :translate_error}}
+  ]
+
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",

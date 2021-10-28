@@ -22,6 +22,10 @@ defmodule Gamenite.RoomAPI do
     GenServer.call(via(room_slug), {:set_game, game_id})
   end
 
+  def set_game_in_progress(room_slug, in_progress?) do
+    GenServer.call(via(room_slug), {:set_game_in_progress, in_progress?})
+  end
+
   def send_message(room_slug, message, user_id) do
     GenServer.call(via(room_slug), {:send_message, message, user_id})
   end
