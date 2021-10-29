@@ -39,7 +39,7 @@ defmodule Gamenite.TeamGame do
     game
     |> append_turn_to_team
     |> inc_player
-    |> inc_team
+    |> next_team
   end
 
   defp append_turn_to_team(%{current_team: current_team, current_turn: current_turn} = game) do
@@ -55,7 +55,7 @@ defmodule Gamenite.TeamGame do
     )
   end
 
-  defp inc_team(game) do
+  defp next_team(game) do
     Lists.update_current_item_and_increment_list(
       game,
       [:teams],
@@ -68,7 +68,7 @@ defmodule Gamenite.TeamGame do
     %{game | teams: new_teams}
   end
 
-  defp replace_current_team(game, next_team) do
+  def replace_current_team(game, next_team) do
     game
     |> Map.replace!(:current_team, next_team)
   end

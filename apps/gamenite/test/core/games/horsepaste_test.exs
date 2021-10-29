@@ -2,36 +2,81 @@ defmodule HorsePasteTest do
   use ExUnit.Case
   use GameBuilders
 
+  alias Gamenite.Games.Horsepaste
+  alias Gamenite.Games.Horsepaste.{Game, Player}
+
+  defp build_game(context) do
+    teams = build_teams([2, 2], %{})
+
+    {:ok, game} =
+      Horsepaste.create_game(%{room_slug: "ABCDEF", teams: teams})
+
+    new_context =
+      context
+      |> Map.put(:game, game)
+
+    {:ok, Map.put(context, :game, game)}
+  end
+
   describe "creating game" do
-    test "game must have at least two teams with four players total" do
+    setup [:build_game]
+
+    test "game must have at only two teams with four players total" do
+      teams = build_teams([1], %Player{})
+      assert match?({:error, _ }, Horsepaste.create_game(%{teams: teams}))
+
+      teams = build_teams([2], %Player{})
+      assert match?({:error, _ }, Horsepaste.create_game(%{teams: teams}))
+
+      teams = build_teams([1, 2], %Player{})
+      assert match?({:error, _ }, Horsepaste.create_game(%{teams: teams}))
+
+      teams = build_teams([2, 2, 3], %Player{})
+      assert match?({:error, _ }, Horsepaste.create_game(%{teams: teams}))
+
+      teams = build_teams([2, 2], %Player{})
+      assert match?({:ok, _ }, Horsepaste.create_game(%{room_slug: "ABCDEF", teams: teams}))
     end
 
-    test "board must be initialized with 25 words in 5x5 grid" do
-    end
+
 
     test "randomize which team goes first" do
     end
   end
 
-  describe "assign cards colors/roles" do
-    test "9 cards for starting team" do
+  describe "creating board: cards and types" do
+    test "board must be initialized with 25 words in 5x5 grid", %{game: game} do
+      new_game = Horsepaste.setup_game(game)
+
+      assert map_size(new_game.board) == 25
     end
 
-    test "8 cards for second team" do
+    test "9 cards for starting team", %{game: game} do
+      new_game = Horsepaste.setup_game(game)
+      assert count_card_types(new_game, :red) == 9
     end
 
-    test "7 bystanders" do
+    test "8 cards for second team", %{game: game} do
+      new_game = Horsepaste.setup_game(game)
+      assert count_card_types(new_game, :blue) == 9
+
     end
 
-    test "1 assassin" do
-    end
-  end
-
-  describe "assign players roles" do
-    test "one spymaster per team" do
+    test "7 bystanders", %{game: game} do
+      new_game = Horsepaste.setup_game(game)
+      assert count_card_types(new_game, :bystander) == 9
     end
 
-    test "rest of players are guessers" do
+    test "1 assassin", %{game: game} do
+      new_game = Horsepaste.setup_game(game)
+      assert count_card_types(new_game, :assassin) == 9
+
+    end
+
+    defp count_card_types(game, card_type) do
+      Enum.count(
+        Map.to_list(game.board),
+        fn {_key, {card, type}} -> type == card_type end)
     end
   end
 
