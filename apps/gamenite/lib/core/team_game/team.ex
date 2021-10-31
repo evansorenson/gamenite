@@ -7,12 +7,13 @@ defmodule Gamenite.TeamGame.Team do
     field(:name, :string)
     field(:score, :integer, default: 0)
     field(:color, :string)
+    field(:index, :integer)
     field(:turns, {:array, :map}, default: [])
     field(:players, {:array, :map})
     field(:current_player, :map)
   end
 
-  @fields [:id, :name, :score, :color, :turns, :players, :current_player]
+  @fields [:id, :name, :score, :color, :index, :turns, :players, :current_player]
   @team_colors ["C0392B", "2980B9", "27AE60", "884EA0", "D35400", "FF33B8", "F1C40F"]
 
   def changeset(team, fields) do
@@ -36,7 +37,8 @@ defmodule Gamenite.TeamGame.Team do
     params
     |> Map.merge(%{current_player: hd(players), id: id})
   end
-  def new(%{players: players} = params) do
+
+  def new(params) do
     id = Ecto.UUID.generate()
 
     params
@@ -74,8 +76,9 @@ defmodule Gamenite.TeamGame.Team do
     |> Map.update(:turns, [turn], fn turns -> [turn | turns] end)
   end
 
-  def assign_color(team, index) do
+  def assign_color_and_index(team, index) do
     team
     |> Map.put(:color, Enum.at(@team_colors, index))
+    |> Map.put(:index, index)
   end
 end

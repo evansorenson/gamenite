@@ -21,14 +21,15 @@ defmodule GameBuilders do
   end
 
   def build_teams(number_of_players_on_each_team, player) do
-    Enum.map(number_of_players_on_each_team, &build_team(&1, player))
+    Enum.map(
+      Enum.with_index(number_of_players_on_each_team), &build_team(&1, player))
   end
 
-  def build_team(num_players, player)do
+  def build_team({num_players, index}, player)do
     players = Enum.map(
       1..num_players,
       fn n -> Map.put(player, :id, n) end)
-    Team.new(%{players: players, color: "C0392B", name: "Team"})
+    Team.new(%{players: players, color: "C0392B", name: "Team", index: index })
   end
 
   def build_deck(deck_length) do

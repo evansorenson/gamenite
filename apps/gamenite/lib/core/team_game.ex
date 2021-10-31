@@ -55,7 +55,7 @@ defmodule Gamenite.TeamGame do
     )
   end
 
-  defp next_team(game) do
+  def next_team(game) do
     Lists.update_current_item_and_increment_list(
       game,
       [:teams],
@@ -145,7 +145,7 @@ defmodule Gamenite.TeamGame do
   defp _split_teams(teams, players, 1 = n) do
     team =
       Team.new(%{players: players, name: "Team #{n}"})
-      |> Team.assign_color(n - 1)
+      |> Team.assign_color_and_index(n - 1)
 
     [team | teams]
   end
@@ -155,7 +155,7 @@ defmodule Gamenite.TeamGame do
 
     team =
       Team.new(%{players: team_players, name: "Team #{n}"})
-      |> Team.assign_color(n - 1)
+      |> Team.assign_color_and_index(n - 1)
 
     _split_teams([team | teams], remaining_players, n - 1)
   end

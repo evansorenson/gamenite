@@ -17,12 +17,13 @@ defmodule Gamenite.Games.Horsepaste.Game do
     field(:timer_enabled?, :boolean, default: false)
   end
 
-  @fields [:room_slug, :current_turn, :cards, :timer_length, :timer_enabled?]
+  @fields [:room_slug, :current_turn, :deck, :timer_length, :timer_enabled?]
   def changeset(game, attrs) do
     game
     |> TeamGame.changeset(attrs)
     |> cast(attrs, @fields)
     |> validate_required(:room_slug)
     |> validate_length(:teams, is: 2)
+    |> validate_length(:deck, min: 25)
   end
 end

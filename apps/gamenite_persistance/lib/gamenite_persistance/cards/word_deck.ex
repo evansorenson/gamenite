@@ -1,12 +1,12 @@
-defmodule GamenitePersistance.Cards.Deck do
+defmodule GamenitePersistance.Cards.WordDeck do
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias GamenitePersistance.Cards.WordDeck
+  alias GamenitePersistance.Cards.WordCard
 
   schema "decks" do
     field :title, :string
-    has_one :word_deck, WordDeck
+    has_many :cards, WordCard
 
     timestamps()
   end
