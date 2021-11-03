@@ -7,6 +7,8 @@ defmodule Gamenite.Application do
 
   @impl true
   def start(_type, _args) do
+    Gamenite.ConfigParser.parse_and_store_in_ets()
+
     children = [
       {Phoenix.PubSub, name: Gamenite.PubSub},
       {Registry, [name: Gamenite.Registry.Game, keys: :unique]},

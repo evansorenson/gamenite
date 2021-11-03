@@ -221,7 +221,7 @@ defmodule HorsePasteTest do
     test "selecting bystander ends turn", %{defined_board: game} do
     end
 
-    test "selecting bystander doesn't change scores", %{defined_board: game} 
+    test "selecting bystander doesn't change scores", %{defined_board: game}
     end
 
     test "selecting assassin ends game and other team wins", %{defined_board: game} do

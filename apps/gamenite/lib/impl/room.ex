@@ -8,7 +8,7 @@ defmodule Gamenite.Room do
             name: nil,
             roommates: %{},
             messages: [],
-            game_id: nil,
+            game_title: nil,
             game_in_progress?: false,
             chat_enabled?: true
 
@@ -96,9 +96,9 @@ defmodule Gamenite.Room do
     %{room | roommates: users}
   end
 
-  def set_game(room, game_id) do
+  def set_game(room, game_title) do
     room
-    |> Map.put(:game_id, game_id)
+    |> Map.put(:game_title, game_title)
   end
 
   def change_message(attrs \\ %{}) do

@@ -32,7 +32,7 @@ defmodule GameniteWeb.RoomLive do
        |> assign(
          room: room,
          user: user,
-         game_id: room.game_id,
+         game_title: room.game_title,
          slug: slug,
          roommates: room.roommates,
          message: Room.change_message()

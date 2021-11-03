@@ -10,8 +10,7 @@
     <div class="container-left border-blurple border-8 rounded-xl overflow-hidden">
     <h2 class="text-6xl font-bold text-black px-4 py-2"><%= game.title %></h2>
     <p class="text-black font-light px-8 py-2"><%= game.description %></p>
-    <a class="text-black font-bold float-left pt-4 mb-4 mx-4"><%= "Plays: #{game.play_count}" %></a>
-    <button class="bg-blurple border-none text-white rounded hover:bg-indigo-400 py-2 px-4 float-right mb-4 mr-4" phx-click="host_game" phx-value-game_id="<%= game.id  %>">Host Game</button>
+    <button class="bg-blurple border-none text-white rounded hover:bg-indigo-400 py-2 px-4 float-right mb-4 mr-4" phx-click="host_game" phx-value-game_title="<%= game.title  %>">Host Game</button>
   </div>
 
 <% end %>

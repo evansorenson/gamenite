@@ -10,9 +10,9 @@ defmodule GameniteWeb.Components.Charades.ChangesetTable do
   alias Gamenite.TeamGame
   alias Gamenite.SaladBowl.API
 
-  data(game_changeset, :map)
-  prop(roommates, :map, required: true)
-  prop(slug, :string, required: true)
+  data game_changeset, :map
+  prop roommates, :map, required: true
+  prop slug, :string, required: true
 
   def update(%{slug: slug, roommates: roommates} = _assigns, socket) do
     {:ok,

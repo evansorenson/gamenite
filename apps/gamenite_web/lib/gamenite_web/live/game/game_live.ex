@@ -1,10 +1,12 @@
 defmodule GameniteWeb.GameLive do
   use Surface.LiveComponent
 
+  alias Surface.Components.Dynamic.Component
   alias GameniteWeb.Components.{TeamsScoreboard}
   alias GameniteWeb.Components.Charades.{Card, ChangesetTable}
 
   alias Gamenite.SaladBowl.API
+  alias Gamenite.GameConfigs
 
   data(game, :map, default: nil)
   data(game_info, :map, default: nil)
@@ -15,11 +17,13 @@ defmodule GameniteWeb.GameLive do
   data(flash, :map)
 
   def update(
-        %{slug: slug, game_id: game_id, roommates: roommates, user: user} = _assigns,
+        %{slug: slug, game_title: game_title, roommates: roommates, user: user} = _assigns,
         socket
       ) do
-    game_info = GamenitePersistance.Gaming.get_game(game_id)
+    game_info = GameConfigs.get_config(game_title)
     roommate = Map.get(roommates, user.id)
+
+    IO.inspect(game_info.components)
 
     {:ok,
      socket
@@ -56,17 +60,18 @@ defmodule GameniteWeb.GameLive do
     end
   end
 
+  @impl true
   def render(assigns) do
     ~F"""
     <div>
     <p class="alert alert-info" role="alert">{live_flash(@flash, :info)}</p>
     <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
     {#if is_nil(@game)}
-      <{@changeset_comp} id={@game_info.id} slug={@slug} roommates={@roommates} />
+      <Component module={@game_info.components.changeset} id={@game_info.title} slug={@slug} roommates={@roommates} />
     {#elseif @game.finished?}
-      <{@finished_comp} id={@game_info.id} />
+      <Component module={@game_info.components.finished} id={@game_info.title} />
     {#else}
-      <{@game_comp} id={@game_info.id} game={@game} roommates={@roommates} xc/>
+      <Component module={@game_info.components.game} id={@game_info.title} game={@game} roommates={@roommates} />
     {/if}
     </div>
     """
