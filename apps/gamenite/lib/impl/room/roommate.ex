@@ -1,4 +1,4 @@
-defmodule Gamenite.Rooms.Roommate do
+defmodule Gamenite.Room.Roommate do
   use Accessible
   use Ecto.Schema
   import Ecto.Changeset
@@ -10,6 +10,7 @@ defmodule Gamenite.Rooms.Roommate do
     field :host?, :boolean, default: false
     field :connected?, :boolean, default: true
   end
+
   @fields [:user_id, :display_name, :muted?, :host?]
 
   def changeset(roommate, attrs) do

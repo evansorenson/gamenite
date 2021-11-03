@@ -1,4 +1,4 @@
-defmodule Gamenite.SaladBowlAPI do
+defmodule Gamenite.SaladBowl.API do
   import Gamenite.GameServer
 
   def start_game(game, room_slug) do

@@ -10,12 +10,14 @@ use Mix.Config
 # which you should run after static files are built and
 # before starting your production server.
 config :gamenite_web, GameniteWeb.Endpoint,
-  url: [host: "gamenite.xyz", port: 80],
-  cache_static_manifest: "priv/static/cache_manifest.json"
+  url: [host: "gamenite.fly.dev", port: 80],
+  cache_static_manifest: "priv/static/cache_manifest.json",
+  check_origin: ["//gamenite.fly.dev", "//gamenite.xyz"]
 
 config :gamenite,
+  room_timeout: 900_000,
+  game_timeout: 900_000,
   max_teams: 4,
-  max_deck: 50,
   min_players: 2,
   salad_bowl_default_rounds: ["Catchphrase", "Password", "Charades"],
   salad_bowl_all_rounds: ["Catchphrase", "Password", "Charades", "Pictionary"]

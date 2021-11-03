@@ -1,31 +1,78 @@
-defmodule Gamenite.Games.Charades do
-  alias Gamenite.Games.Charades.{Turn, Game}
-  alias Gamenite.Lists
+defmodule Gamenite.Charades do
+  import Ecto.Changeset
+  use Ecto.Schema
+  use Accessible
+
+  alias Gamenite.Charades.{Turn}
   alias Gamenite.TeamGame
+  alias Gamenite.TeamGame.Team
+  alias Gamenite.Lists
   alias Gamenite.Cards
 
-  import Ecto.Changeset
-
-  def change_charades(%Game{} = game, attrs \\ %{}) do
-    game
-    |> Game.changeset(attrs)
+  @default_rounds Application.get_env(:gamenite, :salad_bowl_default_rounds)
+  embedded_schema do
+    embeds_one(:current_team, Team)
+    embeds_many(:teams, Team)
+    field(:room_slug, :string)
+    field(:current_turn, :map)
+    field(:turn_length, :integer, default: 60)
+    field(:skip_limit, :integer, default: 1)
+    field(:rounds, {:array, :string}, default: @default_rounds)
+    field(:cards_per_player, :integer, default: 4)
+    field(:current_round, :string)
+    field(:starting_deck, {:array, :string})
+    field(:deck, {:array, :string}, default: [])
+    field(:submitted_users, {:array, :binary_id}, default: [])
+    field(:finished?, :boolean, default: false)
+    field(:timer)
   end
 
-  def change_salad_bowl(%Game{} = game, attrs \\ %{}) do
-    game
-    |> Game.salad_bowl_changeset(attrs)
+  @fields [:room_slug, :turn_length, :skip_limit, :deck, :current_turn]
+  @salad_bowl_fields [:rounds, :current_round, :starting_deck, :cards_per_player]
+  def changeset(charades_game, attrs) do
+    charades_game
+    |> TeamGame.changeset(attrs)
+    |> cast(attrs, @fields)
+    |> validate_required(:room_slug)
+    |> validate_number(:turn_length, less_than_or_equal_to: 120)
+    |> validate_number(:turn_length, greater_than_or_equal_to: 30)
+    |> validate_number(:skip_limit, greater_than_or_equal_to: 0)
+    |> validate_number(:skip_limit, less_than_or_equal_to: 5)
   end
 
+  def salad_bowl_changeset(salad_bowl_game, attrs) do
+    rounds = Map.get(attrs, :rounds, @default_rounds)
+    attrs = Map.put(attrs, :current_round, hd(rounds))
+
+    salad_bowl_game
+    |> TeamGame.changeset(attrs)
+    |> changeset(attrs)
+    |> cast(attrs, @salad_bowl_fields)
+    |> validate_required([:rounds, :cards_per_player, :current_round])
+    |> validate_subset(:rounds, Application.get_env(:gamenite, :all_salad_bowl_rounds))
+    |> validate_length(:rounds, min: 1)
+    |> validate_number(:cards_per_player, greater_than: 2, less_than_or_equal_to: 10)
+  end
+
+  def change_charades(%__MODULE__{} = game, attrs \\ %{}) do
+    game
+    |> changeset(attrs)
+  end
+
+  def change_salad_bowl(%__MODULE__{} = game, attrs \\ %{}) do
+    game
+    |> salad_bowl_changeset(attrs)
+  end
 
   def create_charades(attrs) do
-    %Game{}
-    |> Game.changeset(attrs)
+    %__MODULE__{}
+    |> changeset(attrs)
     |> apply_action(:update)
   end
 
   def create_salad_bowl(attrs) do
-    %Game{}
-    |> Game.salad_bowl_changeset(attrs)
+    %__MODULE__{}
+    |> salad_bowl_changeset(attrs)
     |> apply_action(:update)
   end
 
@@ -82,7 +129,8 @@ defmodule Gamenite.Games.Charades do
   def add_card_to_completed(%{deck: deck, current_turn: current_turn} = game, card_outcome) do
     skipped_card_count = count_cards_with_outcome(current_turn.completed_cards, :skipped)
 
-    new_game = game
+    new_game =
+      game
       |> increment_score_if_correct(card_outcome)
       |> do_add_card_to_completed(card_outcome)
 
@@ -99,8 +147,6 @@ defmodule Gamenite.Games.Charades do
         |> draw_card
     end
   end
-
-
 
   defp do_add_card_to_completed(%{current_turn: current_turn} = game, card_outcome) do
     game
@@ -127,17 +173,21 @@ defmodule Gamenite.Games.Charades do
   def change_card_outcome(%{current_turn: current_turn} = game, index, new_outcome) do
     {old_outcome, _old_card} = Enum.at(current_turn.completed_cards, index)
     new_game = do_change_card_outcome(game, index, new_outcome)
+
     cond do
       old_outcome == :correct ->
         new_game
         |> add_to_team_score(-1)
+
       new_outcome == :correct ->
         new_game
         |> add_to_team_score(1)
+
       true ->
         new_game
     end
   end
+
   def do_change_card_outcome(%{current_turn: current_turn} = game, index, new_outcome) do
     completed_cards =
       List.update_at(current_turn.completed_cards, index, fn {_outcome, card} ->
@@ -255,8 +305,8 @@ defmodule Gamenite.Games.Charades do
     game
     |> add_to_team_score(1)
   end
-  defp increment_score_if_correct(game, _card_outcome), do: game
 
+  defp increment_score_if_correct(game, _card_outcome), do: game
 
   defp add_to_team_score(game, score) do
     game
@@ -277,7 +327,7 @@ defmodule Gamenite.Games.Charades do
     end
   end
 
-  def maybe_end_round(%{rounds: rounds, deck: []} = game), do: end_round(game)
+  def maybe_end_round(%{rounds: _rounds, deck: []} = game), do: end_round(game)
   def maybe_end_round(game), do: game
 
   defp end_round(%{starting_deck: starting_deck} = game) do

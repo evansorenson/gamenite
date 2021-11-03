@@ -1,4 +1,4 @@
-defmodule Gamenite.Games.Charades.Turn do
+defmodule Gamenite.Charades.Turn do
   use Accessible
 
   defstruct card: nil,

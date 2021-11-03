@@ -1,10 +1,10 @@
-defmodule Gamenite.SaladBowlServer do
+defmodule Gamenite.SaladBowl.Server do
   use GenServer
 
   import Gamenite.GameServer
 
   alias Gamenite.TeamGame
-  alias Gamenite.Games.Charades
+  alias Gamenite.Charades
 
   def init({game, _room_uuid}) do
     game_with_first_turn = Charades.new_turn(game, game.turn_length)

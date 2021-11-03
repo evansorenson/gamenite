@@ -9,8 +9,8 @@ defmodule GameniteWeb.RoomLive do
   alias Phoenix.PubSub
   alias Phoenix.Socket.Broadcast
   alias GamenitePersistance.Accounts
-  alias Gamenite.RoomAPI
-  alias Gamenite.Rooms
+  alias Gamenite.Room
+  alias Gamenite.Room.API
   alias GameniteWeb.LiveMonitor
 
   @impl true
@@ -24,10 +24,9 @@ defmodule GameniteWeb.RoomLive do
       PubSub.subscribe(Gamenite.PubSub, "room:" <> slug <> ":" <> user.id)
     end
 
-    with true <- RoomAPI.slug_exists?(slug),
-        {:ok, roommate} <- Rooms.new_roommate_from_user(user),
-        {:ok, room} <- RoomAPI.join(slug, roommate)
-    do
+    with true <- API.slug_exists?(slug),
+         {:ok, roommate} <- Room.new_roommate_from_user(user),
+         {:ok, room} <- API.join(slug, roommate) do
       {:ok,
        socket
        |> assign(
@@ -36,20 +35,21 @@ defmodule GameniteWeb.RoomLive do
          game_id: room.game_id,
          slug: slug,
          roommates: room.roommates,
-         message: Rooms.change_message()
+         message: Room.change_message()
        )
        |> assign(offer_requests: [], ice_candidate_offers: [], sdp_offers: [], answers: [])}
     else
       false ->
         {:ok,
-        socket
-        |> put_flash(:error, "Room does not exist.")
-        |> push_redirect(to: Routes.game_path(socket, :index))}
+         socket
+         |> put_flash(:error, "Room does not exist.")
+         |> push_redirect(to: Routes.game_path(socket, :index))}
+
       {:error, reason} ->
         {:ok,
-        socket
-        |> put_flash(:error, reason)
-        |> push_redirect(to: Routes.game_path(socket, :index))}
+         socket
+         |> put_flash(:error, reason)
+         |> push_redirect(to: Routes.game_path(socket, :index))}
     end
   end
 
@@ -69,7 +69,7 @@ defmodule GameniteWeb.RoomLive do
   """
   def unmount(_reason, %{user: user, room_slug: room_slug}) do
     Logger.info("Unmounting LiveView")
-    RoomAPI.leave(room_slug, user.id)
+    API.leave(room_slug, user.id)
   end
 
   defp mount_socket_user(socket, params) do
@@ -85,41 +85,45 @@ defmodule GameniteWeb.RoomLive do
   defp room_response(:ok, socket) do
     {:noreply, socket}
   end
+
   defp room_response({:error, reason}, socket) do
     {:noreply,
-  socket
-  |> put_flash(:error, reason)}
+     socket
+     |> put_flash(:error, reason)}
   end
 
   def handle_event("validate", %{"message" => message}, socket) do
-    message_changeset = message
-    |> ParseHelpers.key_to_atom
-    |> Rooms.change_message
+    message_changeset =
+      message
+      |> ParseHelpers.key_to_atom()
+      |> Room.change_message()
 
     {:noreply,
-    socket
-    |> assign(message: message_changeset)}
+     socket
+     |> assign(message: message_changeset)}
   end
 
   def handle_event("send", %{"message" => message}, socket) do
-    created_message = message
-    |> ParseHelpers.key_to_atom
-    |> Rooms.create_message
+    created_message =
+      message
+      |> ParseHelpers.key_to_atom()
+      |> Room.create_message()
 
     case created_message do
       {:ok, message} ->
-        RoomAPI.send_message(socket.assigns.room.slug, message, socket.assigns.user.id)
-        |> room_response(assign(socket, message: Rooms.change_message()))
+        API.send_message(socket.assigns.room.slug, message, socket.assigns.user.id)
+        |> room_response(assign(socket, message: Room.change_message()))
+
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, "Could not send message.")}
     end
   end
 
   def handle_event("mute", %{"user_id" => user_id}, socket) do
-    RoomAPI.invert_mute(
-        socket.assigns.room.slug,
-        Map.get(socket.assigns.room.roommates, user_id)
-      )
+    API.invert_mute(
+      socket.assigns.room.slug,
+      Map.get(socket.assigns.room.roommates, user_id)
+    )
     |> room_response(socket)
   end
 
@@ -129,7 +133,11 @@ defmodule GameniteWeb.RoomLive do
   end
 
   def handle_info({:game_changeset_update, game_changeset}, socket) do
-    send_update(self(), GameniteWeb.GameLive, %{id: socket.assigns.game_id, game_changeset: game_changeset})
+    send_update(self(), GameniteWeb.GameLive, %{
+      id: socket.assigns.game_id,
+      game_changeset: game_changeset
+    })
+
     {:noreply, socket}
   end
 

@@ -63,7 +63,7 @@ defmodule Gamenite.TeamGame do
     )
   end
 
-  defp update_team(%{teams: teams} = game, team) do
+  def update_team(%{teams: teams} = game, team) do
     new_teams = Lists.replace_element_by_id(teams, team)
     %{game | teams: new_teams}
   end

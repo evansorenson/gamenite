@@ -1,8 +1,18 @@
-defmodule Gamenite.Games.Poophead.Game do
+defmodule Gamenite.Poophead do
+  # def setup_game(game) do
+  #   game
+  #   |> add_decks
+  #   |> set_threshold_limit
+  # end
+
+  # defp add_decks(%Game{players: players}) do
+
+  # end
+
   use Ecto.Schema
   import Ecto.Changeset
 
-  alias Gamenite.Games.Poophead.{Player}
+  alias Gamenite.Poophead.{Player}
   alias Gamenite.Cards.PlayingCard
 
   embedded_schema do
@@ -14,6 +24,7 @@ defmodule Gamenite.Games.Poophead.Game do
     field :flush_threshold, :integer
     field :phase, :string
   end
+
   @fields [:players, :deck]
   @phases [""]
 

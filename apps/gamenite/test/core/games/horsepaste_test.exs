@@ -3,7 +3,7 @@ defmodule HorsePasteTest do
   use GameBuilders
 
   alias Gamenite.Games.Horsepaste
-  alias Gamenite.Games.Horsepaste.{Game, Player}
+  alias Gamenite.Games.Horsepaste.{Game, Player, Card}
 
   defp create_game() do
     teams = build_teams([2, 2], %{})
@@ -50,6 +50,26 @@ defmodule HorsePasteTest do
     {:ok, Map.put(context, :setup_game, Horsepaste.setup_game(game, false))}
   end
 
+  defp defined_board() do
+    create_game()
+    |> elem(1)
+    |> Map.put(
+      :board,
+      %{
+        {0, 0} => Card.new(%{type: :blue}),
+        {0, 1} => Card.new(%{type: :red}),
+        {0, 2} => Card.new(%{type: :bystander}),
+        {0, 3} => Card.new(%{type: :assassin})
+      }
+    )
+  end
+
+  defp game_with_defined_board(context) do
+    game = defined_board()
+
+    {:ok, Map.put(context, :defined_board, game)}
+  end
+
   describe "creating game" do
     setup [:working_game]
 
@@ -83,6 +103,12 @@ defmodule HorsePasteTest do
       assert map_size(new_game.board) == 25
     end
 
+    test "removes words used from deck", %{game: game} do
+      new_game = Horsepaste.setup_game(game, false)
+
+      assert length(new_game.deck) == 0
+    end
+
     test "cards with proper counts when starting team is index 0", %{game: game} do
       new_game = Horsepaste.setup_game(game, false)
       assert count_card_types(new_game, :red) == 9
@@ -106,8 +132,25 @@ defmodule HorsePasteTest do
     defp count_card_types(game, card_type) do
       Enum.count(
         Map.to_list(game.board),
-        fn {_key, {type, card}} -> type == card_type end
+        fn {_key, card} -> card.type == card_type end
       )
+    end
+
+    test "teams with proper score when starting team is index 0", %{game: game} do
+      new_game = Horsepaste.setup_game(game, false)
+      assert new_game.current_team.score == 9
+      IO.inspect(new_game)
+      assert Enum.at(new_game.teams, 1).score == 8
+    end
+
+    test "teams with proper score when starting team is index 1", %{game: game} do
+      new_game =
+        game
+        |> TeamGame.next_team()
+        |> Horsepaste.setup_game(false)
+
+      assert new_game.current_team.score == 9
+      assert Enum.at(new_game.teams, 0).score == 8
     end
   end
 
@@ -149,19 +192,42 @@ defmodule HorsePasteTest do
   end
 
   describe "selecting words" do
-    test "selecting own color with words left continues turn" do
+    setup [:game_with_defined_board]
+
+    test "selecting own color with words left continues turn", %{defined_board: game} do
     end
 
-    test "selecting own color with no words or +1 from previous remaining ends turn" do
+    test "selecting own color with no extra guess and number correct equal to clue total ends turn",
+         %{
+           defined_board: game
+         } do
     end
 
-    test "select bystander or other teams color ends turn" do
+    test "selecting own color with extra guess and number correct equal to clue total continues turn",
+         %{
+           defined_board: game
+         } do
     end
 
-    test "selecting assassin ends game and other team wins" do
+    test "selecting own color decrements current team score", %{defined_board: game} do
     end
 
-    test "selecting red or blue removes point from appropraite team score" do
+    test "selecting other teams color decrements their score", %{defined_board: game} do
+    end
+
+    test "selecting other teams color ends turn", %{defined_board: game} do
+    end
+
+    test "selecting bystander ends turn", %{defined_board: game} do
+    end
+
+    test "selecting bystander doesn't change scores", %{defined_board: game} 
+    end
+
+    test "selecting assassin ends game and other team wins", %{defined_board: game} do
+    end
+
+    test "getting to 0 score wins game" do
     end
   end
 end

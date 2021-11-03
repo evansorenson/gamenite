@@ -1,4 +1,4 @@
-defmodule Gamenite.Games.Charades.Player do
+defmodule Gamenite.Charades.Player do
   use Accessible
   use Ecto.Schema
   import Ecto.Changeset

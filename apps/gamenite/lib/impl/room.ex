@@ -1,7 +1,20 @@
-defmodule Gamenite.Rooms do
+defmodule Gamenite.Room do
   import Ecto.Changeset
+  use Accessible
 
-  alias Gamenite.Rooms.{Message, Roommate}
+  alias Gamenite.Room.{Message, Roommate}
+
+  defstruct slug: nil,
+            name: nil,
+            roommates: %{},
+            messages: [],
+            game_id: nil,
+            game_in_progress?: false,
+            chat_enabled?: true
+
+  def new(attrs) do
+    struct!(__MODULE__, attrs)
+  end
 
   @max_room_size 8
   def join(%{roommates: roommates} = room, player)
@@ -50,7 +63,7 @@ defmodule Gamenite.Rooms do
     |> Roommate.changeset(attrs)
   end
 
-  def new_roommate_from_user(%{id: user_id, username: username} = user) do
+  def new_roommate_from_user(%{id: user_id, username: username} = _user) do
     create_roommate(%{user_id: user_id, display_name: username})
   end
 

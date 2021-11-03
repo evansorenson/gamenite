@@ -1,16 +1,17 @@
 defmodule Gamenite.GameServer do
   alias Phoenix.PubSub
+  require Logger
 
   def via(room_uuid) do
-    {:via,
-    Registry,
-    {Gamenite.Registry.Game, room_uuid}}
+    {:via, Registry, {Gamenite.Registry.Game, room_uuid}}
   end
 
   def start_child(module, game, room_uuid) do
     DynamicSupervisor.start_child(
       Gamenite.Supervisor.Game,
-      child_spec(module, {game, room_uuid}))
+      child_spec(module, {game, room_uuid})
+    )
+
     broadcast_game_update(game)
     :ok
   end
@@ -34,11 +35,18 @@ defmodule Gamenite.GameServer do
     PubSub.broadcast(Gamenite.PubSub, "room:" <> game.room_slug, {:game_update, game})
   end
 
+  @timeout Application.get_env(:gamenite, :game_timeout)
   def game_response({:error, reason}, old_state) do
-    {:reply, {:error, reason}, old_state}
+    {:reply, {:error, reason}, old_state, @timeout}
   end
+
   def game_response(new_state, _old_state) do
     broadcast_game_update(new_state)
-    {:reply, :ok, new_state}
+    {:reply, :ok, new_state, @timeout}
+  end
+
+  def handle_info(:timeout, game) do
+    Logger.info("Game inactive. Shutting down.")
+    {:stop, :normal, game}
   end
 end

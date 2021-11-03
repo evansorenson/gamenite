@@ -19,6 +19,8 @@ config :gamenite_web, GameniteWeb.Endpoint,
   server: false
 
 config :gamenite,
+  room_timeout: 900_000,
+  game_timeout: 900_000,
   max_teams: 4,
   max_deck: 50,
   min_players: 2,

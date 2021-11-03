@@ -5,14 +5,14 @@ defmodule GameniteWeb.Components.Charades.ChangesetTable do
 
   alias GameniteWeb.ParseHelpers
   alias GamenitePersistance.Accounts
-  alias Gamenite.Games.Charades
-  alias Gamenite.Games.Charades.{Game, Player}
+  alias Gamenite.Charades
+  alias Gamenite.Charades.{Player}
   alias Gamenite.TeamGame
-  alias Gamenite.SaladBowlAPI
+  alias Gamenite.SaladBowl.API
 
-  data game_changeset, :map
-  prop roommates, :map, required: true
-  prop slug, :string, required: true
+  data(game_changeset, :map)
+  prop(roommates, :map, required: true)
+  prop(slug, :string, required: true)
 
   def update(%{slug: slug, roommates: roommates} = _assigns, socket) do
     {:ok,
@@ -44,8 +44,8 @@ defmodule GameniteWeb.Components.Charades.ChangesetTable do
   end
 
   defp create_game_changeset(params, roommates, slug) do
-    %Game{}
-    |> Game.salad_bowl_changeset(convert_changeset_params(params, roommates, slug))
+    %Charades{}
+    |> Charades.salad_bowl_changeset(convert_changeset_params(params, roommates, slug))
   end
 
   defp roommates_to_players(roommates) do
@@ -61,12 +61,12 @@ defmodule GameniteWeb.Components.Charades.ChangesetTable do
   def handle_event("start", %{"game" => params}, socket) do
     params = convert_changeset_params(params, socket.assigns.roommates, socket.assigns.slug)
 
-    if SaladBowlAPI.exists?(socket.assigns.slug) do
+    if SaladBowl.API.exists?(socket.assigns.slug) do
       {:noreply, put_flash(socket, :error, "Game already started.")}
     else
       with {:ok, game} <- Charades.create_salad_bowl(params),
-           :ok <- SaladBowlAPI.start_game(game, socket.assigns.slug) do
-        Gamenite.RoomAPI.set_game_in_progress(socket.assigns.slug, true)
+           :ok <- SaladBowl.API.start_game(game, socket.assigns.slug) do
+        Gamenite.Room.set_game_in_progress(socket.assigns.slug, true)
 
         {:noreply,
          socket

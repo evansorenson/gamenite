@@ -1,12 +1,10 @@
-defmodule Gamenite.RoomServer do
+defmodule Gamenite.Room.Server do
   use GenServer
   require Logger
 
   alias Phoenix.PubSub
-  alias Gamenite.Rooms
-  alias Gamenite.Rooms.Room
+  alias Gamenite.Room
 
-  # Server
   def init(slug) do
     {:ok, Room.new(%{slug: slug})}
   end
@@ -55,7 +53,7 @@ defmodule Gamenite.RoomServer do
   end
 
   def handle_call({:join, player}, _from, room) do
-    case Rooms.join(room, player) do
+    case Room.join(room, player) do
       {:error, reason} ->
         {:reply, {:error, reason}, room}
 
@@ -65,24 +63,25 @@ defmodule Gamenite.RoomServer do
     end
   end
 
+  @timeout Application.get_env(:gamenite, :room_timeout)
   def handle_call({:leave, user_id}, _from, %{roommates: roommates} = room)
       when map_size(roommates) == 1 do
     new_room =
       room
-      |> Rooms.leave(user_id)
+      |> Room.leave(user_id)
 
-    {:reply, :ok, new_room, 300_000}
+    {:reply, :ok, new_room, @timeout}
   end
 
   def handle_call({:leave, user_id}, _from, room) do
     room
-    |> Rooms.leave(user_id)
+    |> Room.leave(user_id)
     |> response(room)
   end
 
   def handle_call({:invert_mute, player}, _from, room) do
     room
-    |> Rooms.invert_mute(player)
+    |> Room.invert_mute(player)
     |> response(room)
   end
 
@@ -100,13 +99,13 @@ defmodule Gamenite.RoomServer do
 
   def handle_call({:send_message, message, user_id}, _from, room) do
     room
-    |> Rooms.send_message(message, user_id)
+    |> Room.send_message(message, user_id)
     |> response(room)
   end
 
   def handle_call({:set_game, game_id}, _from, room) do
     room
-    |> Rooms.set_game(game_id)
+    |> Room.set_game(game_id)
     |> response(room)
   end
 

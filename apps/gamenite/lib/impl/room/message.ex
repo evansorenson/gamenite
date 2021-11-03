@@ -1,14 +1,13 @@
-defmodule Gamenite.Rooms.Message do
+defmodule Gamenite.Room.Message do
   use Ecto.Schema
   import Ecto.Changeset
-
-  alias Gamenite.Rooms.{Roommate}
 
   embedded_schema do
     field :roommate, :map
     field :body, :string
     field :sent_at, :utc_datetime
   end
+
   @fields [:body, :sent_at, :roommate]
   @required [:body, :sent_at]
 

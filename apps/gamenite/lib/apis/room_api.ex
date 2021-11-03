@@ -1,5 +1,5 @@
-defmodule Gamenite.RoomAPI do
-  import Gamenite.RoomServer, only: [via: 1, start_child: 1]
+defmodule Gamenite.Room.API do
+  import Gamenite.Room.Server, only: [via: 1, start_child: 1]
 
   def start_room do
     generate_slug()
