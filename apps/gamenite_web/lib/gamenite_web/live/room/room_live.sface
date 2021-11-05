@@ -5,18 +5,20 @@
   <div class="mb-28">
     <div class="py-4">
         {#if is_nil(@game)}
-          <DynamicLive module={@game_config.components.changeset} id={@game_config.title} 
-          game_config={@game_config} user={@user} slug={@slug} roommates={@roommates} />
+          <OptionsTable id={@game_config.title} 
+          game_config={@game_config} user={@user} slug={@slug} roommates={@roommates}>
+            <Dynamic.Component module={@game_config.options} />
+          </OptionsTable>
         {#elseif @game.finished?}
-          <DynamicLive module={@game_config.components.finished} id={@game_config.title} />
+          <Dynamic.LiveComponent module={@game_config.components.finished} id={@game_config.title} />
         {#else}
-          <DynamicLive module={@game_config.components.game} id={@game_config.title} game={@game}
+          <Dynamic.LiveComponent module={@game_config.components.game} id={@game_config.title} game={@game}
           roommates={@roommates} user={@user} slug={@slug} />
         {/if}
     </div>
 
     {#if not is_nil(@game)}
-          <Component module={@game_config.components.scoreboard} id={@game_config.title}
+          <Dynamic.Component module={@game_config.components.scoreboard} id={@game_config.title}
           game={@game} roommate={@roommate} roommates={@roommates} />
     {/if}
     

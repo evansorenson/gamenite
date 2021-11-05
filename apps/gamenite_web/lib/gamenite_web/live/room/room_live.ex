@@ -14,10 +14,10 @@ defmodule GameniteWeb.RoomLive do
   alias GameniteWeb.GameConfig
   alias Gamenite.GameServer
 
-  alias Surface.Components.Dynamic.LiveComponent, as: DynamicLive
-  alias Surface.Components.Dynamic.Component
+  alias Surface.Components.Dynamic
   alias Surface.Components.Form
   alias Surface.Components.Form.{Field, ErrorTag, TextInput, Submit}
+  alias GameniteWeb.Components.OptionsTable
 
   data(game, :map, default: nil)
   data(game_info, :map, default: nil)

@@ -1,4 +1,4 @@
-defmodule GameniteWeb.Components.GameOptions.Row do
+defmodule GameniteWeb.Components.OptionsTable.Row do
   use Surface.Component
 
   alias Surface.Components.Form.{Field, Label, ErrorTag}
