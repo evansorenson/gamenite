@@ -16,7 +16,7 @@ defmodule Gamenite.Charades.Player do
     |> Player.changeset(attrs)
   end
 
-  def new(attrs) do
+  def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
     |> apply_action!(:update)

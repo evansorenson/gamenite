@@ -1,7 +1,9 @@
-defmodule GameniteWeb.Components.Charades.ChangesetTable do
+defmodule GameniteWeb.Components.GameOptions do
   use Surface.LiveComponent
+
   alias Surface.Components.Form
-  alias Surface.Components.Form.{Select, Field, Label, ErrorTag, Submit}
+  alias Surface.Components.Form.{Submit}
+  alias Surface.Components.Dynamic
 
   alias GameniteWeb.ParseHelpers
   alias Gamenite.TeamGame
@@ -108,16 +110,12 @@ defmodule GameniteWeb.Components.Charades.ChangesetTable do
      )}
   end
 
-  # def handle_event("add_round", _from, socket) do
-  # end
-
-  # def handle_event("move_round_up", unsigned_params, socket) do
-  # end
-
-  # def handle_event("move_round_down", unsigned_params, socket) do
-  # end
-
-  # def handle_event("remove_round", unsigned_params, socket) do
-
-  # end
+  def render(assigns) do
+    ~F"""
+    <Form for={@game_changeset} as={:game} change="validate" submit="start" opts={autocomplete: "off", target: @myself}>
+      <Dynamic.Component module={@game_config.changeset} />
+      <Submit>Start Game</Submit>
+    </Form>
+    """
+  end
 end

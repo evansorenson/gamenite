@@ -60,11 +60,11 @@ defmodule Gamenite.TeamGame.Player do
     |> apply_action(:update)
   end
 
-  def new_players_from_users(users) do
-    users
+  def new_players_from_roommates(roommates) do
+    roommates
     |> Enum.with_index()
-    |> Enum.map(fn {user, index} ->
-      %{id: user.id, color: Enum.at(@player_colors, index), name: user.username}
+    |> Enum.map(fn {roommate, index} ->
+      %{id: roommate.id, color: Enum.at(@player_colors, index), name: roommate.name}
     end)
   end
 end

@@ -6,6 +6,8 @@ defmodule GameniteWeb.Application do
   use Application
 
   def start(_type, _args) do
+    GameniteWeb.GameConfig.parse_and_store_in_ets()
+
     children = [
       GameniteWeb.Endpoint,
       # Start the Telemetry supervisor

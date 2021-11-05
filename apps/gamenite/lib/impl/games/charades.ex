@@ -9,7 +9,6 @@ defmodule Gamenite.Charades do
   alias Gamenite.Lists
   alias Gamenite.Cards
 
-  @default_rounds Application.get_env(:gamenite, :salad_bowl_default_rounds)
   embedded_schema do
     embeds_one(:current_team, Team)
     embeds_many(:teams, Team)
@@ -17,18 +16,12 @@ defmodule Gamenite.Charades do
     field(:current_turn, :map)
     field(:turn_length, :integer, default: 60)
     field(:skip_limit, :integer, default: 1)
-    field(:rounds, {:array, :string}, default: @default_rounds)
-    field(:cards_per_player, :integer, default: 4)
-    field(:current_round, :string)
-    field(:starting_deck, {:array, :string})
     field(:deck, {:array, :string}, default: [])
-    field(:submitted_users, {:array, :binary_id}, default: [])
     field(:finished?, :boolean, default: false)
     field(:timer)
   end
 
   @fields [:room_slug, :turn_length, :skip_limit, :deck, :current_turn]
-  @salad_bowl_fields [:rounds, :current_round, :starting_deck, :cards_per_player]
   def changeset(charades_game, attrs) do
     charades_game
     |> TeamGame.changeset(attrs)
@@ -40,39 +33,14 @@ defmodule Gamenite.Charades do
     |> validate_number(:skip_limit, less_than_or_equal_to: 5)
   end
 
-  def salad_bowl_changeset(salad_bowl_game, attrs) do
-    rounds = Map.get(attrs, :rounds, @default_rounds)
-    attrs = Map.put(attrs, :current_round, hd(rounds))
-
-    salad_bowl_game
-    |> TeamGame.changeset(attrs)
-    |> changeset(attrs)
-    |> cast(attrs, @salad_bowl_fields)
-    |> validate_required([:rounds, :cards_per_player, :current_round])
-    |> validate_subset(:rounds, Application.get_env(:gamenite, :all_salad_bowl_rounds))
-    |> validate_length(:rounds, min: 1)
-    |> validate_number(:cards_per_player, greater_than: 2, less_than_or_equal_to: 10)
-  end
-
-  def change_charades(%__MODULE__{} = game, attrs \\ %{}) do
+  def change(%__MODULE__{} = game, attrs \\ %{}) do
     game
     |> changeset(attrs)
   end
 
-  def change_salad_bowl(%__MODULE__{} = game, attrs \\ %{}) do
-    game
-    |> salad_bowl_changeset(attrs)
-  end
-
-  def create_charades(attrs) do
+  def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
-    |> apply_action(:update)
-  end
-
-  def create_salad_bowl(attrs) do
-    %__MODULE__{}
-    |> salad_bowl_changeset(attrs)
     |> apply_action(:update)
   end
 

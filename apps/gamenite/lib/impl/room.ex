@@ -19,7 +19,7 @@ defmodule Gamenite.Room do
   @max_room_size 8
   def join(%{roommates: roommates} = room, player)
       when map_size(roommates) >= @max_room_size do
-    if Map.has_key?(roommates, player.user_id) do
+    if Map.has_key?(roommates, player.id) do
       do_join(player, room)
     else
       {:error, "Room is full."}
@@ -34,23 +34,23 @@ defmodule Gamenite.Room do
 
   def join(room, player), do: do_join(player, room)
 
-  defp do_join(%{user_id: user_id} = player, %{roommates: roommates} = room) do
-    %{room | roommates: Map.put(roommates, user_id, player)}
+  defp do_join(%{id: id} = player, %{roommates: roommates} = room) do
+    %{room | roommates: Map.put(roommates, id, player)}
   end
 
-  def leave(%{roommates: roommates, game_in_progress?: true} = room, user_id) do
+  def leave(%{roommates: roommates, game_in_progress?: true} = room, id) do
     new_roommates =
       Map.update!(
         roommates,
-        user_id,
+        id,
         fn roommate -> %{roommate | connected?: false} end
       )
 
     %{room | roommates: new_roommates}
   end
 
-  def leave(%{roommates: roommates} = room, user_id) do
-    %{room | roommates: Map.delete(roommates, user_id)}
+  def leave(%{roommates: roommates} = room, id) do
+    %{room | roommates: Map.delete(roommates, id)}
   end
 
   def create_roommate(attrs \\ %{}) do
@@ -63,8 +63,8 @@ defmodule Gamenite.Room do
     |> Roommate.changeset(attrs)
   end
 
-  def new_roommate_from_user(%{id: user_id, username: username} = _user) do
-    create_roommate(%{user_id: user_id, display_name: username})
+  def new_roommate_from_user(%{id: id, username: username} = _user) do
+    create_roommate(%{id: id, name: username})
   end
 
   def invert_mute(room, %{muted?: muted?} = player) do
@@ -80,7 +80,7 @@ defmodule Gamenite.Room do
     do_mute_all(room, false)
   end
 
-  defp do_mute(%{roommates: roommates} = room, %{user_id: id} = player, mute?) do
+  defp do_mute(%{roommates: roommates} = room, %{id: id} = player, mute?) do
     roommates = Map.put(roommates, id, %{player | muted?: mute?})
 
     room
@@ -113,20 +113,20 @@ defmodule Gamenite.Room do
     |> apply_action(:update)
   end
 
-  def send_message(room, message, user_id)
+  def send_message(room, message, id)
       when length(room.messages) == 100 do
     room
     |> Map.update!(
       :messages,
       &List.delete_at(&1, 99)
     )
-    |> do_send_message(message, user_id)
+    |> do_send_message(message, id)
   end
 
-  def send_message(room, message, user_id), do: do_send_message(room, message, user_id)
+  def send_message(room, message, id), do: do_send_message(room, message, id)
 
-  defp do_send_message(room, message, user_id) do
-    roommate = Map.get(room.roommates, user_id)
+  defp do_send_message(room, message, id) do
+    roommate = Map.get(room.roommates, id)
     new_message = %{message | roommate: roommate}
 
     room

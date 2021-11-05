@@ -7,11 +7,24 @@ defmodule GameniteWeb.RoomLive do
 
   alias GameniteWeb.ParseHelpers
   alias Phoenix.PubSub
-  alias Phoenix.Socket.Broadcast
   alias GamenitePersistance.Accounts
   alias Gamenite.Room
   alias Gamenite.Room.API
   alias GameniteWeb.LiveMonitor
+  alias GameniteWeb.GameConfig
+  alias Gamenite.GameServer
+
+  alias Surface.Components.Dynamic.LiveComponent, as: DynamicLive
+  alias Surface.Components.Dynamic.Component
+  alias Surface.Components.Form
+  alias Surface.Components.Form.{Field, ErrorTag, TextInput, Submit}
+
+  data(game, :map, default: nil)
+  data(game_info, :map, default: nil)
+  data(user, :map)
+  data(slug, :string)
+  data(roommates, :map)
+  data(roommate, :map)
 
   @impl true
   def mount(_params, %{"slug" => slug} = session, socket) do
@@ -27,13 +40,18 @@ defmodule GameniteWeb.RoomLive do
     with true <- API.slug_exists?(slug),
          {:ok, roommate} <- Room.new_roommate_from_user(user),
          {:ok, room} <- API.join(slug, roommate) do
+      game_config = GameConfig.get_config(room.game_title)
+
       {:ok,
        socket
+       |> initialize_game(slug)
        |> assign(
          room: room,
          user: user,
+         game_config: game_config,
          game_title: room.game_title,
          slug: slug,
+         roommate: roommate,
          roommates: room.roommates,
          message: Room.change_message()
        )
@@ -92,6 +110,17 @@ defmodule GameniteWeb.RoomLive do
      |> put_flash(:error, reason)}
   end
 
+  defp initialize_game(socket, slug) do
+    cond do
+      GameServer.game_exists?(slug) ->
+        {:ok, game} = GameServer.state(slug)
+        assign(socket, game: game)
+
+      true ->
+        assign(socket, game: nil)
+    end
+  end
+
   def handle_event("validate", %{"message" => message}, socket) do
     message_changeset =
       message
@@ -129,12 +158,13 @@ defmodule GameniteWeb.RoomLive do
 
   @impl true
   def handle_info({:room_update, room}, socket) do
-    {:noreply, assign(socket, room: room, roommates: room.roommates)}
+    roommate = Map.get(room.roommates, socket.assigns.user.id)
+    {:noreply, assign(socket, room: room, roommates: room.roommates, roommate: roommate)}
   end
 
   def handle_info({:game_changeset_update, game_changeset}, socket) do
     send_update(self(), GameniteWeb.GameLive, %{
-      id: socket.assigns.game_id,
+      id: socket.assigns.game_title,
       game_changeset: game_changeset
     })
 
@@ -142,7 +172,8 @@ defmodule GameniteWeb.RoomLive do
   end
 
   def handle_info({:game_update, game}, socket) do
-    send_update(self(), GameniteWeb.GameLive, %{id: socket.assigns.game_id, game: game})
-    {:noreply, socket}
+    {:noreply,
+     socket
+     |> assign(game: game)}
   end
 end

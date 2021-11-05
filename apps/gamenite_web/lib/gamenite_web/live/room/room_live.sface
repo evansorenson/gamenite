@@ -1,0 +1,75 @@
+
+<div>
+  <p class="alert alert-info" role="alert">{live_flash(@flash, :info)}</p>
+  <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
+  <div class="mb-28">
+    <div class="py-4">
+        {#if is_nil(@game)}
+          <DynamicLive module={@game_config.components.changeset} id={@game_config.title} 
+          game_config={@game_config} user={@user} slug={@slug} roommates={@roommates} />
+        {#elseif @game.finished?}
+          <DynamicLive module={@game_config.components.finished} id={@game_config.title} />
+        {#else}
+          <DynamicLive module={@game_config.components.game} id={@game_config.title} game={@game}
+          roommates={@roommates} user={@user} slug={@slug} />
+        {/if}
+    </div>
+
+    {#if not is_nil(@game)}
+          <Component module={@game_config.components.scoreboard} id={@game_config.title}
+          game={@game} roommate={@roommate} roommates={@roommates} />
+    {/if}
+    
+    <div class="bg-white pt-4 shadow-md">
+      {#for roommate_msgs <- Enum.chunk_by(@room.messages, &(&1.id))}
+        <div class="pb-4">
+          {#for message <- roommate_msgs}
+            {#if message.id == @user.id}
+              <div class="flex w-full justify-end py-1">
+                <div class="flex w-3/4 justify-end px-4">
+                  <h3 class="bg-blurple text-white rounded-lg px-4 text-right">{message.body}</h3>
+                </div>
+              </div>
+            {#else}
+              <div class="flex w-full justify-start py-0.5">
+                <div class="flex w-3/4 justify-start px-4">
+                  <div>
+                    <h3 class="bg-gray-dark text-gray-light text-right rounded-lg px-4">{message.body}</h3>
+                  </div>
+                </div>
+              </div>
+            {/if}
+          {/for}
+          {#if hd(roommate_msgs).id != @user.id}
+            <h6 class="text-black text-lg px-4 text-left">{hd(roommate_msgs).roommate.name}</h6>
+          {/if}
+        </div>
+      {/for}
+
+      <Form for={@message} class="flex w-full bg-gray-light items-center justify-center" change="validate" phx-target={@myself} submit="send" opts={autocomplete: "off"}>
+        <div class="w-10/12 px-4">
+          <Field name={:body}>
+            <TextInput/>
+            <ErrorTag/>
+          </Field>
+        </div>
+        <div class="flex items-center justify-center pr-4">
+          <Submit phx_disable_with="Sending..." disabled={!@message.valid?} class="button bg-black border-0 text-white text-center">Send</Submit>
+        </div>
+      </Form>
+    </div>
+  </div>
+
+  {#if not @room.game_in_progress?}
+    <div class="fixed w-full h-24 left-0 bottom-0 bg-blurple flex">
+      {#for {_id, user} <- Map.to_list(@room.roommates)}
+        <div class="container px-4 py-4 items-center justify-center">
+          <div class="flex justify-center items-center">
+            <button class="block h-10 w-10 bg-black rounded-full border-0"></button>
+          </div>
+          <h1 class="text-center">{user.name}</h1>
+        </div>
+      {/for}
+    </div>
+  {/if}
+</div>

@@ -4,18 +4,17 @@ defmodule Gamenite.Room.Roommate do
   import Ecto.Changeset
 
   embedded_schema do
-    field :user_id, :binary_id
-    field :display_name, :string
+    field :name, :string
     field :muted?, :boolean, default: false
     field :host?, :boolean, default: false
     field :connected?, :boolean, default: true
   end
 
-  @fields [:user_id, :display_name, :muted?, :host?]
+  @fields [:id, :name, :muted?, :host?]
 
   def changeset(roommate, attrs) do
     roommate
     |> cast(attrs, @fields)
-    |> validate_required([:display_name])
+    |> validate_required([:name])
   end
 end

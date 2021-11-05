@@ -139,7 +139,6 @@ defmodule HorsePasteTest do
     test "teams with proper score when starting team is index 0", %{game: game} do
       new_game = Horsepaste.setup_game(game, false)
       assert new_game.current_team.score == 9
-      IO.inspect(new_game)
       assert Enum.at(new_game.teams, 1).score == 8
     end
 

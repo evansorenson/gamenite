@@ -1,12 +1,15 @@
 defmodule GameniteWeb.Game.IndexLive do
   use GameniteWeb, :live_view
 
+  alias Surface.Components.Form
+  alias Surface.Components.Form.{Field, Label, SearchInput, Submit}
+
   alias GamenitePersistance.Gaming
-  alias Gamenite.GameConfigs
+  alias GameniteWeb.GameConfig
   alias Gamenite.Room
 
   def mount(_params, _session, socket) do
-    games = GameConfigs.list_configs()
+    games = GameConfig.list_configs()
     sorted_games = Enum.sort(games, &(Map.get(&1, :play_count) <= Map.get(&2, :play_count)))
 
     {:ok,
@@ -14,12 +17,14 @@ defmodule GameniteWeb.Game.IndexLive do
      |> assign(:games, sorted_games)}
   end
 
-  def handle_event("search", %{"search_field" => %{"query" => nil}}, socket) do
-    {:noreply, assign(socket, :games, GameConfigs.list_configs())}
+  def handle_event("search", %{"query" => nil}, socket) do
+    IO.puts("helloasdffasdf")
+    {:noreply, assign(socket, :games, GameConfig.list_configs())}
   end
 
-  def handle_event("search", %{"search_field" => %{"query" => query}}, socket) do
-    games_search = Gaming.search_games(query)
+  def handle_event("search", %{"query" => query}, socket) do
+    IO.puts("hello")
+    games_search = GameConfig.search_games(query)
     {:noreply, assign(socket, :games, games_search)}
   end
 

@@ -9,7 +9,7 @@ defmodule GamenitePersistance.Accounts.User do
     field :password_hash, :string
     field :password, :string, virtual: true
     field :password_confirmation, :string, virtual: true
-    field :display_name, :string, virtual: true
+    field :name, :string, virtual: true
 
     timestamps()
   end
@@ -36,7 +36,10 @@ defmodule GamenitePersistance.Accounts.User do
 
   defp unique_email(changeset) do
     changeset
-    |> validate_format(:email, ~r/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9-\.]+\.[a-zA-Z]{2,}$/)
+    |> validate_format(
+      :email,
+      ~r/^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9-\.]+\.[a-zA-Z]{2,}$/
+    )
     |> validate_length(:email, max: 255)
     |> unique_constraint(:email)
   end
@@ -44,10 +47,14 @@ defmodule GamenitePersistance.Accounts.User do
   defp validate_password(changeset) do
     changeset
     |> validate_length(:password, min: 8, max: 40)
-    |> validate_format(:password, ~r/[0-9]+/, message: "Password missing a number") # has a number
-    |> validate_format(:password, ~r/[A-Z]+/, message: "Password missing an upper-case letter") # has an upper case letter
-    |> validate_format(:password, ~r/[a-z]+/, message: "Password missing a lower-case letter") # has a lower case letter
-    |> validate_format(:password, ~r/[#\!\?&@\$%^&*\(\)]+/, message: "Password missing a symbol") # Has a symbol
+    # has a number
+    |> validate_format(:password, ~r/[0-9]+/, message: "Password missing a number")
+    # has an upper case letter
+    |> validate_format(:password, ~r/[A-Z]+/, message: "Password missing an upper-case letter")
+    # has a lower case letter
+    |> validate_format(:password, ~r/[a-z]+/, message: "Password missing a lower-case letter")
+    # Has a symbol
+    |> validate_format(:password, ~r/[#\!\?&@\$%^&*\(\)]+/, message: "Password missing a symbol")
     |> validate_confirmation(:password)
   end
 
@@ -55,7 +62,9 @@ defmodule GamenitePersistance.Accounts.User do
     case changeset do
       %Ecto.Changeset{valid?: true, changes: %{password: pass}} ->
         put_change(changeset, :password_hash, Pbkdf2.hash_pwd_salt(pass))
-      _ -> changeset
+
+      _ ->
+        changeset
     end
   end
 end

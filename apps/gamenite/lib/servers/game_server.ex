@@ -2,24 +2,24 @@ defmodule Gamenite.GameServer do
   alias Phoenix.PubSub
   require Logger
 
-  def via(room_uuid) do
-    {:via, Registry, {Gamenite.Registry.Game, room_uuid}}
+  def via(room_slug) do
+    {:via, Registry, {Gamenite.Registry.Game, room_slug}}
   end
 
-  def start_child(module, game, room_uuid) do
+  def start_game(module, game, room_slug) do
     DynamicSupervisor.start_child(
       Gamenite.Supervisor.Game,
-      child_spec(module, {game, room_uuid})
+      child_spec(module, {game, room_slug})
     )
 
     broadcast_game_update(game)
     :ok
   end
 
-  def child_spec(module, {game, room_uuid}) do
+  def child_spec(module, {game, room_slug}) do
     %{
-      id: {module, room_uuid},
-      start: {module, :start_link, [{game, room_uuid}]},
+      id: {module, room_slug},
+      start: {module, :start_link, [{game, room_slug}]},
       restart: :temporary
     }
   end
@@ -29,6 +29,10 @@ defmodule Gamenite.GameServer do
       [{_pid, _val}] -> true
       [] -> false
     end
+  end
+
+  def state(room_slug) do
+    GenServer.call(via(room_slug), :state)
   end
 
   def broadcast_game_update(game) do

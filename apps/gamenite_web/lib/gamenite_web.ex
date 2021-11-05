@@ -45,7 +45,7 @@ defmodule GameniteWeb do
 
   def live_view do
     quote do
-      use Phoenix.LiveView,
+      use Surface.LiveView,
         layout: {GameniteWeb.LayoutView, "live.html"}
 
       unquote(view_helpers())
@@ -54,7 +54,7 @@ defmodule GameniteWeb do
 
   def live_component do
     quote do
-      use Phoenix.LiveComponent
+      use Surface.LiveComponent
 
       unquote(view_helpers())
     end
