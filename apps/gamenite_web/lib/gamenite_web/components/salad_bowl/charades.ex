@@ -1,8 +1,7 @@
-defmodule GameniteWeb.Components.Charades do
+defmodule GameniteWeb.Components.SaladBowl do
   use Surface.LiveComponent
 
-  alias GameniteWeb.Components.{TeamsScoreboard}
-  alias GameniteWeb.Components.Charades.{Card, ChangesetTable}
+  alias GameniteWeb.Components.Charades.{Card}
 
   alias Gamenite.SaladBowl.API
   alias Gamenite.TeamGame

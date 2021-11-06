@@ -1,9 +1,9 @@
 defmodule GameniteWeb.GameConfig do
-  @enforce_keys [:title, :description, :related_games, :components]
-  defstruct [:title, :description, :related_games, :components, :decks]
+  @enforce_keys [:title, :category, :team_game?, :description, :related_games, :components]
+  defstruct [:title, :description, :category, :team_game?, :related_games, :components, :decks]
 
   defmodule Components do
-    @enforce_keys [:game, :changeset, :scoreboard, :finished]
+    @enforce_keys [:game, :options, :scoreboard, :finished]
     defstruct game: nil, changeset: nil, scoreboard: nil, finished: nil
 
     def new(attr) do
@@ -34,14 +34,14 @@ defmodule GameniteWeb.GameConfig do
   end
 
   defp get_game_config_filepaths() do
-    static_dir = Application.app_dir(:gamenite_web, "priv/static/game_configs/")
+    static_dir = Application.app_dir(:gamenite_web, "priv/game_configs/")
     _files = Path.wildcard(Path.join(static_dir, "*.json"))
   end
 
   defp decode_file_and_insert(filepath) do
     filepath
     |> File.read!()
-    |> Poison.decode!(keys: :atoms!)
+    |> Poison.decode!(keys: :atoms)
     |> component_modules_to_atoms
     |> modules_to_atoms
     |> insert_in_ets()

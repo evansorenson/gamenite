@@ -5,20 +5,18 @@
   <div class="mb-28">
     <div class="py-4">
         {#if is_nil(@game)}
-          <OptionsTable id={@game_config.title} 
-          game_config={@game_config} user={@user} slug={@slug} roommates={@roommates}>
-            <Dynamic.Component module={@game_config.options} />
+          <OptionsTable id="options" game_config={@game_config} user={@user} slug={@slug} roommates={@roommates}>
           </OptionsTable>
         {#elseif @game.finished?}
-          <Dynamic.LiveComponent module={@game_config.components.finished} id={@game_config.title} />
+          <Dynamic.LiveComponent id="finished" module={@game_config.components.finished} />
         {#else}
-          <Dynamic.LiveComponent module={@game_config.components.game} id={@game_config.title} game={@game}
+          <Dynamic.LiveComponent id="game" module={@game_config.components.game} game={@game}
           roommates={@roommates} user={@user} slug={@slug} />
         {/if}
     </div>
 
     {#if not is_nil(@game)}
-          <Dynamic.Component module={@game_config.components.scoreboard} id={@game_config.title}
+          <Dynamic.Component id="scoreboard" module={@game_config.components.scoreboard}
           game={@game} roommate={@roommate} roommates={@roommates} />
     {/if}
     
@@ -52,7 +50,6 @@
         <div class="w-10/12 px-4">
           <Field name={:body}>
             <TextInput/>
-            <ErrorTag/>
           </Field>
         </div>
         <div class="flex items-center justify-center pr-4">

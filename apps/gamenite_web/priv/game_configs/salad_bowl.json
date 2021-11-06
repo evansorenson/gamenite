@@ -1,14 +1,15 @@
 {
     "title": "Salad Bowl",
     "description": "Salad Bowl is a virtual version of a fun (and mostly hilarious) guessing game. You'll need at least 4 to play, but it only gets more fun with more players. Hop on a video call, and play through rounds of Taboo, Charades, and Password.",
+    "category": "Party Game",
     "team_game?": true,
     "server": "Elixir.Gamenite.SaladBowl.Server",
     "impl": "Elixir.Gamenite.SaladBowl",
     "player": "Elixir.Gamenite.Charades.Player",
     "components": {
         "scoreboard": "Elixir.GameniteWeb.Components.TeamsScoreboard",
-        "changeset": "Elixir.GameniteWeb.Components.Charades.ChangesetTable",
-        "game": "Elixir.GameniteWeb.Components.Charades"
+        "options": "Elixir.GameniteWeb.Components.SaladBowl.Options",
+        "game": "Elixir.GameniteWeb.Components.SaladBowl"
     },
     "decks": []
 }

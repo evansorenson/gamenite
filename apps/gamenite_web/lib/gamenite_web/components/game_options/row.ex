@@ -7,7 +7,7 @@ defmodule GameniteWeb.Components.OptionsTable.Row do
   prop label, :string, required: true
   prop first?, :boolean, default: false
   prop last?, :boolean, default: false
-  slot svg, required: true
+  slot icon, required: true
   slot input, required: true
 
   def render(assigns) do
@@ -16,10 +16,12 @@ defmodule GameniteWeb.Components.OptionsTable.Row do
       <tr>
         <td class="bg-gray-dark text-white font-bold w-1/2 rounded-tl-lg">
           <div class="flex justify-start items-center px-4">
-            <#slot name="svg" />
+            <div class="w-12 h-12">
+              <#slot name="icon"/>
+            </div>
             <div class="px-2 mt-1">
               <Label>{@label}</Label>
-              <ErrorTag/>
+              <ErrorTag />
             </div>
           </div>
         </td>

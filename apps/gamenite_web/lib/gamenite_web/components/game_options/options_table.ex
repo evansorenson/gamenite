@@ -1,8 +1,8 @@
 defmodule GameniteWeb.Components.OptionsTable do
-  use Surface.LiveComponent
+  use Surface.LiveView
 
   alias Surface.Components.Form
-  alias Surface.Components.Form.{Submit}
+  alias Surface.Components.Form.{Submit, Select}
   alias Surface.Components.Dynamic
 
   alias GameniteWeb.ParseHelpers
@@ -10,12 +10,21 @@ defmodule GameniteWeb.Components.OptionsTable do
   alias Gamenite.GameServer
   alias Gamenite.Room
 
+  alias GameniteWeb.Components.OptionsTable.Row
+
   data game_changeset, :map
   prop game_config, :map, required: true
   prop roommates, :map, required: true
   prop slug, :string, required: true
+  prop errors, :list
 
-  slot rows, required: true
+  def mount(arg0, session, socket) do
+    IO.inspect(session)
+    IO.inspect(socket)
+    IO.inspect(arg0)
+
+    {:ok, socket}
+  end
 
   def update(%{slug: slug, game_config: game_config, roommates: roommates} = _assigns, socket) do
     {:ok,
@@ -82,7 +91,7 @@ defmodule GameniteWeb.Components.OptionsTable do
     apply(player_module, :create, [player])
   end
 
-  @impl true
+  @impl Phoenix.LiveComponent
   def handle_event("start", %{"game" => params}, socket) do
     IO.puts("hello pup")
 
@@ -104,26 +113,22 @@ defmodule GameniteWeb.Components.OptionsTable do
     end
   end
 
-  @impl true
+  @impl Phoenix.LiveComponent
   def handle_event("validate", %{"game" => params}, socket) do
+    IO.puts("hello pup")
+
     {:noreply,
      assign(socket,
        game_changeset: create_game_changeset(socket, params)
      )}
   end
 
+  @impl Phoenix.LiveComponent
   def render(assigns) do
     ~F"""
-    <Form for={@game_changeset} as={:game} change="validate" submit="start" opts={autocomplete: "off", target: @myself}>
-      <table class="table shadow-md">
-        <tbody>
-          {#for row <- @rows}
-            <#slot name="rows" />
-          {/for}
-        </tbody>
-      </table>
-      <Submit>Start Game</Submit>
-    </Form>
+    <div>
+      <Dynamic.Component module={@game_config.components.options} game_changeset={@game_changeset}/>
+    </div>
     """
   end
 end
