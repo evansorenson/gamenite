@@ -97,9 +97,9 @@ defmodule Gamenite.Room.Server do
   #   {:reply, :ok, Room.end_game(room)}
   # end
 
-  def handle_call({:send_message, message, user_id}, _from, room) do
+  def handle_call({:send_message, message}, _from, room) do
     room
-    |> Room.send_message(message, user_id)
+    |> Room.send_message(message)
     |> response(room)
   end
 

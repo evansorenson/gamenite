@@ -19,7 +19,7 @@ defmodule GameniteWeb.Components.TeamScoreboard do
                     <div class="h-3 w-3 bg-red-600 rounded-full"/>
                   {/if}
                   <h1 style={"color:##{@team.color}"} class="text-lg font-semibold pl-1">
-                    {#if player.id == @id}
+                    {#if player.id == @roommate.id}
                       {player.name} (You)
                     {#else}
                       {player.name}

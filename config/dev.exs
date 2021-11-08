@@ -69,9 +69,10 @@ config :gamenite_web, GameniteWeb.Endpoint,
     patterns: [
       ~r"priv/static/.*(js|css|png|jpeg|jpg|gif|svg)$",
       ~r"priv/gettext/.*(po)$",
-      ~r"lib/gamenite_web/(live|views)/.*(ex)$",
+      ~r"lib/gamenite_web/(live|views|components)/.*(ex)$",
       ~r"lib/gamenite_web/templates/.*(eex)$",
-      ~r"lib/my_app_web/live/.*(sface)$"
+      ~r"lib/gamenite_web/live/.*(sface)$",
+      ~r"lib/gamenite_web/components/.*(sface)$"
     ]
   ]
 

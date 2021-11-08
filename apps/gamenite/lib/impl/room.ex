@@ -63,10 +63,6 @@ defmodule Gamenite.Room do
     |> Roommate.changeset(attrs)
   end
 
-  def new_roommate_from_user(%{id: id, username: username} = _user) do
-    create_roommate(%{id: id, name: username})
-  end
-
   def invert_mute(room, %{muted?: muted?} = player) do
     do_mute(room, player, not muted?)
   end
@@ -113,26 +109,23 @@ defmodule Gamenite.Room do
     |> apply_action(:update)
   end
 
-  def send_message(room, message, id)
+  def send_message(room, message)
       when length(room.messages) == 100 do
     room
     |> Map.update!(
       :messages,
       &List.delete_at(&1, 99)
     )
-    |> do_send_message(message, id)
+    |> do_send_message(message)
   end
 
-  def send_message(room, message, id), do: do_send_message(room, message, id)
+  def send_message(room, message), do: do_send_message(room, message)
 
-  defp do_send_message(room, message, id) do
-    roommate = Map.get(room.roommates, id)
-    new_message = %{message | roommate: roommate}
-
+  defp do_send_message(room, message) do
     room
     |> Map.update!(
       :messages,
-      fn messages -> [new_message | messages] end
+      fn messages -> [message | messages] end
     )
   end
 end

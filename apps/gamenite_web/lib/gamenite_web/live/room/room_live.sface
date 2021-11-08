@@ -1,37 +1,46 @@
 
-<div>
+<div class="flex flex-col justify-center items-center">
   <p class="alert alert-info" role="alert">{live_flash(@flash, :info)}</p>
   <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
-  <div class="mb-28">
-    <div class="py-4">
-        {#if is_nil(@game)}
-          <OptionsTable id="options" game_config={@game_config} user={@user} slug={@slug} roommates={@roommates}>
-          </OptionsTable>
-        {#elseif @game.finished?}
-          <Dynamic.LiveComponent id="finished" module={@game_config.components.finished} />
-        {#else}
-          <Dynamic.LiveComponent id="game" module={@game_config.components.game} game={@game}
-          roommates={@roommates} user={@user} slug={@slug} />
-        {/if}
+
+  {#if is_nil(@room)}
+    <h1 class="block text-center pb-10 text-bold text-6xl">Enter Room</h1>
+    <div class="flex flex-col items-center w-1/2 bg-white rounded-xl shadow-xl">
+      <Form for={@roommate_changeset} class="w-full px-8 space-y-8" submit="join_room" change="validate_roommate" opts={autocomplete: "off"}>
+        <Field name={:name} class="py-4">
+        <Label class="font-semibold text-gray-dark" >Display Name</Label> 
+        <TextInput/>
+        <ErrorTag/>
+      </Field>
+      <div class="flex items-center justify-center">
+        <Submit class="btn-blurple w-full">Join Room</Submit>
+      </div>
+      </Form>
+    </div>
+  {#else}
+  <div class="w-full mb-28 px-8">
+    <div class="game py-4">
+      {live_render(@socket, OptionsTable, id: "game", session: %{"slug" => @slug, "game_config" => @game_config, "user_id" => @user_id, "roommates" => @roommates})}
     </div>
 
     {#if not is_nil(@game)}
           <Dynamic.Component id="scoreboard" module={@game_config.components.scoreboard}
           game={@game} roommate={@roommate} roommates={@roommates} />
     {/if}
-    
     <div class="bg-white pt-4 shadow-md">
-      {#for roommate_msgs <- Enum.chunk_by(@room.messages, &(&1.id))}
+      <div class="flex flex-col-reverse">
+      {#for roommate_msgs <- Enum.chunk_by(@room.messages, &(&1.user_id))}
         <div class="pb-4">
+        <div class="flex flex-col-reverse">
           {#for message <- roommate_msgs}
-            {#if message.id == @user.id}
+            {#if message.user_id == @user_id}
               <div class="flex w-full justify-end py-1">
                 <div class="flex w-3/4 justify-end px-4">
                   <h3 class="bg-blurple text-white rounded-lg px-4 text-right">{message.body}</h3>
                 </div>
               </div>
             {#else}
-              <div class="flex w-full justify-start py-0.5">
+              <div class="flex flex-col-reverse justify-start py-0.5">
                 <div class="flex w-3/4 justify-start px-4">
                   <div>
                     <h3 class="bg-gray-dark text-gray-light text-right rounded-lg px-4">{message.body}</h3>
@@ -40,20 +49,23 @@
               </div>
             {/if}
           {/for}
-          {#if hd(roommate_msgs).id != @user.id}
-            <h6 class="text-black text-lg px-4 text-left">{hd(roommate_msgs).roommate.name}</h6>
-          {/if}
+        </div>
+        {#if hd(roommate_msgs).user_id != @user_id}
+          <h6 class="text-black text-lg px-4 text-left">{Map.fetch!(@roommates, hd(roommate_msgs).user_id).name}</h6>
+        {/if}
         </div>
       {/for}
+      </div>
 
-      <Form for={@message} class="flex w-full bg-gray-light items-center justify-center" change="validate" phx-target={@myself} submit="send" opts={autocomplete: "off"}>
+      <Form for={@message} class="flex w-full bg-gray-light items-center justify-center" change="validate_message" submit="send" opts={autocomplete: "off"}>
         <div class="w-10/12 px-4">
           <Field name={:body}>
             <TextInput/>
+            <ErrorTag/>
           </Field>
         </div>
         <div class="flex items-center justify-center pr-4">
-          <Submit phx_disable_with="Sending..." disabled={!@message.valid?} class="button bg-black border-0 text-white text-center">Send</Submit>
+          <Submit class="button bg-black border-0 text-white text-center">Send</Submit>
         </div>
       </Form>
     </div>
@@ -61,14 +73,16 @@
 
   {#if not @room.game_in_progress?}
     <div class="fixed w-full h-24 left-0 bottom-0 bg-blurple flex">
-      {#for {_id, user} <- Map.to_list(@room.roommates)}
+      {#for {_id, roommate} <- Map.to_list(@room.roommates)}
         <div class="container px-4 py-4 items-center justify-center">
           <div class="flex justify-center items-center">
             <button class="block h-10 w-10 bg-black rounded-full border-0"></button>
           </div>
-          <h1 class="text-center">{user.name}</h1>
+          <h1 class="text-center">{roommate.name}</h1>
         </div>
       {/for}
     </div>
   {/if}
+{/if}
 </div>
+

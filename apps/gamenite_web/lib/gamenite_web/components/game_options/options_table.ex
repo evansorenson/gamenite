@@ -1,44 +1,43 @@
 defmodule GameniteWeb.Components.OptionsTable do
   use Surface.LiveView
 
-  alias Surface.Components.Form
-  alias Surface.Components.Form.{Submit, Select}
   alias Surface.Components.Dynamic
 
   alias GameniteWeb.ParseHelpers
   alias Gamenite.TeamGame
   alias Gamenite.GameServer
   alias Gamenite.Room
+  alias GameniteWeb.Router.Helpers, as: Routes
 
-  alias GameniteWeb.Components.OptionsTable.Row
-
-  data game_changeset, :map
-  prop game_config, :map, required: true
-  prop roommates, :map, required: true
-  prop slug, :string, required: true
-  prop errors, :list
-
-  def mount(arg0, session, socket) do
-    IO.inspect(session)
-    IO.inspect(socket)
-    IO.inspect(arg0)
-
-    {:ok, socket}
+  def mount(
+        _params,
+        %{"slug" => slug, "game_config" => game_config, "roommates" => roommates} = _session,
+        socket
+      ) do
+    if GameServer.game_exists?(slug) do
+      {:noreply,
+       push_patch(socket,
+         to:
+           Routes.game_path(socket, game_config.components.game, %{
+             slug: slug,
+             roommates: roommates
+           })
+       )}
+    else
+      {:ok,
+       socket
+       |> assign(game_config: game_config)
+       |> assign(slug: slug)
+       |> assign(roommates: roommates)
+       |> assign_game_changeset(%{})}
+    end
   end
 
-  def update(%{slug: slug, game_config: game_config, roommates: roommates} = _assigns, socket) do
+  def update(%{roommates: roommates} = _assigns, socket) do
     {:ok,
      socket
-     |> assign(game_config: game_config)
-     |> assign(slug: slug)
      |> assign(roommates: roommates)
-     |> assign_game_changeset(%{})}
-  end
-
-  def update(%{game_changeset: game_changeset} = _assigns, socket) do
-    {:ok,
-     socket
-     |> assign(game_changeset: create_game_changeset(game_changeset, socket))}
+     |> assign(game_changeset: create_game_changeset(socket, socket.assigns.game_changeset))}
   end
 
   defp new_game(game_config) do
@@ -77,7 +76,9 @@ defmodule GameniteWeb.Components.OptionsTable do
       |> convert_changeset_params(socket)
 
     game = new_game(socket.assigns.game_config)
+
     apply(socket.assigns.game_config.impl, :change, [game, converted_params])
+    |> Map.put(:action, :validate)
   end
 
   defp roommates_to_players(roommates, player_module) do
@@ -91,39 +92,38 @@ defmodule GameniteWeb.Components.OptionsTable do
     apply(player_module, :create, [player])
   end
 
-  @impl Phoenix.LiveComponent
+  @impl true
   def handle_event("start", %{"game" => params}, socket) do
-    IO.puts("hello pup")
+    game_config = socket.assigns.game_config
 
     if GameServer.game_exists?(socket.assigns.slug) do
+      IO.puts("hello game already setarted")
       {:noreply, put_flash(socket, :error, "Game already started.")}
     else
       with conv_params <- convert_changeset_params(params, socket),
-           {:ok, game} <- apply(socket.assigns.game_config.impl, :create, [conv_params]),
+           {:ok, game} <- apply(game_config.impl, :create, [conv_params]),
            :ok <-
-             GameServer.start_game(socket.assigns.game_config.server, game, socket.assigns.slug),
+             GameServer.start_game(game_config.server, game, socket.assigns.slug),
            :ok <- Room.API.set_game_in_progress(socket.assigns.slug, true) do
-        {:noreply,
-         socket
-         |> assign(:game, game)}
+        {:noreply, push_redirect(socket, game_config.components.game)}
       else
         {:error, _reason} ->
+          IO.puts("error")
+
           {:noreply, put_flash(socket, :error, "Error creating game.")}
       end
     end
   end
 
-  @impl Phoenix.LiveComponent
+  @impl true
   def handle_event("validate", %{"game" => params}, socket) do
-    IO.puts("hello pup")
-
     {:noreply,
      assign(socket,
        game_changeset: create_game_changeset(socket, params)
      )}
   end
 
-  @impl Phoenix.LiveComponent
+  @impl true
   def render(assigns) do
     ~F"""
     <div>

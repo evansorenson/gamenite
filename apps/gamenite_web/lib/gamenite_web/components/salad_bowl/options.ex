@@ -1,14 +1,14 @@
 defmodule GameniteWeb.Components.SaladBowl.Options do
   use Surface.Component
   alias Surface.Components.Form
-  alias Surface.Components.Form.{Submit, Select}
+  alias Surface.Components.Form.{Submit, Select, NumberInput}
   alias GameniteWeb.Components.OptionsTable.Row
 
   prop game_changeset, :map, required: true
 
   def render(assigns) do
     ~F"""
-    <Form for={@game_changeset} as={:game} change="validate" submit="submit" opts={autocomplete: "off"}>
+    <Form for={@game_changeset} as={:game} change="validate" submit="start" opts={autocomplete: "off"}>
     <table class="table shadow-md">
       <tbody>
       <Row name={:skip_limit} label={"Skip Limit"} first?={true}>
@@ -18,7 +18,7 @@ defmodule GameniteWeb.Components.SaladBowl.Options do
       </svg>
       </:icon>
       <:input>
-    <Select options={0..5}/>
+    <NumberInput/>
     </:input>
     </Row>
     <Row name={:turn_length} label={"Turn Length"}>
@@ -28,7 +28,7 @@ defmodule GameniteWeb.Components.SaladBowl.Options do
       </svg>
       </:icon>
       <:input>
-    <Select options={[30, 45, 60, 90, 120]}/>
+    <NumberInput/>
     </:input>
     </Row>
     <Row name={:cards_per_player} label={"Cards Per Player"}>
@@ -38,7 +38,7 @@ defmodule GameniteWeb.Components.SaladBowl.Options do
       </svg>
     </:icon>
     <:input>
-    <Select class="options-select" options={2..10}/>
+    <NumberInput/>
     </:input>
     </Row>
     <Row name={:rounds} label={"Rounds"} last?={true}>
@@ -56,7 +56,7 @@ defmodule GameniteWeb.Components.SaladBowl.Options do
     </Row>
       </tbody>
     </table>
-    <Submit>Start Game</Submit>
+    <Submit class="btn-blurple w-full">Start Game</Submit>
     </Form>
     """
   end

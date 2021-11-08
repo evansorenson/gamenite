@@ -16,5 +16,6 @@ defmodule Gamenite.Room.Roommate do
     roommate
     |> cast(attrs, @fields)
     |> validate_required([:name])
+    |> validate_length(:name, min: 2, max: 15)
   end
 end

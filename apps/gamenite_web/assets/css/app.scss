@@ -4,6 +4,15 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+.btn-blurple {
+  @apply bg-blurple;
+  @apply text-white;
+  @apply border-0;
+  @apply px-12;
+  @apply rounded-lg;
+  @apply shadow-md;
+}
+
 /* LiveView specific classes for your customizations */
 .phx-no-feedback.invalid-feedback,
 .phx-no-feedback .invalid-feedback {
@@ -88,5 +97,4 @@
 .invalid-feedback {
   color: #a94442;
   display: block;
-  margin: -1rem 0 2rem;
 }

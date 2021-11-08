@@ -3,8 +3,8 @@ defmodule GameniteWeb.GameConfig do
   defstruct [:title, :description, :category, :team_game?, :related_games, :components, :decks]
 
   defmodule Components do
-    @enforce_keys [:game, :options, :scoreboard, :finished]
-    defstruct game: nil, changeset: nil, scoreboard: nil, finished: nil
+    @enforce_keys [:game, :options, :scoreboard]
+    defstruct game: nil, options: nil, scoreboard: nil
 
     def new(attr) do
       struct!(__MODULE__, attr)

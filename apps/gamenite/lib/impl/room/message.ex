@@ -3,13 +3,13 @@ defmodule Gamenite.Room.Message do
   import Ecto.Changeset
 
   embedded_schema do
-    field :roommate, :map
+    field :user_id, :binary_id
     field :body, :string
     field :sent_at, :utc_datetime
   end
 
-  @fields [:body, :sent_at, :roommate]
-  @required [:body, :sent_at]
+  @fields [:body, :sent_at, :user_id]
+  @required [:body, :sent_at, :user_id]
 
   def changeset(message, attrs) do
     message

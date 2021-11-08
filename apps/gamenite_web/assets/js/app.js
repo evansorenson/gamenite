@@ -23,42 +23,40 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", info => topbar.show())
 window.addEventListener("phx:page-loading-stop", info => topbar.hide())
 
-
-
-window.onload = () => {
-  const removeElement = ({target}) => {
-    let el = document.getElementById(target.dataset.id);
-    let li = el.parentNode;
-    li.parentNode.removeChild(li);
-  }
-  console.log("hi");
-  set_onclick();
-  function set_onclick() {
-    Array.from(document.querySelectorAll(".remove-form-field"))
-    .forEach(el => {
-      console.log(el)
-      el.onclick = (e) => {
-        removeElement(e);
-      }
-    });
-  }
-  Array.from(document.querySelectorAll(".add-form-field"))
-    .forEach(el => {
-      el.onclick = ({target}) => {
-        let container = document.getElementById(target.dataset.container);
-        let index = container.dataset.index;
-        let newRow = target.dataset.prototype;
-        container.insertAdjacentHTML('beforeend', newRow.replace(/__name__/g, index));
-        container.dataset.index = parseInt(container.dataset.index) + 1;
-        container.querySelectorAll('a.remove-form-field').forEach(el => {
-          el.onclick = (e) => {
-            removeElement(e);
-          }
-        });
-        set_onclick();
-      }
-    });
-};
+// window.onload = () => {
+//   const removeElement = ({target}) => {
+//     let el = document.getElementById(target.dataset.id);
+//     let li = el.parentNode;
+//     li.parentNode.removeChild(li);
+//   }
+//   console.log("hi");
+//   set_onclick();
+//   function set_onclick() {
+//     Array.from(document.querySelectorAll(".remove-form-field"))
+//     .forEach(el => {
+//       console.log(el)
+//       el.onclick = (e) => {
+//         removeElement(e);
+//       }
+//     });
+//   }
+//   Array.from(document.querySelectorAll(".add-form-field"))
+//     .forEach(el => {
+//       el.onclick = ({target}) => {
+//         let container = document.getElementById(target.dataset.container);
+//         let index = container.dataset.index;
+//         let newRow = target.dataset.prototype;
+//         container.insertAdjacentHTML('beforeend', newRow.replace(/__name__/g, index));
+//         container.dataset.index = parseInt(container.dataset.index) + 1;
+//         container.querySelectorAll('a.remove-form-field').forEach(el => {
+//           el.onclick = (e) => {
+//             removeElement(e);
+//           }
+//         });
+//         set_onclick();
+//       }
+//     });
+// };
 
 // assets/js/app.js
 import "phoenix_html"

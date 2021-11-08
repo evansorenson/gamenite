@@ -18,12 +18,10 @@ defmodule GameniteWeb.Game.IndexLive do
   end
 
   def handle_event("search", %{"query" => nil}, socket) do
-    IO.puts("helloasdffasdf")
     {:noreply, assign(socket, :games, GameConfig.list_configs())}
   end
 
   def handle_event("search", %{"query" => query}, socket) do
-    IO.puts("hello")
     games_search = GameConfig.search_games(query)
     {:noreply, assign(socket, :games, games_search)}
   end
@@ -33,7 +31,7 @@ defmodule GameniteWeb.Game.IndexLive do
          :ok <- Room.API.set_game(room_slug, game_title) do
       {:noreply,
        socket
-       |> push_redirect(to: Routes.room_path(socket, :new, room_slug))}
+       |> push_redirect(to: Routes.room_path(socket, :new, room_slug, %{slug: room_slug}))}
     else
       {:error, _reason} ->
         {:noreply,
