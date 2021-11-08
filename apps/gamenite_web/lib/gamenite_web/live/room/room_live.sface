@@ -3,7 +3,7 @@
   <p class="alert alert-info" role="alert">{live_flash(@flash, :info)}</p>
   <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
 
-  {#if is_nil(@room)}
+  {#if is_nil(@roommate)}
     <h1 class="block text-center pb-10 text-bold text-6xl">Enter Room</h1>
     <div class="flex flex-col items-center w-1/2 bg-white rounded-xl shadow-xl">
       <Form for={@roommate_changeset} class="w-full px-8 space-y-8" submit="join_room" change="validate_roommate" opts={autocomplete: "off"}>
@@ -19,16 +19,22 @@
     </div>
   {#else}
   <div class="w-full mb-28 px-8">
+
+    {#if @room.game_in_progress?}
+      <Game id="scoreboard" {=@game} {=@slug} {=@game_config} {=@user_id} />
+    {#else}
+      <OptionsTable id="options" module={@game_config.components.scoreboard} {=@slug} {=@game_config} {=@user_id} roommates={@room.roommates} />
+    {/if}
+
     <div class="game py-4">
-      {live_render(@socket, OptionsTable, id: "game", session: %{"slug" => @slug, "game_config" => @game_config, "user_id" => @user_id, "roommates" => @roommates})}
     </div>
 
-    {#if not is_nil(@game)}
+    {#if @room.game_in_progress?}
           <Dynamic.Component id="scoreboard" module={@game_config.components.scoreboard}
-          game={@game} roommate={@roommate} roommates={@roommates} />
+          game={@game} roommate={@roommate} roommates={@room.roommates} />
     {/if}
-    <div class="bg-white pt-4 shadow-md">
-      <div class="flex flex-col-reverse">
+    <div class="bg-white pt-4 shadow-md rounded-lg">
+      <div class="flex h-96 flex-col-reverse overflow-y-auto">
       {#for roommate_msgs <- Enum.chunk_by(@room.messages, &(&1.user_id))}
         <div class="pb-4">
         <div class="flex flex-col-reverse">
@@ -51,21 +57,21 @@
           {/for}
         </div>
         {#if hd(roommate_msgs).user_id != @user_id}
-          <h6 class="text-black text-lg px-4 text-left">{Map.fetch!(@roommates, hd(roommate_msgs).user_id).name}</h6>
+          <h6 class="text-black text-lg px-4 text-left">{Room.fetch_roommate_or_previous_roommate(@room, hd(roommate_msgs).user_id).name}</h6>
         {/if}
         </div>
       {/for}
       </div>
 
-      <Form for={@message} class="flex w-full bg-gray-light items-center justify-center" change="validate_message" submit="send" opts={autocomplete: "off"}>
-        <div class="w-10/12 px-4">
+      <Form for={@message} class="rounded-b-lg flex w-full bg-gray-light items-center justify-center py-4" change="validate_message" submit="send" opts={autocomplete: "off"}>
+        <div class="w-11/12 px-4">
           <Field name={:body}>
-            <TextInput/>
+            <TextInput class="bg-opacity-50 bg-black focus:ring-1 focus:ring-blurple focus:bg-white"/>
             <ErrorTag/>
           </Field>
         </div>
         <div class="flex items-center justify-center pr-4">
-          <Submit class="button bg-black border-0 text-white text-center">Send</Submit>
+          <Submit class="btn-blurple">Send</Submit>
         </div>
       </Form>
     </div>

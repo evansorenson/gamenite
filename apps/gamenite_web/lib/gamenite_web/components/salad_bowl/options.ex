@@ -5,10 +5,12 @@ defmodule GameniteWeb.Components.SaladBowl.Options do
   alias GameniteWeb.Components.OptionsTable.Row
 
   prop game_changeset, :map, required: true
+  prop change, :event, required: true
+  prop submit, :event, required: true
 
   def render(assigns) do
     ~F"""
-    <Form for={@game_changeset} as={:game} change="validate" submit="start" opts={autocomplete: "off"}>
+    <Form for={@game_changeset} as={:game} {=@change} {=@submit} opts={autocomplete: "off"}>
     <table class="table shadow-md">
       <tbody>
       <Row name={:skip_limit} label={"Skip Limit"} first?={true}>

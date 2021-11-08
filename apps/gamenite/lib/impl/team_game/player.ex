@@ -67,4 +67,10 @@ defmodule Gamenite.TeamGame.Player do
       %{id: roommate.id, color: Enum.at(@player_colors, index), name: roommate.name}
     end)
   end
+
+  def create(attrs) do
+    %__MODULE__{}
+    |> changeset(attrs)
+    |> apply_action!(:update)
+  end
 end

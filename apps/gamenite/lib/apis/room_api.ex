@@ -6,8 +6,16 @@ defmodule Gamenite.Room.API do
     |> start_child
   end
 
+  def state(room_slug) do
+    GenServer.call(via(room_slug), :state)
+  end
+
   def join(room_slug, player) do
     GenServer.call(via(room_slug), {:join, player})
+  end
+
+  def join_if_previous_or_current(room_slug, user_id) do
+    GenServer.call(via(room_slug), {:join_if_previous_or_current, user_id})
   end
 
   def leave(room_slug, user_id) do

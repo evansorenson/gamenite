@@ -1,5 +1,5 @@
 defmodule GameniteWeb.Components.OptionsTable do
-  use Surface.LiveView
+  use Surface.LiveComponent
 
   alias Surface.Components.Dynamic
 
@@ -7,37 +7,29 @@ defmodule GameniteWeb.Components.OptionsTable do
   alias Gamenite.TeamGame
   alias Gamenite.GameServer
   alias Gamenite.Room
-  alias GameniteWeb.Router.Helpers, as: Routes
 
-  def mount(
-        _params,
-        %{"slug" => slug, "game_config" => game_config, "roommates" => roommates} = _session,
+  prop(slug, :string, required: true)
+  prop(game_config, :map, required: true)
+  prop(roommates, :map, required: true)
+
+  data(game_changeset, :map)
+
+  def update(
+        %{slug: slug, game_config: game_config, roommates: roommates} = _assigns,
         socket
       ) do
-    if GameServer.game_exists?(slug) do
-      {:noreply,
-       push_patch(socket,
-         to:
-           Routes.game_path(socket, game_config.components.game, %{
-             slug: slug,
-             roommates: roommates
-           })
-       )}
-    else
-      {:ok,
-       socket
-       |> assign(game_config: game_config)
-       |> assign(slug: slug)
-       |> assign(roommates: roommates)
-       |> assign_game_changeset(%{})}
-    end
+    {:ok,
+     socket
+     |> assign(game_config: game_config)
+     |> assign(slug: slug)
+     |> assign(roommates: roommates)
+     |> assign_game_changeset(%{})}
   end
 
   def update(%{roommates: roommates} = _assigns, socket) do
     {:ok,
      socket
-     |> assign(roommates: roommates)
-     |> assign(game_changeset: create_game_changeset(socket, socket.assigns.game_changeset))}
+     |> assign(roommates: roommates)}
   end
 
   defp new_game(game_config) do
@@ -49,6 +41,8 @@ defmodule GameniteWeb.Components.OptionsTable do
       socket.assigns.roommates
       |> roommates_to_players(socket.assigns.game_config.player)
       |> TeamGame.split_teams(2)
+
+    IO.inspect(params)
 
     ParseHelpers.key_to_atom(params)
     |> Map.put(:teams, teams)
@@ -97,7 +91,6 @@ defmodule GameniteWeb.Components.OptionsTable do
     game_config = socket.assigns.game_config
 
     if GameServer.game_exists?(socket.assigns.slug) do
-      IO.puts("hello game already setarted")
       {:noreply, put_flash(socket, :error, "Game already started.")}
     else
       with conv_params <- convert_changeset_params(params, socket),
@@ -107,8 +100,8 @@ defmodule GameniteWeb.Components.OptionsTable do
            :ok <- Room.API.set_game_in_progress(socket.assigns.slug, true) do
         {:noreply, push_redirect(socket, game_config.components.game)}
       else
-        {:error, _reason} ->
-          IO.puts("error")
+        {:error, reason} ->
+          IO.inspect(reason)
 
           {:noreply, put_flash(socket, :error, "Error creating game.")}
       end
@@ -125,10 +118,11 @@ defmodule GameniteWeb.Components.OptionsTable do
 
   @impl true
   def render(assigns) do
+    #   <div>
+    #   <Dynamic.Component module={@game_config.components.options} game_changeset={@game_changeset} submit={"start", target: @myself} change={"validate", target: @myself}/>
+    # </div>
     ~F"""
-    <div>
-      <Dynamic.Component module={@game_config.components.options} game_changeset={@game_changeset}/>
-    </div>
+    <GameniteWeb.Components.Horsepaste.Options submit={"start", target: @myself} change={"validate", target: @myself} game_changeset={@game_changeset} />
     """
   end
 end

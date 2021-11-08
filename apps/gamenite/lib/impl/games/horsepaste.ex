@@ -1,4 +1,4 @@
-defmodule Gamenite.Games.Horsepaste do
+defmodule Gamenite.Horsepaste do
   use Ecto.Schema
   use Accessible
   import Ecto.Changeset
@@ -19,6 +19,7 @@ defmodule Gamenite.Games.Horsepaste do
     field(:finished?, :boolean, default: false)
     field(:timer_length, :integer, default: 60)
     field(:timer_enabled?, :boolean, default: false)
+    field(:winning_team_idx, :integer)
   end
 
   @fields [:room_slug, :current_turn, :deck, :timer_length, :timer_enabled?]
@@ -28,15 +29,20 @@ defmodule Gamenite.Games.Horsepaste do
     |> cast(attrs, @fields)
     |> validate_required(:room_slug)
     |> validate_length(:teams, is: 2)
+    |> validate_number(:timer_length, min: 30, max: 600)
     |> validate_length(:deck, min: 25)
   end
 
-  def change_game(%__MODULE__{} = game, attrs \\ %{}) do
+  def change(%__MODULE__{} = game, attrs \\ %{}) do
     game
     |> changeset(attrs)
   end
 
-  def create_game(attrs) do
+  def new() do
+    %__MODULE__{}
+  end
+
+  def create(attrs) do
     %__MODULE__{}
     |> changeset(attrs)
     |> apply_action(:update)
@@ -215,8 +221,8 @@ defmodule Gamenite.Games.Horsepaste do
   end
 
   def do_select_card(%{type: type} = _card, %{current_team: current_team} = game)
-      when (current_team.index == 0 and type == :red) or
-             (current_team.index == 1 and type == :blue) do
+      when (current_team.index == 0 and type == :blue) or
+             (current_team.index == 1 and type == :red) do
     game
     |> decrement_team_score(other_team_index(current_team))
     |> game_maybe_over
@@ -279,7 +285,8 @@ defmodule Gamenite.Games.Horsepaste do
   end
 
   defp turn_maybe_over(%{current_turn: current_turn} = game)
-       when current_turn.num_correct >= current_turn.number_of_words do
+       when not current_turn.extra_guess? and
+              current_turn.num_correct >= current_turn.number_of_words do
     game
     |> TeamGame.next_team()
   end

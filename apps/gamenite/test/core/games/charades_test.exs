@@ -2,14 +2,15 @@ defmodule CharadesCoreTest do
   use ExUnit.Case
   use GameBuilders
 
-  alias Gamenite.Games.Charades
+  alias Gamenite.Charades
+  alias Gamenite.SaladBowl
 
   defp working_game(context) do
     teams = build_teams([2, 2], %Player{})
     deck = build_deck(3)
 
     game =
-      Charades.create_charades(%{teams: teams, deck: deck, skip_limit: 3})
+      Charades.create(%{teams: teams, deck: deck, skip_limit: 3})
       |> elem(1)
       |> Map.put(
         :current_turn,
@@ -28,7 +29,7 @@ defmodule CharadesCoreTest do
     deck = build_deck(3)
 
     salad_bowl =
-      Charades.create_salad_bowl(%{
+      SaladBowl.create(%{
         teams: teams,
         deck: deck,
         skip_limit: 1,

@@ -3,8 +3,8 @@ defmodule SaladBowlTest do
   use GameBuilders
 
   alias Gamenite.SaladBowl.API
-  alias Gamenite.Games.Charades
-  alias Gamenite.Games.Charades.{Game, Player, Turn}
+  alias Gamenite.Charades
+  alias Gamenite.Charades.{Game, Player, Turn}
 
   alias Phoenix.PubSub
 

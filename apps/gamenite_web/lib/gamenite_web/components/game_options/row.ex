@@ -3,12 +3,12 @@ defmodule GameniteWeb.Components.OptionsTable.Row do
 
   alias Surface.Components.Form.{Field, Label, ErrorTag}
 
-  prop name, :atom, required: true
-  prop label, :string, required: true
-  prop first?, :boolean, default: false
-  prop last?, :boolean, default: false
-  slot icon, required: true
-  slot input, required: true
+  prop(name, :atom, required: true)
+  prop(label, :string, required: true)
+  prop(first?, :boolean, default: false)
+  prop(last?, :boolean, default: false)
+  slot(icon, required: true)
+  slot(input, required: true)
 
   def render(assigns) do
     label_column = get_label_class(assigns)
@@ -33,7 +33,7 @@ defmodule GameniteWeb.Components.OptionsTable.Row do
           </div>
         </td>
         <td class={input_column}>
-          <div class="pr-5">
+          <div class="flex justify-center items-center pr-5">
           <#slot name="input" />
           </div>
         </td>

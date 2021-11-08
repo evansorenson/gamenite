@@ -12,14 +12,6 @@ defmodule Gamenite.SaladBowl.Server do
     {:ok, game_with_first_turn}
   end
 
-  def start_link({game, room_uuid}) do
-    GenServer.start_link(
-      __MODULE__,
-      {game, room_uuid},
-      name: via(room_uuid)
-    )
-  end
-
   def handle_call(:state, _from, game) do
     {:reply, {:ok, game}, game}
   end

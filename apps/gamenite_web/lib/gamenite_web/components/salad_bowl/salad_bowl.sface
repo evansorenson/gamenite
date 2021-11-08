@@ -3,7 +3,7 @@
     <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
 
     {#if length(@game.submitted_users) < map_size(@roommates)}
-    {#if @user.id not in @game.submitted_users}
+    {#if @user_id not in @game.submitted_users}
       <div class="container items-center justify-center max-w-max py-10">
         <h1 class="py-8 text-4xl font-bold"> Enter your words to be added to the Salad Bowl!</h1>
         <form phx-target={@myself} phx-submit="submit_words">
@@ -18,14 +18,14 @@
     {#else}
       <h1 class="py-8 text-4xl font-bold text-center">Waiting for others to submit their words...</h1>
       <div class="flex flex-wrap items-center justify-evenly">
-        {#for {user_id, user} <- Map.to_list(@roommates)}
+        {#for {user_id, roommate} <- Map.to_list(@roommates)}
           {#if user_id in @game.submitted_users}
             <div class="px-4 py-4">
-              <h1 class="px-4 bg-green-400 rounded-lg shadow-md"> {user.name} </h1>
+              <h1 class="px-4 bg-green-400 rounded-lg shadow-md"> {roommate.name} </h1>
             </div>
           {#else}
             <div class="px-4 py-4">
-              <h1 class="px-4 bg-red-400 rounded-lg shadow-md"> {user.name} </h1>
+              <h1 class="px-4 bg-red-400 rounded-lg shadow-md"> {roommate.name} </h1>
             </div>
           {/if}
         {/for}
@@ -51,7 +51,7 @@
           <h1 class="text-5xl">{@game.current_turn.time_remaining_in_sec}</h1>
         </div>
       </div>
-      {#if Gamenite.TeamGame.current_player?(@game, @user.id)}
+      {#if Gamenite.TeamGame.current_player?(@game.current_team, @user_id)}
         {#case @game.current_turn}
         {#match %{started?: false}}
           <div class="flex justify-center items-center">
@@ -94,7 +94,7 @@
             <button phx-target={@myself} phx-click="correct" class="bg-green-600 px-4">Correct</button>
           </div>
         {/case}
-      {#elseif Gamenite.TeamGame.on_current_team?(@game, @user.id)}
+      {#elseif Gamenite.TeamGame.on_team?(@game.current_team, @user_id)}
         <h1 class="text-5xl py-10 text-center">{"Your team is up! You are guessing clues."}</h1>
       {#else}
         <h1 class="text-5xl py-10 text-center">{"Your team is chilling. Sit back and relax."}</h1>

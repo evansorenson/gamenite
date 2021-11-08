@@ -125,12 +125,12 @@ defmodule Gamenite.TeamGame do
     |> put_in(current_turn.started_at, DateTime.utc_now())
   end
 
-  def on_current_team?(%{current_team: current_team} = _game, id) do
-    Enum.any?(current_team.players, fn player -> player.id == id end)
+  def on_team?(team, id) do
+    Enum.any?(team.players, fn player -> player.id == id end)
   end
 
-  def current_player?(%{current_team: current_team} = _game, id) do
-    current_team.current_player.id == id
+  def current_player?(team, id) do
+    team.current_player.id == id
   end
 
   def add_score(game, score) do

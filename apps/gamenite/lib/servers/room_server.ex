@@ -52,14 +52,25 @@ defmodule Gamenite.Room.Server do
     PubSub.broadcast(Gamenite.PubSub, "room:" <> room.slug, {:room_update, room})
   end
 
-  def handle_call({:join, player}, _from, room) do
-    case Room.join(room, player) do
-      {:error, reason} ->
-        {:reply, {:error, reason}, room}
+  def handle_call(:state, _from, room) do
+    {:reply, room, room}
+  end
 
-      new_room ->
+  def handle_call({:join, player}, _from, room) do
+    room
+    |> Room.join(player)
+    |> response(room)
+  end
+
+  def handle_call({:join_if_previous_or_current, user_id}, _from, room) do
+    case Room.join_if_previous_or_current(room, user_id) do
+      %{roommates: roommates} = new_room ->
+        roommate = Map.fetch!(roommates, user_id)
         broadcast_room_update(new_room)
-        {:reply, {:ok, new_room}, new_room}
+        {:reply, {:ok, roommate}, new_room}
+
+      {:error, reason} ->
+        response({:error, reason}, room)
     end
   end
 

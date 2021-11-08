@@ -1,5 +1,6 @@
 defmodule GameniteWeb.Components.SaladBowl do
   use Surface.LiveComponent
+  import GameniteWeb.Components.Game
 
   alias GameniteWeb.Components.Charades.{Card}
 
@@ -9,20 +10,7 @@ defmodule GameniteWeb.Components.SaladBowl do
   data(game, :map)
   data(user, :map)
   data(slug, :string)
-  data(roommates, :map)
   data(flash, :map)
-
-  def update(
-        %{slug: slug, game: game, roommates: roommates, user: user} = _assigns,
-        socket
-      ) do
-    {:ok,
-     socket
-     |> assign(user: user)
-     |> assign(game: game)
-     |> assign(slug: slug)
-     |> assign(roommates: roommates)}
-  end
 
   @impl true
   def handle_event("correct", _params, socket) do
@@ -71,14 +59,6 @@ defmodule GameniteWeb.Components.SaladBowl do
 
     API.submit_cards(socket.assigns.slug, word_list, socket.assigns.user.id)
     |> game_callback(socket)
-  end
-
-  defp game_callback(:ok, socket) do
-    {:noreply, socket}
-  end
-
-  defp game_callback({:error, reason}, socket) do
-    {:noreply, put_flash(socket, :error, reason)}
   end
 
   defp card_completed(socket, outcome) do

@@ -7,6 +7,7 @@ defmodule Gamenite.Room do
   defstruct slug: nil,
             name: nil,
             roommates: %{},
+            previous_roommates: %{},
             messages: [],
             game_title: nil,
             game_in_progress?: false,
@@ -16,26 +17,45 @@ defmodule Gamenite.Room do
     struct!(__MODULE__, attrs)
   end
 
+  def join_if_previous_or_current(%{previous_roommates: previous_roommates} = room, user_id)
+      when is_map_key(previous_roommates, user_id) do
+    {roommate_to_join, new_previous_roommates} = Map.pop!(previous_roommates, user_id)
+
+    join(
+      %{room | previous_roommates: new_previous_roommates},
+      roommate_to_join
+    )
+  end
+
+  def join_if_previous_or_current(%{roommates: roommates} = room, user_id)
+      when is_map_key(roommates, user_id) do
+    Map.fetch!(roommates, user_id)
+    |> do_join(room)
+  end
+
+  def join_if_previous_or_current(_room, _user_id),
+    do: {:error, "User not previously or currently in room."}
+
   @max_room_size 8
-  def join(%{roommates: roommates} = room, player)
+  def join(%{roommates: roommates} = room, roommate)
       when map_size(roommates) >= @max_room_size do
-    if Map.has_key?(roommates, player.id) do
-      do_join(player, room)
+    if Map.has_key?(roommates, roommate.id) do
+      do_join(roommate, room)
     else
       {:error, "Room is full."}
     end
   end
 
-  def join(%{roommates: %{}} = room, player) do
-    player
+  def join(%{roommates: %{}} = room, roommate) do
+    roommate
     |> Map.put(:host?, true)
     |> do_join(room)
   end
 
-  def join(room, player), do: do_join(player, room)
+  def join(room, roommate), do: do_join(roommate, room)
 
-  defp do_join(%{id: id} = player, %{roommates: roommates} = room) do
-    %{room | roommates: Map.put(roommates, id, player)}
+  defp do_join(%{id: id} = roommate, %{roommates: roommates} = room) do
+    %{room | roommates: Map.put(roommates, id, roommate)}
   end
 
   def leave(%{roommates: roommates, game_in_progress?: true} = room, id) do
@@ -50,7 +70,13 @@ defmodule Gamenite.Room do
   end
 
   def leave(%{roommates: roommates} = room, id) do
-    %{room | roommates: Map.delete(roommates, id)}
+    {roommate_leaving, new_roommates} = Map.pop!(roommates, id)
+
+    room
+    |> Map.put(:roommates, new_roommates)
+    |> Map.update!(:previous_roommates, fn prev_roommates ->
+      Map.put(prev_roommates, roommate_leaving.id, roommate_leaving)
+    end)
   end
 
   def create_roommate(attrs \\ %{}) do
@@ -61,6 +87,19 @@ defmodule Gamenite.Room do
   def change_roommate(attrs \\ %{}) do
     %Roommate{}
     |> Roommate.changeset(attrs)
+  end
+
+  def fetch_roommate_or_previous_roommate(%{roommates: roommates} = _room, user_id)
+      when is_map_key(roommates, user_id) do
+    Map.fetch!(roommates, user_id)
+  end
+
+  def fetch_roommate_or_previous_roommate(
+        %{previous_roommates: previous_roommates} = _room,
+        user_id
+      )
+      when is_map_key(previous_roommates, user_id) do
+    Map.fetch!(previous_roommates, user_id)
   end
 
   def invert_mute(room, %{muted?: muted?} = player) do

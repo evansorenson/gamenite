@@ -2,8 +2,8 @@ defmodule HorsePasteTest do
   use ExUnit.Case
   use GameBuilders
 
-  alias Gamenite.Games.Horsepaste
-  alias Gamenite.Games.Horsepaste.{Game, Player, Card}
+  alias Gamenite.Horsepaste
+  alias Gamenite.Horsepaste.{Player, Card, Turn}
 
   defp create_game() do
     teams = build_teams([2, 2], %{})
@@ -50,22 +50,37 @@ defmodule HorsePasteTest do
     {:ok, Map.put(context, :setup_game, Horsepaste.setup_game(game, false))}
   end
 
-  defp defined_board() do
-    create_game()
+  defp defined_board(game) do
+    game
     |> elem(1)
     |> Map.put(
       :board,
       %{
-        {0, 0} => Card.new(%{type: :blue}),
-        {0, 1} => Card.new(%{type: :red}),
+        {0, 0} => Card.new(%{type: :red}),
+        {0, 1} => Card.new(%{type: :blue}),
         {0, 2} => Card.new(%{type: :bystander}),
         {0, 3} => Card.new(%{type: :assassin})
       }
     )
   end
 
+  defp new_turn(game, attrs \\ %{}) do
+    game
+    |> Map.put(:current_turn, Turn.new(attrs))
+  end
+
+  defp give_teams_scores(game, first_team_score, second_team_score) do
+    game
+    |> put_in([:current_team, :score], first_team_score)
+    |> put_in([:teams, Access.at!(1), :score], second_team_score)
+  end
+
   defp game_with_defined_board(context) do
-    game = defined_board()
+    game =
+      create_game()
+      |> defined_board()
+      |> new_turn()
+      |> give_teams_scores(9, 8)
 
     {:ok, Map.put(context, :defined_board, game)}
   end
@@ -193,40 +208,109 @@ defmodule HorsePasteTest do
   describe "selecting words" do
     setup [:game_with_defined_board]
 
-    test "selecting own color with words left continues turn", %{defined_board: game} do
+    test "select own color, words left -> continues turn", %{defined_board: game} do
+      new_game =
+        game
+        |> Horsepaste.select_card({0, 0})
+
+      assert new_game.current_team.index == 0
     end
 
-    test "selecting own color with no extra guess and number correct equal to clue total ends turn",
+    test "select own color, no extra guess, correct equal to clue total -> ends turn",
          %{
            defined_board: game
          } do
+      new_game =
+        game
+        |> new_turn(%{number_of_words: 2, num_correct: 2})
+        |> Horsepaste.select_card({0, 0})
+
+      assert new_game.current_team.index == 1
     end
 
-    test "selecting own color with extra guess and number correct equal to clue total continues turn",
+    test "select own color, extra guess, correct equal to clue total -> continues turn",
          %{
            defined_board: game
          } do
+      new_game =
+        game
+        |> new_turn(%{number_of_words: 2, num_correct: 2})
+        |> put_in([:current_turn, :extra_guess?], true)
+        |> Horsepaste.select_card({0, 0})
+
+      assert new_game.current_team.index == 0
     end
 
     test "selecting own color decrements current team score", %{defined_board: game} do
+      new_game =
+        game
+        |> Horsepaste.select_card({0, 0})
+
+      assert new_game.current_team.score == 8
     end
 
     test "selecting other teams color decrements their score", %{defined_board: game} do
+      new_game =
+        game
+        |> Horsepaste.select_card({0, 1})
+
+      assert new_game.current_team.score == 7
     end
 
     test "selecting other teams color ends turn", %{defined_board: game} do
+      new_game =
+        game
+        |> Horsepaste.select_card({0, 1})
+
+      assert new_game.current_team.index == 1
     end
 
     test "selecting bystander ends turn", %{defined_board: game} do
+      new_game =
+        game
+        |> Horsepaste.select_card({0, 2})
+
+      assert new_game.current_team.index == 1
     end
 
-    test "selecting bystander doesn't change scores", %{defined_board: game}
+    test "selecting bystander doesn't change scores", %{defined_board: game} do
+      new_game =
+        game
+        |> Horsepaste.select_card({0, 2})
+
+      assert Enum.at(new_game.teams, 0).score == 9
+      assert Enum.at(new_game.teams, 1).score == 8
     end
 
     test "selecting assassin ends game and other team wins", %{defined_board: game} do
+      new_game =
+        game
+        |> Horsepaste.select_card({0, 3})
+
+      assert new_game.finished?
+      assert new_game.winning_team_idx == 1
     end
 
-    test "getting to 0 score wins game" do
+    test "selecting own color and getting to 0 score wins game", %{defined_board: game} do
+      new_game =
+        game
+        |> give_teams_scores(1, 1)
+        |> Horsepaste.select_card({0, 0})
+
+      assert new_game.finished?
+      assert new_game.winning_team_idx == 0
+    end
+
+    test "selecting other team's color and getting to 0 score wins them the game", %{
+      defined_board: game
+    } do
+      new_game =
+        game
+        |> give_teams_scores(1, 1)
+        |> Horsepaste.select_card({0, 1})
+
+      assert new_game.finished?
+      assert new_game.winning_team_idx == 1
     end
   end
 end

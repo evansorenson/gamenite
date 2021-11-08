@@ -16,7 +16,7 @@ defmodule GameniteWeb.RoomLive do
   alias Surface.Components.Dynamic
   alias Surface.Components.Form
   alias Surface.Components.Form.{Field, TextInput, Submit, Label, ErrorTag}
-  alias GameniteWeb.Components.OptionsTable
+  alias GameniteWeb.Components.{Game, OptionsTable}
 
   data(game, :map, default: nil)
   data(game_info, :map, default: nil)
@@ -29,28 +29,51 @@ defmodule GameniteWeb.RoomLive do
   def mount(%{"slug" => slug} = _params, session, socket) do
     user_id = mount_socket_user(socket, session)
 
-    with true <- API.slug_exists?(slug) do
+    with true <- API.slug_exists?(slug),
+         room <- API.state(slug) do
+      game_config = GameConfig.get_config(room.game_title)
+      PubSub.subscribe(Gamenite.PubSub, "room:" <> slug)
+      PubSub.subscribe(Gamenite.PubSub, "game:" <> slug)
+
       {:ok,
        socket
        |> initialize_game(slug)
+       |> join_room_if_previous_or_current_roommate(slug, user_id)
        |> assign(
          user_id: user_id,
+         room: room,
+         game_title: room.game_title,
+         game_config: game_config,
          roommate_changeset: Room.change_roommate(),
-         room: nil,
-         slug: slug
+         slug: slug,
+         message: Room.change_message()
        )}
     else
       false ->
+        IO.puts("false")
+
         {:ok,
          socket
          |> put_flash(:error, "Room does not exist.")
          |> push_redirect(to: Routes.game_path(socket, :index))}
 
       {:error, reason} ->
+        IO.inspect(reason)
+
         {:ok,
          socket
          |> put_flash(:error, reason)
          |> push_redirect(to: Routes.game_path(socket, :index))}
+    end
+  end
+
+  defp join_room_if_previous_or_current_roommate(socket, slug, user_id) do
+    case API.join_if_previous_or_current(slug, user_id) do
+      {:ok, roommate} ->
+        assign(socket, roommate: roommate)
+
+      {:error, _reason} ->
+        assign(socket, roommate: nil)
     end
   end
 
@@ -69,6 +92,7 @@ defmodule GameniteWeb.RoomLive do
   there are no remaining players.
   """
   def unmount(_reason, %{user_id: user_id, room_slug: room_slug}) do
+    IO.puts("helllooooo")
     Logger.info("Unmounting LiveView")
     API.leave(room_slug, user_id)
   end
@@ -126,22 +150,12 @@ defmodule GameniteWeb.RoomLive do
 
     with {:ok, roommate} <-
            Room.create_roommate(new_roommate),
-         {:ok, room} <- API.join(socket.assigns.slug, roommate) do
-      PubSub.subscribe(Gamenite.PubSub, "room:" <> socket.assigns.slug)
+         :ok <- API.join(socket.assigns.slug, roommate) do
       monitor_live_view_process(socket.assigns.slug, socket.assigns.user_id)
-
-      game_config = GameConfig.get_config(room.game_title)
 
       {:noreply,
        socket
-       |> assign(
-         room: room,
-         game_title: room.game_title,
-         game_config: game_config,
-         roommate: roommate,
-         roommates: room.roommates,
-         message: Room.change_message()
-       )}
+       |> assign(roommate: roommate)}
     else
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, reason)}
@@ -197,16 +211,13 @@ defmodule GameniteWeb.RoomLive do
   @impl true
   def handle_info({:room_update, room}, socket) do
     roommate = Map.get(room.roommates, socket.assigns.user_id)
-    {:noreply, assign(socket, room: room, roommates: room.roommates, roommate: roommate)}
-  end
 
-  def handle_info({:game_changeset_update, game_changeset}, socket) do
-    send_update(self(), GameniteWeb.GameLive, %{
-      id: socket.assigns.game_title,
-      game_changeset: game_changeset
+    send_update(OptionsTable, %{
+      id: "options",
+      roommates: room.roommates
     })
 
-    {:noreply, socket}
+    {:noreply, assign(socket, room: room, roommate: roommate)}
   end
 
   def handle_info({:game_update, game}, socket) do
