@@ -221,6 +221,9 @@ defmodule GameniteWeb.RoomLive do
   end
 
   def handle_info({:game_update, game}, socket) do
+    IO.puts("game update")
+    IO.inspect(game)
+
     {:noreply,
      socket
      |> assign(game: game)}

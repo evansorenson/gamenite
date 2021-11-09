@@ -34,7 +34,8 @@ config :gamenite_web, GameniteWeb.Endpoint,
       "node_modules/webpack/bin/webpack.js",
       "--mode",
       "development",
-      "--watch-stdin",
+      "--watch-options-stdin",
+      "--watch",
       cd: Path.expand("../apps/gamenite_web/assets", __DIR__)
     ]
   ]

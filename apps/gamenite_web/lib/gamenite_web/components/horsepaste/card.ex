@@ -3,52 +3,49 @@ defmodule GameniteWeb.Components.Horsepaste.Card do
 
   prop(card, :map, required: true)
   prop(disabled?, :boolean, default: true)
-  prop(spymaster?, :boolean)
-  prop(flip, :event)
+  prop(spymaster?, :boolean, required: true)
+  prop(flip, :event, required: true)
 
   def render(assigns) do
-    class = card_color("text-", @card)
+    class = card_class(assigns)
 
     ~F"""
+    <button class={class} disa :on-click={@flip}>@card.word</button>
     """
-
-    # ~F"""
-    # {#if @card.flipped?}
-    # <button class="hover:text-white disabled #{card_color}">
-    #   {@card.word}
-    # </button>
-    # {#elseif @spymaster?}
-    # <button class={card_class(@card)}, card_color("text-", @card), "disabled": true}>
-    #   {@card.word}
-    # </button>
-    # {#else}
-    # <button :on-click={@flip} class={"w-72 h-48 text-black bg-white text-center text-4xl", "disabled": @disabled?, card_color("bg-", @card)}>
-    # {@card.word}
-    # </button>
-    # {/if}
-
-    # """
   end
 
-  @spymaster_class "disabled"
+  defp card_class(assigns) do
+    base = "w-72 h-48 text-center text-4xl "
+    color = card_color(assigns.card)
 
-  defp card_class(card) do
-    "w-72 h-48 text-center text-4xl "
+    cond do
+      assigns.flipped? ->
+        base <> "hover:text-white disabled bg-#{color} text-#{color}"
+
+      assigns.spymaster? ->
+        base <> " bg-white disabled text-#{color}"
+
+      assigns.disabled? ->
+        base <> " bg-white text-black disabled"
+
+      true ->
+        base <> "bg-white text-black"
+    end
   end
 
-  defp card_color(string, card) do
+  defp card_color(card) do
     case card.type do
       :assassin ->
-        string <> "gray-darkest"
+        "gray-darkest"
 
       :bystander ->
-        string <> "yellow-100"
+        "yellow-100"
 
       :red ->
-        string <> "red"
+        "red"
 
       :blue ->
-        string <> "blue"
+        "blue"
     end
   end
 end

@@ -2,9 +2,7 @@ defmodule Gamenite.Horsepaste.Server do
   use GenServer
 
   import Gamenite.GameServer
-
-  alias Gamenite.TeamGame
-  alias Gamenite.Horsepaste
+  alias Gamenite.{Horsepaste, TeamGame}
 
   def init({game, _room_uuid}) do
     setup_game = Horsepaste.setup_game(game)
@@ -24,8 +22,17 @@ defmodule Gamenite.Horsepaste.Server do
     |> game_response(game)
   end
 
-  def handle_call(:play_again, _from, game) do
+  def handle_call(:play_again_same_teams, _from, game) do
     game
+    |> TeamGame.end_turn()
+    |> TeamGame.end_turn()
+    |> Horsepaste.setup_game()
+    |> game_response(game)
+  end
+
+  def handle_call(:play_again_new_teams, _from, game) do
+    game
+    |> TeamGame.mix_up_teams()
     |> Horsepaste.setup_game()
     |> game_response(game)
   end

@@ -20,7 +20,6 @@ defmodule Gamenite.GameServer do
       child_spec(module, {game, room_slug})
     )
 
-    broadcast_game_update(game)
     :ok
   end
 

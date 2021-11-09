@@ -22,12 +22,13 @@ defmodule Gamenite.Horsepaste do
     field(:winning_team_idx, :integer)
   end
 
-  @fields [:room_slug, :current_turn, :deck, :timer_length, :timer_enabled?]
+  @fields [:current_turn, :deck, :timer_length, :timer_enabled?]
   def changeset(game, attrs) do
     game
+    |> Game.changeset(attrs)
     |> TeamGame.changeset(attrs)
     |> cast(attrs, @fields)
-    |> validate_required(:room_slug)
+    |> validate_required([:deck])
     |> validate_length(:teams, is: 2)
     |> validate_number(:timer_length, min: 30, max: 600)
     |> validate_length(:deck, min: 25)
@@ -247,7 +248,7 @@ defmodule Gamenite.Horsepaste do
     |> update_in([:teams, Access.at!(team_idx), :score], &(&1 - 1))
   end
 
-  defp other_team_index(current_team) do
+  def other_team_index(current_team) do
     rem(current_team.index + 1, 2)
   end
 

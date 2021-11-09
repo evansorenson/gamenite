@@ -21,9 +21,9 @@
   <div class="w-full mb-28 px-8">
 
     {#if @room.game_in_progress?}
-      <Game id="scoreboard" {=@game} {=@slug} {=@game_config} {=@user_id} />
+      <Dynamic.LiveComponent id="game" module={@game_config.components.game} {=@game} {=@slug} {=@game_config} {=@user_id} />
     {#else}
-      <OptionsTable id="options" module={@game_config.components.scoreboard} {=@slug} {=@game_config} {=@user_id} roommates={@room.roommates} />
+      <OptionsTable id="options" {=@slug} {=@game_config} {=@user_id} roommates={@room.roommates} />
     {/if}
 
     <div class="game py-4">

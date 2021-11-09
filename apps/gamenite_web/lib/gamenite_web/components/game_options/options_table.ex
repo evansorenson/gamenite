@@ -98,7 +98,7 @@ defmodule GameniteWeb.Components.OptionsTable do
            :ok <-
              GameServer.start_game(game_config.server, game, socket.assigns.slug),
            :ok <- Room.API.set_game_in_progress(socket.assigns.slug, true) do
-        {:noreply, push_redirect(socket, game_config.components.game)}
+        {:noreply, socket}
       else
         {:error, reason} ->
           IO.inspect(reason)
