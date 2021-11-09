@@ -37,23 +37,47 @@ defmodule GameniteWeb.Components.OptionsTable do
   end
 
   defp convert_changeset_params(params, socket) when socket.assigns.game_config.team_game? do
+    params
+    |> ParseHelpers.key_to_atom()
+    |> add_teams(socket)
+    |> maybe_add_deck(socket)
+    |> add_room_slug(socket)
+  end
+
+  defp convert_changeset_params(params, socket) do
+    params
+    |> ParseHelpers.key_to_atom()
+    |> add_players(socket)
+    |> maybe_add_deck(socket)
+    |> add_room_slug(socket)
+  end
+
+  defp add_teams(params, socket) do
     teams =
       socket.assigns.roommates
       |> roommates_to_players(socket.assigns.game_config.player)
       |> TeamGame.split_teams(2)
 
-    ParseHelpers.key_to_atom(params)
+    params
     |> Map.put(:teams, teams)
-    |> Map.put(:room_slug, socket.assigns.slug)
   end
 
-  defp convert_changeset_params(params, socket) do
+  defp add_players(params, socket) do
     players =
       socket.assigns.roommates
       |> roommates_to_players(socket.assigns.game_config.player)
 
-    ParseHelpers.key_to_atom(params)
+    params
     |> Map.put(:players, players)
+  end
+
+  defp maybe_add_deck(params, socket) when is_map_key(socket.assigns.game_config, :deck) do
+    params
+    |> Map.put(:deck, socket.assigns.game_config.deck.cards)
+  end
+
+  defp add_room_slug(params, socket) do
+    params
     |> Map.put(:room_slug, socket.assigns.slug)
   end
 
@@ -93,14 +117,12 @@ defmodule GameniteWeb.Components.OptionsTable do
     else
       with conv_params <- convert_changeset_params(params, socket),
            {:ok, game} <- apply(game_config.impl, :create, [conv_params]),
-           :ok <-
-             GameServer.start_game(game_config.server, game, socket.assigns.slug),
-           :ok <- Room.API.set_game_in_progress(socket.assigns.slug, true) do
+           :ok <- GameServer.start_game(game_config.server, game, socket.assigns.slug) do
+        IO.inspect(game_config.server)
         {:noreply, socket}
       else
         {:error, reason} ->
           IO.inspect(reason)
-
           {:noreply, put_flash(socket, :error, "Error creating game.")}
       end
     end
@@ -120,7 +142,11 @@ defmodule GameniteWeb.Components.OptionsTable do
     #   <Dynamic.Component module={@game_config.components.options} game_changeset={@game_changeset} submit={"start", target: @myself} change={"validate", target: @myself}/>
     # </div>
     ~F"""
+    <div>
+    <p class="alert alert-info" role="alert">{live_flash(@flash, :info)}</p>
+    <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
     <GameniteWeb.Components.Horsepaste.Options submit={"start", target: @myself} change={"validate", target: @myself} game_changeset={@game_changeset} />
+    </div>
     """
   end
 end

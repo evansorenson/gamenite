@@ -32,7 +32,8 @@ module.exports = {
       black: colors.black,
       white: colors.white,
       indigo: colors.indigo,
-      red: colors.rose,
+      red: colors.red,
+      blue: colors.blue,
       yellow: colors.yellow,
       green: colors.green
     }

@@ -31,8 +31,8 @@ defmodule GameniteWeb.Components.Horsepaste do
     <div>
     {#if TeamGame.current_player?(@game.current_team, @user_id) or TeamGame.current_player?(Enum.at(@game.teams, Horsepaste.other_team_index(@game.current_team)), @user_id)}
       <Board board={@game.board} spymaster?={true} disabled?={true} flip={"select_card", target: @myself} />
-    {#elseif TeamGame.on_team?(@game.current_team)}
-      <Board board={@game.board} spymaster?={false} disabled?={not @game.current_turn.clue} flip={"select_card", target: @myself} />
+    {#elseif TeamGame.on_team?(@game.current_team, @user_id)}
+      <Board board={@game.board} spymaster?={false} disabled?={is_nil(@game.current_turn.clue)} flip={"select_card", target: @myself} />
     {#else}
       <Board board={@game.board} spymaster?={false} disabled?={true} flip={"select_card", target: @myself} />
     {/if}

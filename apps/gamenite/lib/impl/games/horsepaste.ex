@@ -3,6 +3,9 @@ defmodule Gamenite.Horsepaste do
   use Accessible
   import Ecto.Changeset
 
+  @behaviour Gamenite.Game
+
+  alias Gamenite.Game
   alias Gamenite.TeamGame
   alias Gamenite.TeamGame.Team
   alias Gamenite.Cards

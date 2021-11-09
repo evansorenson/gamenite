@@ -2,25 +2,23 @@ defmodule Gamenite.GameServer do
   alias Phoenix.PubSub
   require Logger
 
-  def start_link({game, room_uuid}) do
-    GenServer.start_link(
-      __MODULE__,
-      {game, room_uuid},
-      name: via(room_uuid)
-    )
-  end
+  alias Gamenite.Room
 
   def via(room_slug) do
     {:via, Registry, {Gamenite.Registry.Game, room_slug}}
   end
 
   def start_game(module, game, room_slug) do
-    DynamicSupervisor.start_child(
-      Gamenite.Supervisor.Game,
-      child_spec(module, {game, room_slug})
-    )
+    case DynamicSupervisor.start_child(
+           Gamenite.Supervisor.Game,
+           child_spec(module, {game, room_slug})
+         ) do
+      {:ok, _pid} ->
+        Room.API.set_game_in_progress(room_slug, true)
 
-    :ok
+      _ ->
+        :error
+    end
   end
 
   def child_spec(module, {game, room_slug}) do

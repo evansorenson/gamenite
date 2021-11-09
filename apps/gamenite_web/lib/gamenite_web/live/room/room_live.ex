@@ -221,6 +221,11 @@ defmodule GameniteWeb.RoomLive do
   end
 
   def handle_info({:game_update, game}, socket) do
+    if not socket.assigns.game do
+      IO.puts("hello")
+      Room.API.set_game_in_progress(socket.assigns.slug, true)
+    end
+
     IO.puts("game update")
     IO.inspect(game)
 

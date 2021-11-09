@@ -5,9 +5,18 @@ defmodule Gamenite.Horsepaste.Server do
   alias Gamenite.{Horsepaste, TeamGame}
 
   def init({game, _room_uuid}) do
+    IO.puts("setting up")
     setup_game = Horsepaste.setup_game(game)
     broadcast_game_update(setup_game)
     {:ok, setup_game}
+  end
+
+  def start_link({game, room_uuid}) do
+    GenServer.start_link(
+      __MODULE__,
+      {game, room_uuid},
+      name: via(room_uuid)
+    )
   end
 
   def handle_call({:give_clue, clue_word, number_of_words}, _from, game) do
@@ -20,6 +29,10 @@ defmodule Gamenite.Horsepaste.Server do
     game
     |> Horsepaste.select_card(board_coords)
     |> game_response(game)
+  end
+
+  def handle_call(:state, _from, game) do
+    {:reply, {:ok, game}, game}
   end
 
   def handle_call(:play_again_same_teams, _from, game) do

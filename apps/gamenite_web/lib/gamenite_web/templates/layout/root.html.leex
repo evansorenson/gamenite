@@ -13,19 +13,6 @@
     <header class="bg-gradient-to-r from-gray-darkest to-black">
       <section class="container">
         <nav role="navigation">
-          <!-- <ul>
-            <%= if @current_user do %>
-              <li class="text-blurple text-3xl font-bold"><%= @current_user.username %></li>
-              <li class="text-blurple">
-                <%= link "Log out",
-                      to: Routes.session_path(@conn, :delete, @current_user),
-                      method: "delete" %>
-              </li>
-            <% else %>
-              <li class="text-blurple"><%= link "Register", to: Routes.user_path(@conn, :new) %></li>
-              <li class="text-blurple"><%= link "Log in", to: Routes.session_path(@conn, :new) %></li>
-            <% end %>
-          </ul> -->
         </nav>
         <a href="http://gamenite.fly.dev">
           <img src="<%= Routes.static_url(@conn, "/images/logo_cropped.png") %>"
