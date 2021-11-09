@@ -42,8 +42,6 @@ defmodule GameniteWeb.Components.OptionsTable do
       |> roommates_to_players(socket.assigns.game_config.player)
       |> TeamGame.split_teams(2)
 
-    IO.inspect(params)
-
     ParseHelpers.key_to_atom(params)
     |> Map.put(:teams, teams)
     |> Map.put(:room_slug, socket.assigns.slug)
