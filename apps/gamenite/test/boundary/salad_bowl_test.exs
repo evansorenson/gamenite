@@ -3,16 +3,16 @@ defmodule SaladBowlTest do
   use GameBuilders
 
   alias Gamenite.SaladBowl.API
-  alias Gamenite.Charades
-  alias Gamenite.Charades.{Game, Player, Turn}
+  alias Gamenite.SaladBowl
+  alias Gamenite.Charades.{Turn}
 
   alias Phoenix.PubSub
 
   defp build_salad_bowl(context) do
-    teams = build_teams([2, 2], %Player{})
+    teams = build_teams([2, 2], %{})
 
     salad_bowl =
-      Charades.create_salad_bowl(%{
+      SaladBowl.create(%{
         room_slug: "123456",
         teams: teams,
         deck: ["1", "2", "3"],
@@ -26,10 +26,10 @@ defmodule SaladBowlTest do
   end
 
   defp finished_turn(context) do
-    teams = build_teams([2, 2], %Player{})
+    teams = build_teams([2, 2], %{})
 
     salad_bowl =
-      Charades.create_salad_bowl(%{
+      SaladBowl.create(%{
         room_slug: "123456",
         teams: teams,
         starting_deck: ["1", "2", "3"],
@@ -54,8 +54,8 @@ defmodule SaladBowlTest do
   end
 
   defp start_game(game) do
-    room_slug = Gamenite.Room.generate_slug()
-    SaladBowl.API.start_game(game, room_slug)
+    room_slug = Gamenite.Room.API.generate_slug()
+    :ok = Gamenite.GameServer.start_game(SaladBowl.Server, game, room_slug, false)
     PubSub.subscribe(Gamenite.PubSub, "room:" <> room_slug)
     room_slug
   end

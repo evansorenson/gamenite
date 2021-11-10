@@ -11,10 +11,7 @@ defmodule GameniteWeb.Components.Horsepaste.Card do
     class = card_class(assigns)
 
     ~F"""
-    <h1>{IO.inspect(List.to_string(Tuple.to_list(@coords)))}</h1>
-    <span>
-    <button class={class} phx-value="1" disabled={@disabled?} :on-click={@flip}>{@card.word}</button>
-    </span>
+    <button class={class} phx-value-x={elem(@coords, 0)} phx-value-y={elem(@coords, 1)} disabled={@disabled?} :on-click={@flip}>{@card.word}</button>
     """
   end
 

@@ -3,40 +3,40 @@ defmodule HorsePasteTest do
   use GameBuilders
 
   alias Gamenite.Horsepaste
-  alias Gamenite.Horsepaste.{Player, Card, Turn}
+  alias Gamenite.Horsepaste.{Card, Turn}
+
+  @deck [
+    "AFRICA",
+    "AGENT",
+    "AIR",
+    "ALIEN",
+    "ALPS",
+    "AMAZON",
+    "AMBULANCE",
+    "AMERICA",
+    "ANGEL",
+    "ANTARCTICA",
+    "APPLE",
+    "ARM",
+    "ATLANTIS",
+    "AUSTRALIA",
+    "AZTEC",
+    "BACK",
+    "BALL",
+    "BAND",
+    "BANK",
+    "BAR",
+    "BARK",
+    "BAT",
+    "BATTERY",
+    "BEACH",
+    "BEAR"
+  ]
 
   defp create_game() do
     teams = build_teams([2, 2], %{})
 
-    deck = [
-      "AFRICA",
-      "AGENT",
-      "AIR",
-      "ALIEN",
-      "ALPS",
-      "AMAZON",
-      "AMBULANCE",
-      "AMERICA",
-      "ANGEL",
-      "ANTARCTICA",
-      "APPLE",
-      "ARM",
-      "ATLANTIS",
-      "AUSTRALIA",
-      "AZTEC",
-      "BACK",
-      "BALL",
-      "BAND",
-      "BANK",
-      "BAR",
-      "BARK",
-      "BAT",
-      "BATTERY",
-      "BEACH",
-      "BEAR"
-    ]
-
-    Horsepaste.create_game(%{room_slug: "ABCDEF", teams: teams, deck: deck})
+    Horsepaste.create(%{room_slug: "ABCDEF", teams: teams, deck: @deck})
   end
 
   defp working_game(context) do
@@ -90,19 +90,40 @@ defmodule HorsePasteTest do
 
     test "game must have at only two teams with four players total" do
       teams = build_teams([1], %Player{})
-      assert match?({:error, _}, Horsepaste.create_game(%{teams: teams}))
+
+      deck =
+        assert match?(
+                 {:error, _},
+                 Horsepaste.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
+               )
 
       teams = build_teams([2], %Player{})
-      assert match?({:error, _}, Horsepaste.create_game(%{teams: teams}))
+
+      assert match?(
+               {:error, _},
+               Horsepaste.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
+             )
 
       teams = build_teams([1, 2], %Player{})
-      assert match?({:error, _}, Horsepaste.create_game(%{teams: teams}))
+
+      assert match?(
+               {:error, _},
+               Horsepaste.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
+             )
 
       teams = build_teams([2, 2, 3], %Player{})
-      assert match?({:error, _}, Horsepaste.create_game(%{teams: teams}))
+
+      assert match?(
+               {:error, _},
+               Horsepaste.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
+             )
 
       teams = build_teams([2, 2], %Player{})
-      assert match?({:ok, _}, Horsepaste.create_game(%{room_slug: "ABCDEF", teams: teams}))
+
+      assert match?(
+               {:ok, _},
+               Horsepaste.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
+             )
     end
 
     test "randomize which team goes first" do
@@ -135,7 +156,7 @@ defmodule HorsePasteTest do
     test "cards with proper counts when starting team is index 1", %{game: game} do
       new_game =
         game
-        |> TeamGame.next_team()
+        |> TeamGame.end_turn_same_player()
         |> Horsepaste.setup_game(false)
 
       assert count_card_types(new_game, :blue) == 9
@@ -160,7 +181,7 @@ defmodule HorsePasteTest do
     test "teams with proper score when starting team is index 1", %{game: game} do
       new_game =
         game
-        |> TeamGame.next_team()
+        |> TeamGame.end_turn_same_player()
         |> Horsepaste.setup_game(false)
 
       assert new_game.current_team.score == 9
@@ -222,7 +243,7 @@ defmodule HorsePasteTest do
          } do
       new_game =
         game
-        |> new_turn(%{number_of_words: 2, num_correct: 2})
+        |> new_turn(%{number_of_words: 2, num_correct: 1})
         |> Horsepaste.select_card({0, 0})
 
       assert new_game.current_team.index == 1
@@ -234,8 +255,7 @@ defmodule HorsePasteTest do
          } do
       new_game =
         game
-        |> new_turn(%{number_of_words: 2, num_correct: 2})
-        |> put_in([:current_turn, :extra_guess?], true)
+        |> new_turn(%{number_of_words: 2, num_correct: 1, extra_guess?: true})
         |> Horsepaste.select_card({0, 0})
 
       assert new_game.current_team.index == 0
@@ -246,6 +266,7 @@ defmodule HorsePasteTest do
         game
         |> Horsepaste.select_card({0, 0})
 
+      assert new_game.current_turn.num_correct == 1
       assert new_game.current_team.score == 8
     end
 

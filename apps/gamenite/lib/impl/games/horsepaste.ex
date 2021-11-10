@@ -216,7 +216,7 @@ defmodule Gamenite.Horsepaste do
 
   def do_select_card(%{type: :bystander} = _card, game) do
     game
-    |> TeamGame.next_team()
+    |> do_next_turn
   end
 
   def do_select_card(%{type: :assassin} = _card, %{current_team: current_team} = game) do
@@ -230,14 +230,20 @@ defmodule Gamenite.Horsepaste do
     game
     |> decrement_team_score(other_team_index(current_team))
     |> game_maybe_over
-    |> TeamGame.next_team()
+    |> do_next_turn
   end
 
   def do_select_card(_card, %{current_team: current_team} = game) do
     game
+    |> increment_num_correct
     |> decrement_team_score(current_team.index)
     |> game_maybe_over
     |> turn_maybe_over
+  end
+
+  defp increment_num_correct(game) do
+    game
+    |> update_in([:current_turn, :num_correct], &(&1 + 1))
   end
 
   defp decrement_team_score(%{current_team: current_team} = game, team_idx)
@@ -284,16 +290,20 @@ defmodule Gamenite.Horsepaste do
   defp turn_maybe_over(%{current_turn: current_turn} = game)
        when current_turn.extra_guess? and
               current_turn.num_correct >= current_turn.number_of_words + 1 do
-    game
-    |> TeamGame.next_team()
+    do_next_turn(game)
   end
 
   defp turn_maybe_over(%{current_turn: current_turn} = game)
        when not current_turn.extra_guess? and
               current_turn.num_correct >= current_turn.number_of_words do
-    game
-    |> TeamGame.next_team()
+    do_next_turn(game)
   end
 
   defp turn_maybe_over(game), do: game
+
+  def do_next_turn(game) do
+    game
+    |> TeamGame.end_turn_same_player()
+    |> new_turn()
+  end
 end

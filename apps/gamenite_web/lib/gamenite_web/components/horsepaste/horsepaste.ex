@@ -12,8 +12,8 @@ defmodule GameniteWeb.Components.Horsepaste do
   data(slug, :string)
   data(flash, :map)
 
-  def handle_event("select_card", %{"board_coords" => board_coords} = _params, socket) do
-    API.select_card(socket.assigns.slug, board_coords)
+  def handle_event("select_card", %{"x" => x, "y" => y} = _params, socket) do
+    API.select_card(socket.assigns.slug, {String.to_integer(x), String.to_integer(y)})
     |> game_callback(socket)
   end
 
@@ -22,6 +22,7 @@ defmodule GameniteWeb.Components.Horsepaste do
         %{"clue" => clue, "number_of_words" => number_of_words} = _params,
         socket
       ) do
+    IO.inspect(clue)
     parsed_number_of_words = parse_number_of_words(number_of_words)
 
     API.give_clue(socket.assigns.slug, clue, parsed_number_of_words)
@@ -39,37 +40,47 @@ defmodule GameniteWeb.Components.Horsepaste do
   def render(assigns) do
     ~F"""
     <div>
-    <div class="pb-8">
-    {#if TeamGame.current_player?(@game.current_team, @user_id) and is_nil(@game.current_turn.clue)}
-      <h2 class="block text-center text-bold text-4xl">Give a clue</h2>
-      <form phx-target={@myself} phx-submit="submit_clue" class="flex justify-center items-center py-4 space-x-4 bg-white rounded-lg shadow-md">
-      <input class="text-center ring-1 ring-gray ml-2 w-1/4 rounded-md" name="clue">
-      <select name="number_of_words">
-        <option value="1">1</option>
-        <option value="2">2</option>
-        <option value="3">3</option>
-        <option value="4">4</option>
-        <option value="5">5</option>
-        <option value="6">6</option>
-        <option value="7">7</option>
-        <option value="8">8</option>
-        <option value="9">9</option>
-        <option value="Unlimited">Unlimited</option>
-      </select>
-      <button class="btn-blurple">Submit Clue</button>
-      </form>
-    {/if}
-    </div>
-
-    <div>
-    {#if TeamGame.current_player?(@game.current_team, @user_id) or TeamGame.current_player?(Enum.at(@game.teams, Horsepaste.other_team_index(@game.current_team)), @user_id)}
-      <Board board={@game.board} spymaster?={true} disabled?={true} flip={"select_card", target: @myself} />
-    {#elseif TeamGame.on_team?(@game.current_team, @user_id)}
-      <Board board={@game.board} spymaster?={false} disabled?={is_nil(@game.current_turn.clue)} flip={"select_card", target: @myself} />
+    {#if @game.finished?}
+      <h2> Game finished </h2>
     {#else}
-      <Board board={@game.board} spymaster?={false} disabled?={true} flip={"select_card", target: @myself} />
+      <div class="pb-8">
+      {#if TeamGame.current_player?(@game.current_team, @user_id) and is_nil(@game.current_turn.clue)}
+        <h2 class="block text-center text-bold text-4xl">Give a clue</h2>
+        <form phx-target={@myself} phx-submit="submit_clue" class="flex justify-center items-center py-4 space-x-4 bg-white rounded-lg shadow-md">
+        <input class="text-center ring-1 ring-gray ml-2 w-1/4 rounded-md" name="clue">
+        <select name="number_of_words">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+          <option value="9">9</option>
+          <option value="Unlimited">Unlimited</option>
+        </select>
+        <button class="btn-blurple">Submit Clue</button>
+        </form>
+      {#elseif is_nil(@game.current_turn.clue) }
+        <h2>{"Waiting for #{@game.current_team.current_player.name} to give a clue"}</h2>
+      {#elseif TeamGame.on_team?(@game.current_team, @user_id) and not TeamGame.current_player?(@game.current_team, @user_id)}
+        <h2> You are Guessing!! </h2>
+      {#else}
+        <h2> J chillin </h2>
+      {/if}
+      </div>
+
+      <div>
+      {#if TeamGame.current_player?(@game.current_team, @user_id) or TeamGame.current_player?(Enum.at(@game.teams, Horsepaste.other_team_index(@game.current_team)), @user_id)}
+        <Board board={@game.board} spymaster?={true} disabled?={true} flip={"select_card", target: @myself} />
+      {#elseif TeamGame.on_team?(@game.current_team, @user_id)}
+        <Board board={@game.board} spymaster?={false} disabled?={is_nil(@game.current_turn.clue)} flip={"select_card", target: @myself} />
+      {#else}
+        <Board board={@game.board} spymaster?={false} disabled?={true} flip={"select_card", target: @myself} />
+      {/if}
+      </div>
     {/if}
-    </div>
     </div>
     """
   end

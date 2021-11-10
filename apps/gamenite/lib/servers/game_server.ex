@@ -8,13 +8,17 @@ defmodule Gamenite.GameServer do
     {:via, Registry, {Gamenite.Registry.Game, room_slug}}
   end
 
-  def start_game(module, game, room_slug) do
+  def start_game(module, game, room_slug, notify_room? \\ true) do
     case DynamicSupervisor.start_child(
            Gamenite.Supervisor.Game,
            child_spec(module, {game, room_slug})
          ) do
       {:ok, _pid} ->
-        Room.API.set_game_in_progress(room_slug, true)
+        if notify_room? do
+          Room.API.set_game_in_progress(room_slug, true)
+        else
+          :ok
+        end
 
       _ ->
         :error

@@ -42,6 +42,12 @@ defmodule Gamenite.TeamGame do
     |> next_team
   end
 
+  def end_turn_same_player(game) do
+    game
+    |> append_turn_to_team
+    |> next_team
+  end
+
   defp append_turn_to_team(%{current_team: current_team, current_turn: current_turn} = game) do
     game
     |> replace_current_team(Team.add_turn(current_team, current_turn))
@@ -55,7 +61,7 @@ defmodule Gamenite.TeamGame do
     )
   end
 
-  def next_team(game) do
+  defp next_team(game) do
     Lists.update_current_item_and_increment_list(
       game,
       [:teams],
