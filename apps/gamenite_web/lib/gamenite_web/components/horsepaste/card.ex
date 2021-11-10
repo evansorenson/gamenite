@@ -2,6 +2,7 @@ defmodule GameniteWeb.Components.Horsepaste.Card do
   use Surface.Component
 
   prop(card, :map, required: true)
+  prop(coords, :tuple, required: true)
   prop(disabled?, :boolean, default: true)
   prop(spymaster?, :boolean, required: true)
   prop(flip, :event, required: true)
@@ -10,12 +11,17 @@ defmodule GameniteWeb.Components.Horsepaste.Card do
     class = card_class(assigns)
 
     ~F"""
-    <button class={class} disabled={@disabled?} :on-click={@flip}>{@card.word}</button>
+    <h1>{IO.inspect(List.to_string(Tuple.to_list(@coords)))}</h1>
+    <span>
+    <button class={class} phx-value="1" disabled={@disabled?} :on-click={@flip}>{@card.word}</button>
+    </span>
     """
   end
 
   defp card_class(assigns) do
-    base = "w-72 h-48 text-center text-4xl rounded-none border-0 disabled:opacity-100"
+    base =
+      "w-full xs:text-lg sm:text-xl md:text-2xl sm:h-32 md:h-36 lg:h-42 text-center rounded-none border-0 disabled:opacity-100 "
+
     color = card_color(assigns.card)
 
     cond do
@@ -33,7 +39,8 @@ defmodule GameniteWeb.Components.Horsepaste.Card do
         base <> " bg-white text-black cursor-not-allowed hover:bg-white"
 
       true ->
-        base <> "bg-white text-black hover:bg-gray-dark"
+        base <>
+          "bg-white text-black hover:shadow-xl hover:bg-gray-light"
     end
   end
 

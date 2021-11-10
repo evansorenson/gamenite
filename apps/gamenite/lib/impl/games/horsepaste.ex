@@ -33,7 +33,7 @@ defmodule Gamenite.Horsepaste do
     |> cast(attrs, @fields)
     |> validate_required([:deck])
     |> validate_length(:teams, is: 2)
-    |> validate_number(:timer_length, min: 30, max: 600)
+    |> validate_number(:timer_length, greater_than_or_equal_to: 30, less_than_or_equal_to: 600)
     |> validate_length(:deck, min: 25)
   end
 

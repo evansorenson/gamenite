@@ -212,23 +212,15 @@ defmodule GameniteWeb.RoomLive do
   def handle_info({:room_update, room}, socket) do
     roommate = Map.get(room.roommates, socket.assigns.user_id)
 
-    send_update(OptionsTable, %{
-      id: "options",
-      roommates: room.roommates
-    })
+    # send_update(OptionsTable, %{
+    #   id: "options",
+    #   roommates: room.roommates
+    # })
 
     {:noreply, assign(socket, room: room, roommate: roommate)}
   end
 
   def handle_info({:game_update, game}, socket) do
-    if not socket.assigns.game do
-      IO.puts("hello")
-      Room.API.set_game_in_progress(socket.assigns.slug, true)
-    end
-
-    IO.puts("game update")
-    IO.inspect(game)
-
     {:noreply,
      socket
      |> assign(game: game)}
