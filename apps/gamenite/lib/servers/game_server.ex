@@ -1,47 +1,35 @@
-defmodule Gamenite.GameServer do
+defmodule Gamenite.Game.Server do
   alias Phoenix.PubSub
-  require Logger
 
-  alias Gamenite.Room
+  defmacro __using__([]) do
+    quote do
+      use GenServer
+      require Logger
 
-  def via(room_slug) do
-    {:via, Registry, {Gamenite.Registry.Game, room_slug}}
-  end
+      import Gamenite.Game.Server, only: [game_response: 2, broadcast_game_update: 1]
 
-  def start_game(module, game, room_slug, notify_room? \\ true) do
-    case DynamicSupervisor.start_child(
-           Gamenite.Supervisor.Game,
-           child_spec(module, {game, room_slug})
-         ) do
-      {:ok, _pid} ->
-        if notify_room? do
-          Room.API.set_game_in_progress(room_slug, true)
-        else
-          :ok
-        end
+      def init({game, _room_uuid}) do
+        broadcast_game_update(game)
+        {:ok, game}
+      end
 
-      _ ->
-        :error
+      def start_link({game, room_uuid}) do
+        GenServer.start_link(
+          __MODULE__,
+          {game, room_uuid},
+          name: Gamenite.Game.API.via(room_uuid)
+        )
+      end
+
+      def handle_call(:state, _from, game) do
+        {:reply, {:ok, game}, game}
+      end
+
+      def handle_info(:timeout, game) do
+        Logger.info("Game inactive. Shutting down.")
+        {:stop, :normal, game}
+      end
     end
-  end
-
-  def child_spec(module, {game, room_slug}) do
-    %{
-      id: {module, room_slug},
-      start: {module, :start_link, [{game, room_slug}]},
-      restart: :temporary
-    }
-  end
-
-  def game_exists?(room_slug) do
-    case Registry.lookup(Gamenite.Registry.Game, room_slug) do
-      [{_pid, _val}] -> true
-      [] -> false
-    end
-  end
-
-  def state(room_slug) do
-    GenServer.call(via(room_slug), :state)
   end
 
   def broadcast_game_update(game) do
@@ -56,14 +44,5 @@ defmodule Gamenite.GameServer do
   def game_response(new_state, _old_state) do
     broadcast_game_update(new_state)
     {:reply, :ok, new_state, @timeout}
-  end
-
-  def handle_call(:state, _from, game) do
-    {:reply, {:ok, game}, game}
-  end
-
-  def handle_info(:timeout, game) do
-    Logger.info("Game inactive. Shutting down.")
-    {:stop, :normal, game}
   end
 end

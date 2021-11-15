@@ -1,4 +1,4 @@
-defmodule Gamenite.Horsepaste.Turn do
+defmodule Gamenite.Kodenames.Turn do
   use Accessible
 
   defstruct clue: nil,

@@ -1,5 +1,5 @@
 defmodule Gamenite.SaladBowl.API do
-  import Gamenite.GameServer, only: [via: 1]
+  import Gamenite.Game.API, only: [via: 1]
 
   def add_player(room_slug, player) do
     GenServer.call(via(room_slug), {:add_player, player})

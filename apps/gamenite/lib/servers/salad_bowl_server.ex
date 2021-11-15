@@ -1,27 +1,11 @@
 defmodule Gamenite.SaladBowl.Server do
-  use GenServer
-
-  import Gamenite.GameServer
+  use Gamenite.Game.Server
 
   alias Gamenite.TeamGame
   alias Gamenite.Charades
 
-  def init({game, _room_uuid}) do
-    game_with_first_turn = Charades.new_turn(game, game.turn_length)
-    broadcast_game_update(game_with_first_turn)
-    {:ok, game_with_first_turn}
-  end
-
-  def start_link({game, room_uuid}) do
-    GenServer.start_link(
-      __MODULE__,
-      {game, room_uuid},
-      name: via(room_uuid)
-    )
-  end
-
-  def handle_call(:state, _from, game) do
-    {:reply, {:ok, game}, game}
+  def setup(game) do
+    Charades.new_turn(game, game.turn_length)
   end
 
   def handle_call({:add_player, player}, _from, game) do

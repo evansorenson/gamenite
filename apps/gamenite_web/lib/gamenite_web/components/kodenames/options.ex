@@ -1,4 +1,4 @@
-defmodule GameniteWeb.Components.Horsepaste.Options do
+defmodule GameniteWeb.Components.Kodenames.Options do
   use Surface.Component
   alias Surface.Components.Form
   alias Surface.Components.Form.{Submit, Select, Checkbox, NumberInput}

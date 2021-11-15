@@ -5,14 +5,14 @@ defmodule GameniteWeb.Components.OptionsTable do
 
   alias GameniteWeb.ParseHelpers
   alias Gamenite.TeamGame
-  alias Gamenite.GameServer
-  alias Gamenite.Room
+  alias Gamenite.Game
 
   prop(slug, :string, required: true)
   prop(game_config, :map, required: true)
   prop(roommates, :map, required: true)
 
   data(game_changeset, :map)
+  data flash, :any
 
   def update(
         %{slug: slug, game_config: game_config, roommates: roommates} = _assigns,
@@ -76,6 +76,8 @@ defmodule GameniteWeb.Components.OptionsTable do
     |> Map.put(:deck, socket.assigns.game_config.deck.cards)
   end
 
+  defp maybe_add_deck(params, _socket), do: params
+
   defp add_room_slug(params, socket) do
     params
     |> Map.put(:room_slug, socket.assigns.slug)
@@ -112,17 +114,16 @@ defmodule GameniteWeb.Components.OptionsTable do
   def handle_event("start", %{"game" => params}, socket) do
     game_config = socket.assigns.game_config
 
-    if GameServer.game_exists?(socket.assigns.slug) do
+    if Game.API.game_exists?(socket.assigns.slug) do
       {:noreply, put_flash(socket, :error, "Game already started.")}
     else
       with conv_params <- convert_changeset_params(params, socket),
            {:ok, game} <- apply(game_config.impl, :create, [conv_params]),
-           :ok <- GameServer.start_game(game_config.server, game, socket.assigns.slug) do
-        IO.inspect(game_config.server)
+           setup_game <- apply(game_config.impl, :setup, [game]),
+           :ok <- Game.API.start_game(game_config.server, setup_game, socket.assigns.slug) do
         {:noreply, socket}
       else
-        {:error, reason} ->
-          IO.inspect(reason)
+        {:error, _reason} ->
           {:noreply, put_flash(socket, :error, "Error creating game.")}
       end
     end
@@ -145,7 +146,7 @@ defmodule GameniteWeb.Components.OptionsTable do
     <div>
     <p class="alert alert-info" role="alert">{live_flash(@flash, :info)}</p>
     <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
-    <GameniteWeb.Components.Horsepaste.Options submit={"start", target: @myself} change={"validate", target: @myself} game_changeset={@game_changeset} />
+    <GameniteWeb.Components.SaladBowl.Options submit={"start", target: @myself} change={"validate", target: @myself} game_changeset={@game_changeset} />
     </div>
     """
   end

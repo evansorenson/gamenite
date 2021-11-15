@@ -1,4 +1,4 @@
-defmodule Gamenite.Horsepaste.Card do
+defmodule Gamenite.Kodenames.Card do
   use Accessible
 
   defstruct word: nil,

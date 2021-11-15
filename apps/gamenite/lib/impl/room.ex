@@ -55,7 +55,8 @@ defmodule Gamenite.Room do
   def join(room, roommate), do: do_join(roommate, room)
 
   defp do_join(%{id: id} = roommate, %{roommates: roommates} = room) do
-    %{room | roommates: Map.put(roommates, id, roommate)}
+    connected_roommate = %{roommate | connected?: true}
+    %{room | roommates: Map.put(roommates, id, connected_roommate)}
   end
 
   def leave(%{roommates: roommates, game_in_progress?: true} = room, id) do

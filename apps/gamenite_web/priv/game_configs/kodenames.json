@@ -1,15 +1,15 @@
 {
-    "title": "Horsepaste",
-    "description": "Codenames is a game of guessing which words in a set are related to a hint-word given by another player.",
+    "title": "Kodenames",
+    "description": "Kodenames is a game of guessing which words in a set are related to a hint-word given by another player.",
     "category": "Mind Game",
     "team_game?": true,
-    "server": "Elixir.Gamenite.Horsepaste.Server",
-    "impl": "Elixir.Gamenite.Horsepaste",
+    "server": "Elixir.Gamenite.Kodenames.Server",
+    "impl": "Elixir.Gamenite.Kodenames",
     "player": "Elixir.Gamenite.TeamGame.Player",
     "components": {
         "scoreboard": "Elixir.GameniteWeb.Components.TeamsScoreboard",
-        "options": "Elixir.GameniteWeb.Components.Horsepaste.Options",
-        "game": "Elixir.GameniteWeb.Components.Horsepaste"
+        "options": "Elixir.GameniteWeb.Components.Kodenames.Options",
+        "game": "Elixir.GameniteWeb.Components.Kodenames"
     },
     "deck": 
         { 

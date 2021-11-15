@@ -1,6 +1,4 @@
 <div>
-    <p class="alert alert-info" role="alert">{live_flash(@flash, :info)}</p>
-    <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
 
     {#if length(@game.submitted_users) < map_size(@roommates)}
     {#if @user_id not in @game.submitted_users}
@@ -32,20 +30,18 @@
       </div>
     {/if}
     {#else}
-    <h1 class="text-center font-bold text-7xl text-gray-darkest pb-2 border-b-2">{"Round #{Enum.find_index(@game.rounds, &(&1 == @game.current_round)) + 1} - #{@game.current_round}"}</h1>
-    <div class="container py-8 space-y-4">
-      <div class="flex items-center justify-evenly">
-        <div class="flex justify-start">
-          <h1 style="color:#{@game.current_team.color}" class="px-4 text-4xl rounded-lg shadow-md font-semibold border-2">{@game.current_team.current_player.name}</h1>
-        </div>
+    <h1 class="text-center font-bold text-5xl text-gray-darkest pb-2 border-b-2">{"Round #{Enum.find_index(@game.rounds, &(&1 == @game.current_round)) + 1} - #{@game.current_round}"}</h1>
+    <div class="flex py-8 space-y-4 items-center justify-center flex-col">
+      <div class="flex justify-evenly w-full">
+        <PlayerName player={@game.current_team.current_player} {=@user_id} color={@game.current_team.color} font_size={"text-3xl"} />
         <div class="flex items-center justify-end">
-          <svg xmlns="http://www.w3.org/2000/svg" class="options-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
           </svg>
           <h1 class="text-center text-5xl">{"#{length(@game.deck)}"}</h1>
         </div>
         <div class="flex items-center justify-end">
-          <svg xmlns="http://www.w3.org/2000/svg" class="options-svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <h1 class="text-5xl">{@game.current_turn.time_remaining_in_sec}</h1>
@@ -54,15 +50,15 @@
       {#if Gamenite.TeamGame.current_player?(@game.current_team, @user_id)}
         {#case @game.current_turn}
         {#match %{started?: false}}
+          <h1 class="text-4xl text-center py-2">{"It's your time to shine. Click the button to begin turn."}</h1>
           <div class="flex justify-center items-center">
             <button class="bg-black text-white  border-0 px-12" phx-click="start_turn" phx-target={@myself}>Start Turn</button>
           </div>
-          <h1 class="text-5xl text-center py-2">{"It's your time to shine. Click the button to begin turn."}</h1>
         {#match %{review?: true}}
+          <h1 class="text-4xl text-center py-2">{"Review and change any contested cards. Click button to end turn."}</h1>
           <div class="flex justify-center items-center">
             <button class="bg-black text-white  border-0 px-12" phx-click="end_turn" phx-target={@myself}>End Turn</button>
           </div>
-          <h1 class="text-5xl text-center py-2">{"Review and change any contested cards. Click button to end turn."}</h1>
           {#for {{outcome, word}, i} <- Enum.with_index(@game.current_turn.completed_cards)}
             <Card word={word}/>
             {#case outcome}
@@ -99,6 +95,9 @@
       {#else}
         <h1 class="text-5xl py-10 text-center">{"Your team is chilling. Sit back and relax."}</h1>
       {/if}
+      <div class="pt-8">
+      <TeamsScoreboard {=@game} {=@user_id} {=@roommates} bg={"gray-light"} shadow={"none"}/>
+      </div>
     </div>
     {/if}
     </div>

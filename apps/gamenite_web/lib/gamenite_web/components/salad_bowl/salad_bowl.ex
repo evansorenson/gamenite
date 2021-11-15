@@ -3,14 +3,15 @@ defmodule GameniteWeb.Components.SaladBowl do
   import GameniteWeb.Components.Game
 
   alias GameniteWeb.Components.Charades.{Card}
+  alias GameniteWeb.Components.{TeamsScoreboard, PlayerName}
 
   alias Gamenite.SaladBowl.API
   alias Gamenite.TeamGame
 
-  data(game, :map)
-  data(user, :map)
-  data(slug, :string)
-  data(flash, :map)
+  data game, :map
+  data user_id, :any
+  data slug, :string
+  data roommates, :map
 
   @impl true
   def handle_event("correct", _params, socket) do
@@ -57,7 +58,7 @@ defmodule GameniteWeb.Components.SaladBowl do
   def handle_event("submit_words", params, socket) do
     word_list = Enum.map(params, fn {_k, v} -> v end)
 
-    API.submit_cards(socket.assigns.slug, word_list, socket.assigns.user.id)
+    API.submit_cards(socket.assigns.slug, word_list, socket.assigns.user_id)
     |> game_callback(socket)
   end
 

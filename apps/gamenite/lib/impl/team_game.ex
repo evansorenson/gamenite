@@ -1,4 +1,33 @@
 defmodule Gamenite.TeamGame do
+  defmacro __using__(_opts) do
+    quote do
+      import Ecto.Changeset
+      alias Gamenite.Game
+      @behaviour Gamenite.Game
+      alias Gamenite.TeamGame
+      use Accessible
+
+      def change(%__MODULE__{} = game, attrs \\ %{}) do
+        game
+        |> Game.base_changeset(attrs)
+        |> TeamGame.changeset(attrs)
+        |> __MODULE__.changeset(attrs)
+      end
+
+      def new() do
+        %__MODULE__{}
+      end
+
+      def create(attrs) do
+        %__MODULE__{}
+        |> Game.base_changeset(attrs)
+        |> TeamGame.changeset(attrs)
+        |> __MODULE__.changeset(attrs)
+        |> apply_action(:update)
+      end
+    end
+  end
+
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -133,6 +162,15 @@ defmodule Gamenite.TeamGame do
 
   def on_team?(team, id) do
     Enum.any?(team.players, fn player -> player.id == id end)
+  end
+
+  def fetch_team_or_current_team(%{current_team: current_team} = _game, index)
+      when current_team.index == index do
+    current_team
+  end
+
+  def fetch_team_or_current_team(%{teams: teams} = _game, index) do
+    Enum.at(teams, index)
   end
 
   def current_player?(team, id) do

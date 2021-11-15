@@ -1,13 +1,7 @@
 defmodule Gamenite.SaladBowl do
-  alias Gamenite.Game
-  @behaviour Game
-
-  import Ecto.Changeset
   use Ecto.Schema
-  use Accessible
-
-  alias Gamenite.TeamGame
   alias Gamenite.TeamGame.Team
+  alias Gamenite.Charades
 
   @default_rounds Application.get_env(:gamenite, :salad_bowl_default_rounds)
   embedded_schema do
@@ -27,6 +21,8 @@ defmodule Gamenite.SaladBowl do
     field(:timer)
   end
 
+  use Gamenite.TeamGame
+
   @fields [
     :room_slug,
     :turn_length,
@@ -38,13 +34,11 @@ defmodule Gamenite.SaladBowl do
     :starting_deck,
     :cards_per_player
   ]
-
   def changeset(salad_bowl_game, attrs) do
     rounds = Map.get(attrs, :rounds, @default_rounds)
     attrs = Map.put(attrs, :current_round, hd(rounds))
 
     salad_bowl_game
-    |> TeamGame.changeset(attrs)
     |> cast(attrs, @fields)
     |> validate_required(:room_slug)
     |> validate_number(:turn_length, less_than_or_equal_to: 120)
@@ -57,20 +51,8 @@ defmodule Gamenite.SaladBowl do
     |> validate_number(:cards_per_player, greater_than: 2, less_than_or_equal_to: 10)
   end
 
-  def new() do
-    %__MODULE__{}
-  end
-
-  @impl Game
-  def create(attrs) do
-    %__MODULE__{}
-    |> changeset(attrs)
-    |> apply_action(:update)
-  end
-
-  @impl Game
-  def change(%__MODULE__{} = game, attrs \\ %{}) do
-    game
-    |> changeset(attrs)
+  @impl Gamenite.Game
+  def setup(game, _opts \\ []) do
+    Charades.new_turn(game, game.turn_length)
   end
 end

@@ -1,9 +1,9 @@
-defmodule HorsePasteTest do
+defmodule KodenamesTest do
   use ExUnit.Case
   use GameBuilders
 
-  alias Gamenite.Horsepaste
-  alias Gamenite.Horsepaste.{Card, Turn}
+  alias Gamenite.Kodenames
+  alias Gamenite.Kodenames.{Card, Turn}
 
   @deck [
     "AFRICA",
@@ -36,7 +36,7 @@ defmodule HorsePasteTest do
   defp create_game() do
     teams = build_teams([2, 2], %{})
 
-    Horsepaste.create(%{room_slug: "ABCDEF", teams: teams, deck: @deck})
+    Kodenames.create(%{room_slug: "ABCDEF", teams: teams, deck: @deck})
   end
 
   defp working_game(context) do
@@ -47,7 +47,7 @@ defmodule HorsePasteTest do
 
   def game_already_setup(context) do
     {:ok, game} = create_game()
-    {:ok, Map.put(context, :setup_game, Horsepaste.setup_game(game, false))}
+    {:ok, Map.put(context, :setup_game, Kodenames.setup_game(game, false))}
   end
 
   defp defined_board(game) do
@@ -94,35 +94,35 @@ defmodule HorsePasteTest do
       deck =
         assert match?(
                  {:error, _},
-                 Horsepaste.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
+                 Kodenames.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
                )
 
       teams = build_teams([2], %Player{})
 
       assert match?(
                {:error, _},
-               Horsepaste.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
+               Kodenames.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
              )
 
       teams = build_teams([1, 2], %Player{})
 
       assert match?(
                {:error, _},
-               Horsepaste.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
+               Kodenames.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
              )
 
       teams = build_teams([2, 2, 3], %Player{})
 
       assert match?(
                {:error, _},
-               Horsepaste.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
+               Kodenames.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
              )
 
       teams = build_teams([2, 2], %Player{})
 
       assert match?(
                {:ok, _},
-               Horsepaste.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
+               Kodenames.create(%{teams: teams, deck: @deck, room_slug: "ABCDEF"})
              )
     end
 
@@ -134,19 +134,19 @@ defmodule HorsePasteTest do
     setup [:working_game]
 
     test "board must be initialized with 25 words in 5x5 grid", %{game: game} do
-      new_game = Horsepaste.setup_game(game, false)
+      new_game = Kodenames.setup_game(game, false)
 
       assert map_size(new_game.board) == 25
     end
 
     test "removes words used from deck", %{game: game} do
-      new_game = Horsepaste.setup_game(game, false)
+      new_game = Kodenames.setup_game(game, false)
 
       assert length(new_game.deck) == 0
     end
 
     test "cards with proper counts when starting team is index 0", %{game: game} do
-      new_game = Horsepaste.setup_game(game, false)
+      new_game = Kodenames.setup_game(game, false)
       assert count_card_types(new_game, :red) == 9
       assert count_card_types(new_game, :blue) == 8
       assert count_card_types(new_game, :bystander) == 7
@@ -157,7 +157,7 @@ defmodule HorsePasteTest do
       new_game =
         game
         |> TeamGame.end_turn_same_player()
-        |> Horsepaste.setup_game(false)
+        |> Kodenames.setup_game(false)
 
       assert count_card_types(new_game, :blue) == 9
       assert count_card_types(new_game, :red) == 8
@@ -173,7 +173,7 @@ defmodule HorsePasteTest do
     end
 
     test "teams with proper score when starting team is index 0", %{game: game} do
-      new_game = Horsepaste.setup_game(game, false)
+      new_game = Kodenames.setup_game(game, false)
       assert new_game.current_team.score == 9
       assert Enum.at(new_game.teams, 1).score == 8
     end
@@ -182,7 +182,7 @@ defmodule HorsePasteTest do
       new_game =
         game
         |> TeamGame.end_turn_same_player()
-        |> Horsepaste.setup_game(false)
+        |> Kodenames.setup_game(false)
 
       assert new_game.current_team.score == 9
       assert Enum.at(new_game.teams, 0).score == 8
@@ -194,33 +194,33 @@ defmodule HorsePasteTest do
 
     test "invalid empty clue", %{setup_game: game} do
       assert {:error, "Clue must not be empty."} ==
-               Horsepaste.give_clue(game, "", 1)
+               Kodenames.give_clue(game, "", 1)
     end
 
     test "invalid clue with more than one word (has spaces)", %{setup_game: game} do
       assert {:error, "Clue must be one word (no spaces)."} ==
-               Horsepaste.give_clue(game, "two words", 1)
+               Kodenames.give_clue(game, "two words", 1)
     end
 
     test "invalid number of words", %{setup_game: game} do
       assert {:error, "Number of words must be between 1 and 9 or 'Unlimited'"} ==
-               Horsepaste.give_clue(game, "correct", 0)
+               Kodenames.give_clue(game, "correct", 0)
 
       assert {:error, "Number of words must be between 1 and 9 or 'Unlimited'"} ==
-               Horsepaste.give_clue(game, "correct", 10)
+               Kodenames.give_clue(game, "correct", 10)
 
       assert {:error, "Number of words must be between 1 and 9 or 'Unlimited'"} ==
-               Horsepaste.give_clue(game, "correct", "some string")
+               Kodenames.give_clue(game, "correct", "some string")
     end
 
     test "valid unlimited clue", %{setup_game: game} do
-      new_game = Horsepaste.give_clue(game, "correct", "Unlimited")
+      new_game = Kodenames.give_clue(game, "correct", "Unlimited")
       assert new_game.current_turn.clue == "correct"
       assert new_game.current_turn.number_of_words == "Unlimited"
     end
 
     test "valid one word clue", %{setup_game: game} do
-      new_game = Horsepaste.give_clue(game, "correct", 1)
+      new_game = Kodenames.give_clue(game, "correct", 1)
       assert new_game.current_turn.clue == "correct"
       assert new_game.current_turn.number_of_words == 1
     end
@@ -232,7 +232,7 @@ defmodule HorsePasteTest do
     test "select own color, words left -> continues turn", %{defined_board: game} do
       new_game =
         game
-        |> Horsepaste.select_card({0, 0})
+        |> Kodenames.select_card({0, 0})
 
       assert new_game.current_team.index == 0
     end
@@ -244,7 +244,7 @@ defmodule HorsePasteTest do
       new_game =
         game
         |> new_turn(%{number_of_words: 2, num_correct: 1})
-        |> Horsepaste.select_card({0, 0})
+        |> Kodenames.select_card({0, 0})
 
       assert new_game.current_team.index == 1
     end
@@ -256,7 +256,7 @@ defmodule HorsePasteTest do
       new_game =
         game
         |> new_turn(%{number_of_words: 2, num_correct: 1, extra_guess?: true})
-        |> Horsepaste.select_card({0, 0})
+        |> Kodenames.select_card({0, 0})
 
       assert new_game.current_team.index == 0
     end
@@ -264,7 +264,7 @@ defmodule HorsePasteTest do
     test "selecting own color decrements current team score", %{defined_board: game} do
       new_game =
         game
-        |> Horsepaste.select_card({0, 0})
+        |> Kodenames.select_card({0, 0})
 
       assert new_game.current_turn.num_correct == 1
       assert new_game.current_team.score == 8
@@ -273,7 +273,7 @@ defmodule HorsePasteTest do
     test "selecting other teams color decrements their score", %{defined_board: game} do
       new_game =
         game
-        |> Horsepaste.select_card({0, 1})
+        |> Kodenames.select_card({0, 1})
 
       assert new_game.current_team.score == 7
     end
@@ -281,7 +281,7 @@ defmodule HorsePasteTest do
     test "selecting other teams color ends turn", %{defined_board: game} do
       new_game =
         game
-        |> Horsepaste.select_card({0, 1})
+        |> Kodenames.select_card({0, 1})
 
       assert new_game.current_team.index == 1
     end
@@ -289,7 +289,7 @@ defmodule HorsePasteTest do
     test "selecting bystander ends turn", %{defined_board: game} do
       new_game =
         game
-        |> Horsepaste.select_card({0, 2})
+        |> Kodenames.select_card({0, 2})
 
       assert new_game.current_team.index == 1
     end
@@ -297,7 +297,7 @@ defmodule HorsePasteTest do
     test "selecting bystander doesn't change scores", %{defined_board: game} do
       new_game =
         game
-        |> Horsepaste.select_card({0, 2})
+        |> Kodenames.select_card({0, 2})
 
       assert Enum.at(new_game.teams, 0).score == 9
       assert Enum.at(new_game.teams, 1).score == 8
@@ -306,7 +306,7 @@ defmodule HorsePasteTest do
     test "selecting assassin ends game and other team wins", %{defined_board: game} do
       new_game =
         game
-        |> Horsepaste.select_card({0, 3})
+        |> Kodenames.select_card({0, 3})
 
       assert new_game.finished?
       assert new_game.winning_team_idx == 1
@@ -316,7 +316,7 @@ defmodule HorsePasteTest do
       new_game =
         game
         |> give_teams_scores(1, 1)
-        |> Horsepaste.select_card({0, 0})
+        |> Kodenames.select_card({0, 0})
 
       assert new_game.finished?
       assert new_game.winning_team_idx == 0
@@ -328,7 +328,7 @@ defmodule HorsePasteTest do
       new_game =
         game
         |> give_teams_scores(1, 1)
-        |> Horsepaste.select_card({0, 1})
+        |> Kodenames.select_card({0, 1})
 
       assert new_game.finished?
       assert new_game.winning_team_idx == 1

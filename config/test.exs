@@ -24,6 +24,7 @@ config :gamenite,
   max_teams: 4,
   max_deck: 50,
   min_players: 2,
+  team_colors: ["#C0392B", "#2980B9", "#27AE60", "#884EA0", "#D35400", "#FF33B8", "#F1C40F"],
   default_salad_bowl_rounds: ["Catchphrase", "Password", "Charades"],
   all_salad_bowl_rounds: ["Catchphrase", "Password", "Charades", "Pictionary"]
 

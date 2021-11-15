@@ -14,8 +14,7 @@ defmodule Gamenite.TeamGame.Team do
   end
 
   @fields [:id, :name, :score, :color, :index, :turns, :players, :current_player]
-  @team_colors ["C0392B", "2980B9", "27AE60", "884EA0", "D35400", "FF33B8", "F1C40F"]
-
+  @team_colors Application.get_env(:gamenite, :team_colors)
   def changeset(team, fields) do
     team
     |> cast(fields, @fields)

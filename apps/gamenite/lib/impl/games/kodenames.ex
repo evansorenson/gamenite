@@ -1,16 +1,12 @@
-defmodule Gamenite.Horsepaste do
+defmodule Gamenite.Kodenames do
   use Ecto.Schema
-  use Accessible
-  import Ecto.Changeset
-
-  @behaviour Gamenite.Game
 
   alias Gamenite.Game
   alias Gamenite.TeamGame
   alias Gamenite.TeamGame.Team
   alias Gamenite.Cards
 
-  alias Gamenite.Horsepaste.{Turn, Card}
+  alias Gamenite.Kodenames.{Turn, Card}
 
   embedded_schema do
     embeds_one(:current_team, Team)
@@ -25,11 +21,11 @@ defmodule Gamenite.Horsepaste do
     field(:winning_team_idx, :integer)
   end
 
+  use Gamenite.TeamGame
+
   @fields [:current_turn, :deck, :timer_length, :timer_enabled?]
   def changeset(game, attrs) do
     game
-    |> Game.changeset(attrs)
-    |> TeamGame.changeset(attrs)
     |> cast(attrs, @fields)
     |> validate_required([:deck])
     |> validate_length(:teams, is: 2)
@@ -37,24 +33,10 @@ defmodule Gamenite.Horsepaste do
     |> validate_length(:deck, min: 25)
   end
 
-  def change(%__MODULE__{} = game, attrs \\ %{}) do
-    game
-    |> changeset(attrs)
-  end
+  @impl Gamenite.Game
+  def setup(game, opts \\ [randomize_first_team?: true])
 
-  def new() do
-    %__MODULE__{}
-  end
-
-  def create(attrs) do
-    %__MODULE__{}
-    |> changeset(attrs)
-    |> apply_action(:update)
-  end
-
-  def setup_game(game, randomize_first_team? \\ true)
-
-  def setup_game(game, true) do
+  def setup(game, randomize_first_team?: true) do
     game
     |> randomize_team
     |> set_starting_score
@@ -62,7 +44,7 @@ defmodule Gamenite.Horsepaste do
     |> create_board
   end
 
-  def setup_game(game, false) do
+  def setup(game, randomize_first_team?: false) do
     game
     |> set_starting_score
     |> new_turn
@@ -98,7 +80,16 @@ defmodule Gamenite.Horsepaste do
   defp extra_guess?(turns) do
     remaining_guesses =
       turns
-      |> Enum.reduce(0, fn turn, acc -> acc + (turn.number_of_words - turn.num_correct) end)
+      |> Enum.reduce(
+        0,
+        fn
+          turn, acc when is_integer(turn.number_of_words) ->
+            acc + (turn.number_of_words - turn.num_correct)
+
+          _turn, acc ->
+            acc
+        end
+      )
 
     remaining_guesses > 0
   end
@@ -216,7 +207,7 @@ defmodule Gamenite.Horsepaste do
 
   def do_select_card(%{type: :bystander} = _card, game) do
     game
-    |> do_next_turn
+    |> next_turn
   end
 
   def do_select_card(%{type: :assassin} = _card, %{current_team: current_team} = game) do
@@ -230,7 +221,7 @@ defmodule Gamenite.Horsepaste do
     game
     |> decrement_team_score(other_team_index(current_team))
     |> game_maybe_over
-    |> do_next_turn
+    |> next_turn
   end
 
   def do_select_card(_card, %{current_team: current_team} = game) do
@@ -290,18 +281,18 @@ defmodule Gamenite.Horsepaste do
   defp turn_maybe_over(%{current_turn: current_turn} = game)
        when current_turn.extra_guess? and
               current_turn.num_correct >= current_turn.number_of_words + 1 do
-    do_next_turn(game)
+    next_turn(game)
   end
 
   defp turn_maybe_over(%{current_turn: current_turn} = game)
        when not current_turn.extra_guess? and
               current_turn.num_correct >= current_turn.number_of_words do
-    do_next_turn(game)
+    next_turn(game)
   end
 
   defp turn_maybe_over(game), do: game
 
-  def do_next_turn(game) do
+  def next_turn(game) do
     game
     |> TeamGame.end_turn_same_player()
     |> new_turn()

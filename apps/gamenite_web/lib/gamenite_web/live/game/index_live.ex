@@ -39,4 +39,26 @@ defmodule GameniteWeb.Game.IndexLive do
          |> put_flash(:error, "Could not start the room.")}
     end
   end
+
+  def render(assigns) do
+    ~F"""
+    <h1 class="text-7xl py-4 font-bold text-black">Games</h1>
+
+    <Form for={:hi} class="search-form focus-within:border-blurple" change="search">
+      <Field name="query" field="query">
+        <SearchInput opts={autofocus: "autofocus", phx_debounnce: 100, placeholder: "Search for games"} />
+      </Field>
+    </Form>
+
+    <div class="space-y-8">
+      {#for game <- @games}
+        <div class="container-left bg-white rounded-xl overflow-hidden shadow-lg">
+        <h2 class="text-4xl font-bold text-black px-4 pt-4">{ game.title }</h2>
+        <p class="text-black font-light px-8 py-2">{ game.description }</p>
+        <button class="bg-blurple border-none text-white rounded hover:bg-indigo-400 py-2 px-4 float-right mb-4 mr-4" phx-click="host_game" phx-value-game_title={ game.title  }>Host Game</button>
+      </div>
+    {/for}
+    </div>
+    """
+  end
 end

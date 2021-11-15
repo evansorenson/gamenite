@@ -35,18 +35,7 @@ defmodule SaladBowlTest do
         starting_deck: ["1", "2", "3"],
         deck: [],
         skip_limit: 1,
-        rounds: ["Catchphrase", "Password", "Charades"],
-        current_turn:
-          Turn.new(%{
-            card: "0",
-            time_remaining_in_sec: 0,
-            completed_cards: [
-              {:correct, "1"},
-              {:correct, "2"},
-              {:skipped, "3"},
-              {:incorrect, "4"}
-            ]
-          })
+        rounds: ["Catchphrase", "Password", "Charades"]
       })
       |> elem(1)
 
@@ -55,7 +44,7 @@ defmodule SaladBowlTest do
 
   defp start_game(game) do
     room_slug = Gamenite.Room.API.generate_slug()
-    :ok = Gamenite.GameServer.start_game(SaladBowl.Server, game, room_slug, false)
+    :ok = Gamenite.Game.API.start_game(SaladBowl.Server, game, room_slug, false)
     PubSub.subscribe(Gamenite.PubSub, "room:" <> room_slug)
     room_slug
   end

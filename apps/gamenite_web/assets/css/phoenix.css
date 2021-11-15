@@ -84,8 +84,7 @@ input[type="search"],
 input[type="tel"],
 input[type="text"],
 input[type="url"],
-textarea,
-select {
+textarea {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
@@ -105,18 +104,9 @@ input[type="search"]:focus,
 input[type="tel"]:focus,
 input[type="text"]:focus,
 input[type="url"]:focus,
-textarea:focus,
-select:focus {
+textarea:focus {
   border-color: #0069d9;
   outline: 0;
-}
-select {
-  background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="14" viewBox="0 0 29 14" width="29"><path fill="%23d1d1d1" d="M9.37727 3.625l5.08154 6.93523L19.54036 3.625"/></svg>')
-    center right no-repeat;
-  padding-right: 3rem;
-}
-select:focus {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="14" viewBox="0 0 29 14" width="29"><path fill="%230069d9" d="M9.37727 3.625l5.08154 6.93523L19.54036 3.625"/></svg>');
 }
 textarea {
   min-height: 6.5rem;
@@ -448,9 +438,6 @@ pre {
   padding: 0 2rem;
   position: relative;
   width: 100%;
-}
-select {
-  width: auto;
 }
 
 /* Headers */

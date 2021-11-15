@@ -29,7 +29,8 @@ defmodule GameBuilders do
     players = Enum.map(
       1..num_players,
       fn n -> Map.put(player, :id, n) end)
-    Team.new(%{players: players, color: "C0392B", name: "Team", index: index })
+    Team.new(%{players: players})
+    |> Team.assign_color_and_index(index)
   end
 
   def build_deck(deck_length) do
