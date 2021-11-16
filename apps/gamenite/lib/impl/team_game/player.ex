@@ -1,13 +1,7 @@
 defmodule Gamenite.TeamGame.Player do
   use Accessible
-  use Ecto.Schema
-  import Ecto.Changeset
 
-  embedded_schema do
-    field(:name, :string)
-    field(:color, :string, default: nil)
-    field(:turns, {:array, :map})
-  end
+  defstruct name: nil, color: nil, turns: [], score: 0
 
   @player_colors [
     "F2F3F4",
@@ -33,23 +27,6 @@ defmodule Gamenite.TeamGame.Player do
     "E25822",
     "2B3D26"
   ]
-
-  def changeset(player, attrs) do
-    player
-    |> cast(attrs, [:name, :color, :id])
-    |> validate_required([:name, :color, :id])
-    |> validate_length(:name, min: 2, max: 15)
-  end
-
-  def new(attrs) do
-    %__MODULE__{}
-  end
-
-  def create(attrs) do
-    %__MODULE__{}
-    |> changeset(attrs)
-    |> apply_action!(:update)
-  end
 
   def new_players_from_roommates(roommates) do
     roommates

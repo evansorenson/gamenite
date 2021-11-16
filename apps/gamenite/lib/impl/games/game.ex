@@ -1,5 +1,7 @@
 defmodule Gamenite.Game do
   @callback setup(struct()) :: struct() | {:error, term()}
+  @callback changeset(struct(), map()) :: Ecto.Changeset.t()
+
   defmacro __using__(_opts) do
     quote do
       import Ecto.Changeset
