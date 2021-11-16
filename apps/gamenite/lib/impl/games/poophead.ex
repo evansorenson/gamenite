@@ -1,19 +1,8 @@
 defmodule Gamenite.Poophead do
-  # def setup_game(game) do
-  #   game
-  #   |> add_decks
-  #   |> set_threshold_limit
-  # end
-
-  # defp add_decks(%Game{players: players}) do
-
-  # end
-
   use Ecto.Schema
-  import Ecto.Changeset
 
   alias Gamenite.Poophead.{Player}
-  alias Gamenite.Cards.PlayingCard
+  alias Gamenite.PlayingCards
 
   embedded_schema do
     field :players, {:array, :map}
@@ -25,13 +14,45 @@ defmodule Gamenite.Poophead do
     field :phase, :string
   end
 
+  use Gamenite.SinglePlayerGame
+
   @fields [:players, :deck]
-  @phases [""]
 
   def changeset(game, attrs) do
     game
     |> cast(@fields, attrs)
     |> validate_required([:players])
     |> validate_length(:players, min: 2)
+  end
+
+  def setup_game(game) do
+    game
+    |> add_decks_and_set_flush_threshold
+    |> setup_round
+  end
+
+  def setup_round(game) do
+    game
+    |>
+    |> deal_cards
+  end
+
+  defp add_decks_and_set_flush_threshold(%Game{players: players} = game) do
+    num_decks = ceil(rem(players, 4))
+    deck = Enum.reduce(1..num_decks, fn _i, acc -> acc ++ PlayingCards.create_deck() end)
+
+    game
+    |> set_threhsold_limit(num_decks)
+    |> Map.put(:deck, deck)
+  end
+
+  defp set_threhsold_limit(game, num_decks) do
+    case num_decks do
+      1 ->
+        %{game | threshold_limit: 4}
+
+      _ ->
+        %{game | threshold_limit: num_decks * 4 - 2}
+    end
   end
 end

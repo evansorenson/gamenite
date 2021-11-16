@@ -1,26 +1,4 @@
 defmodule Gamenite.Cards do
-  alias Gamenite.Cards.{Card, Deck, Hand}
-
-  @doc """
-  Flips card by changing face_up? value in card struct.
-
-  Returns %Cards.Card{}.
-  """
-  def flip(%Card{} = card) do
-    %{card | face_up?: !card.face_up?}
-  end
-
-  def flip(%Card{} = card, true), do: flip_face_up(card)
-  def flip(%Card{} = card, false), do: flip_face_down(card)
-
-  def flip_face_down(%Card{} = card) do
-    %{card | face_up?: false}
-  end
-
-  def flip_face_up(%Card{} = card) do
-    %{card | face_up?: true}
-  end
-
   @doc """
   Returns { drawn_cards, remaining_deck}.
   """

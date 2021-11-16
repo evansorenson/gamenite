@@ -36,28 +36,19 @@ defmodule Gamenite.TeamGame.Player do
 
   def changeset(player, attrs) do
     player
-    |> name_changeset(attrs)
-    |> cast(attrs, [:color, :turns, :id])
+    |> cast(attrs, [:name, :color, :id])
     |> validate_required([:name, :color, :id])
     |> validate_length(:name, min: 2, max: 15)
   end
 
-  def name_changeset(player, attrs) do
-    player
-    |> cast(attrs, [:name])
-    |> validate_required(:name)
-    |> validate_length(:name, min: 2, max: 15)
-  end
-
-  def update_name(player, name) do
-    name_changeset(player, %{name: name})
-    |> apply_action(:update)
-  end
-
   def new(attrs) do
     %__MODULE__{}
+  end
+
+  def create(attrs) do
+    %__MODULE__{}
     |> changeset(attrs)
-    |> apply_action(:update)
+    |> apply_action!(:update)
   end
 
   def new_players_from_roommates(roommates) do
@@ -66,11 +57,5 @@ defmodule Gamenite.TeamGame.Player do
     |> Enum.map(fn {roommate, index} ->
       %{id: roommate.id, color: Enum.at(@player_colors, index), name: roommate.name}
     end)
-  end
-
-  def create(attrs) do
-    %__MODULE__{}
-    |> changeset(attrs)
-    |> apply_action!(:update)
   end
 end
