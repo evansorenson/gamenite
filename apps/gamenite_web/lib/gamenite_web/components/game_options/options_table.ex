@@ -55,7 +55,7 @@ defmodule GameniteWeb.Components.OptionsTable do
   defp add_teams(params, socket) do
     teams =
       socket.assigns.roommates
-      |> roommates_to_players(socket.assigns.game_config.player)
+      |> roommates_to_players(socket.assigns.game_config.impl)
       |> TeamGame.split_teams(2)
 
     params
@@ -65,7 +65,7 @@ defmodule GameniteWeb.Components.OptionsTable do
   defp add_players(params, socket) do
     players =
       socket.assigns.roommates
-      |> roommates_to_players(socket.assigns.game_config.player)
+      |> roommates_to_players(socket.assigns.game_config.impl)
 
     params
     |> Map.put(:players, players)
@@ -99,15 +99,15 @@ defmodule GameniteWeb.Components.OptionsTable do
     |> Map.put(:action, :validate)
   end
 
-  defp roommates_to_players(roommates, player_module) do
+  defp roommates_to_players(roommates, impl_module) do
     roommates
     |> Map.values()
     |> TeamGame.Player.new_players_from_roommates()
-    |> Enum.map(fn player -> create_game_player(player_module, player) end)
+    |> Enum.map(fn player -> create_game_player(impl_module, player) end)
   end
 
-  defp create_game_player(player_module, player) do
-    apply(player_module, :create, [player])
+  defp create_game_player(impl_module, player) do
+    apply(impl_module, :create_player, [player])
   end
 
   @impl true

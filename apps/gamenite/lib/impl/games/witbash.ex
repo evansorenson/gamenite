@@ -1,28 +1,31 @@
 defmodule Gamenite.Witbash do
+  @behaviour Gamenite.Game
+  use Accessible
+
   use Ecto.Schema
+  import Ecto.Changeset
 
   alias Gamenite.Witbash.{Prompt}
   alias Gamenite.TeamGame.Player
   alias Gamenite.Cards
+  alias Gamenite.SinglePlayerGame
+  alias Gamenite.Lists
 
   embedded_schema do
     field(:room_slug, :string)
     field(:players, {:array, :map})
     field(:current_player, :map)
     field(:deck_of_prompts, {:array, :string})
-    field :prompts, :map
-    field :final_prompt, :map
+    field :prompts, {:array, :map}
     field :submitted_user_ids, {:array, :string}
     field :current_prompt, :map
-    field(:rounds, {:array, :string})
-    field :current_round, :string
-    field :phase, :string
+    field :num_rounds, :integer, default: 3
+    field :current_round, :integer, default: 1
+    field :answering?, :boolean
   end
 
-  @fields [:deck_of_prompts, :rounds, :current_round]
+  @fields [:deck_of_prompts, :num_rounds]
   @required [:deck_of_prompts]
-
-  use Gamenite.SinglePlayerGame
 
   @impl Gamenite.Game
   def changeset(game, attrs) do
@@ -34,10 +37,26 @@ defmodule Gamenite.Witbash do
   end
 
   @impl Gamenite.Game
+  def new() do
+    %__MODULE__{}
+  end
+
+  @impl Gamenite.Game
+  def change(game, attrs), do: SinglePlayerGame.change(__MODULE__, game, attrs)
+
+  @impl Gamenite.Game
+  def create(attrs), do: SinglePlayerGame.create(__MODULE__, new(), attrs)
+
+  @impl Gamenite.Game
   def setup(game) do
     game
     |> shuffle_prompts
     |> setup_round()
+  end
+
+  @impl Gamenite.Game
+  def create_player(attr) do
+    Player.create(attr)
   end
 
   defp shuffle_prompts(%{deck_of_prompts: deck_of_prompts} = game) do
@@ -50,19 +69,42 @@ defmodule Gamenite.Witbash do
 
   def setup_round(%{current_round: current_round} = game) when current_round == 3 do
     game
+    |> answering_phase
     |> draw_final_prompt
   end
 
   def setup_round(game) do
     game
+    |> answering_phase
     |> draw_prompts
     |> assign_prompts
+  end
+
+  defp answering_phase(game) do
+    game
+    |> clear_submitted_user_ids
+    |> put_answering(true)
+  end
+
+  defp voting_phase(game) do
+    game
+    |> clear_submitted_user_ids
+    |> next_prompt
+    |> put_answering(false)
+  end
+
+  defp clear_submitted_user_ids(game) do
+    %{game | submitted_user_ids: []}
+  end
+
+  defp put_answering(game, bool) do
+    %{game | answering?: bool}
   end
 
   defp draw_final_prompt(%{deck_of_prompts: deck_of_prompts} = game) do
     {[final_prompt | []], remaining} = do_draw_prompts(deck_of_prompts, 1)
 
-    %{game | deck_of_prompts: remaining, final_prompt: final_prompt}
+    %{game | deck_of_prompts: remaining, current_prompt: final_prompt}
   end
 
   def draw_prompts(%{deck_of_prompts: deck_of_prompts, players: players} = game) do
@@ -70,9 +112,7 @@ defmodule Gamenite.Witbash do
 
     prompts =
       drawn_prompts
-      |> Enum.with_index()
-      |> Enum.map(fn {prompt, i} -> {i, %Prompt{id: i, prompt: prompt}} end)
-      |> Enum.into(%{})
+      |> Enum.map(fn prompt -> %Prompt{prompt: prompt} end)
 
     %{game | deck_of_prompts: remaining, prompts: prompts}
   end
@@ -88,9 +128,9 @@ defmodule Gamenite.Witbash do
     paired_id_list = create_random_player_id_list(players)
 
     assigned_prompts =
-      for {k, prompt} <- Map.to_list(prompts), into: %{} do
-        assigned_ids = Enum.at(paired_id_list, k)
-        {k, %{prompt | assigned_player_ids: assigned_ids}}
+      for {prompt, i} <- Enum.with_index(prompts) do
+        assigned_ids = Enum.at(paired_id_list, i)
+        %{prompt | assigned_player_ids: assigned_ids}
       end
 
     %{game | prompts: assigned_prompts}
@@ -114,23 +154,29 @@ defmodule Gamenite.Witbash do
     |> Enum.shuffle()
   end
 
-  def validate_answer(""), do: {:error, "Answer cannot be blank."}
+  def validate_answer(_prompt, "", _player_id), do: {:error, "Answer cannot be blank."}
 
-  def validate_answer(answer) do
-    if String.length(answer) > 80 do
-      {:error, "Answer is over 80 characters."}
-    else
-      :ok
+  def validate_answer(prompt, answer, player_id) do
+    cond do
+      String.length(answer) > 80 ->
+        {:error, "Answer is over 80 characters."}
+
+      not prompt.is_final? and player_id not in prompt.assigned_player_ids ->
+        {:error, "Player not assigned to prompt."}
+
+      true ->
+        :ok
     end
   end
 
-  def submit_answer(%{prompts: prompts} = game, prompt_id, answer, player_id) do
-    with :ok <- validate_answer(answer),
-         submitted_prompt <-
-           Map.fetch!(prompts, prompt_id) |> put_player_answer_in_prompt(answer, player_id) do
+  def submit_answer(%{prompts: prompts} = game, prompt_index, answer, player_id) do
+    with prompt <- Enum.at(prompts, prompt_index),
+         :ok <- validate_answer(prompt, answer, player_id),
+         submitted_prompt <- put_player_answer_in_prompt(prompt, answer, player_id) do
       game
-      |> put_in([:prompts, Access.key!(prompt_id)], submitted_prompt)
+      |> update_prompt_in_game(submitted_prompt, prompt_index)
       |> maybe_user_fully_submitted(player_id)
+      |> maybe_start_voting
     else
       {:error, reason} ->
         {:error, reason}
@@ -138,25 +184,40 @@ defmodule Gamenite.Witbash do
   end
 
   defp put_player_answer_in_prompt(prompt, answer, player_id) do
-    if player_id in prompt.assigned_player_ids do
-      Map.update!(prompt, :answers, fn answers -> [{player_id, answer} | answers] end)
-    else
-      {:error, "Player not assigned to prompt."}
-    end
+    Map.update!(prompt, :answers, fn answers -> [{player_id, answer} | answers] end)
   end
 
-  def submit_final_answer(%{final_prompt: final_prompt} = game, answer, player_id) do
-    with :ok <- validate_answer(answer),
+  defp update_prompt_in_game(game, prompt, index) do
+    game
+    |> put_in([:prompts, Access.at!(index)], prompt)
+  end
+
+  def submit_final_answer(%{current_prompt: final_prompt} = game, answer, player_id) do
+    with :ok <- validate_answer(final_prompt, answer, player_id),
          submitted_final <-
            put_player_answer_in_prompt(final_prompt, answer, player_id) do
       game
-      |> Map.put(:final_prompt, submitted_final)
+      |> Map.put(:current_prompt, submitted_final)
       |> append_user_to_submitted(player_id)
+      |> maybe_start_voting
     else
       {:error, reason} ->
         {:error, reason}
     end
   end
+
+  defp append_user_to_submitted(game, player_id) do
+    game
+    |> Map.update!(:submitted_user_ids, fn ids -> [player_id | ids] end)
+  end
+
+  defp maybe_start_voting(game)
+       when length(game.submitted_user_ids) == length(game.players) do
+    game
+    |> voting_phase()
+  end
+
+  defp maybe_start_voting(game), do: game
 
   defp maybe_user_fully_submitted(%{prompts: prompts} = game, player_id) do
     if user_submission_count(prompts, player_id) == 2 do
@@ -166,16 +227,110 @@ defmodule Gamenite.Witbash do
     end
   end
 
-  defp append_user_to_submitted(game, player_id) do
-    game
-    |> Map.update!(:submitted_user_ids, fn ids -> [player_id | ids] end)
-  end
-
   defp user_submission_count(prompts, player_id) do
     prompts
-    |> Map.to_list()
-    |> Enum.count(fn {_id, prompt} ->
+    |> Enum.count(fn prompt ->
       Enum.any?(prompt.answers, fn {id, _answer} -> player_id == id end)
     end)
+  end
+
+  def vote(_game, {voting_player_id, receiving_vote_id})
+      when voting_player_id == receiving_vote_id do
+    {:error, "Cannot vote for yourself."}
+  end
+
+  def vote(game, {voting_player_id, receiving_vote_id}) do
+    game
+    |> append_vote({voting_player_id, receiving_vote_id})
+    |> append_user_to_submitted(voting_player_id)
+    |> maybe_score_votes
+  end
+
+  defp append_vote(
+         %{current_prompt: current_prompt} = game,
+         {voting_player_id, receiving_vote_id}
+       ) do
+    prompt_with_vote =
+      current_prompt
+      |> Map.update!(:votes, fn votes -> [{voting_player_id, receiving_vote_id} | votes] end)
+
+    %{game | current_prompt: prompt_with_vote}
+  end
+
+  defp maybe_score_votes(game)
+       when length(game.submitted_user_ids) == length(game.players) do
+    game
+    |> score_votes
+  end
+
+  defp maybe_score_votes(game), do: game
+
+  def score_votes(game)
+      when game.current_round == game.num_rounds do
+    do_score_votes(game, 100 * length(game.players))
+  end
+
+  def score_votes(game), do: do_score_votes(game, 100)
+
+  def do_score_votes(%{current_prompt: current_prompt} = game, total_points) do
+    player_votes =
+      current_prompt.votes
+      |> Enum.sort_by(fn {_voting_player_id, receiving_player_id} -> receiving_player_id end)
+      |> Enum.chunk_by(fn {_voting_player_id, receiving_player_id} -> receiving_player_id end)
+
+    _new_game =
+      Enum.reduce(game.players, game, fn player, acc_game ->
+        case find_player_votes(player_votes, player.id) do
+          nil ->
+            acc_game
+
+          votes_for_player ->
+            _acc_game =
+              votes_for_player
+              |> score_player_votes(total_points, current_prompt.votes)
+              |> update_player_score(player.id, acc_game)
+        end
+      end)
+  end
+
+  defp find_player_votes(player_votes, player_id) do
+    Enum.find(player_votes, fn [{_voting_player_id, receiving_player_id} | _tail] ->
+      player_id == receiving_player_id
+    end)
+  end
+
+  defp score_player_votes(votes_for_player, total_points, all_votes) do
+    fraction_of_points = length(votes_for_player) / length(List.flatten(all_votes))
+    round(total_points * fraction_of_points)
+  end
+
+  defp update_player_score(score, player_id, game) do
+    game
+    |> SinglePlayerGame.add_score_to_player(player_id, score)
+  end
+
+  def next_prompt(%{prompts: []} = game) do
+    game
+    |> next_round
+  end
+
+  def next_prompt(%{prompts: [current_prompt | remaining]} = game) do
+    %{game | current_prompt: current_prompt, prompts: remaining}
+  end
+
+  defp next_round(%{current_round: current_round, num_rounds: num_rounds} = game)
+       when current_round == num_rounds do
+    %{game | finished?: true}
+  end
+
+  defp next_round(game) do
+    game
+    |> increment_round()
+    |> setup_round()
+  end
+
+  defp increment_round(game) do
+    game
+    |> Map.update!(:current_round, &(&1 + 1))
   end
 end

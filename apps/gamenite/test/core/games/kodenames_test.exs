@@ -47,7 +47,7 @@ defmodule KodenamesTest do
 
   def game_already_setup(context) do
     {:ok, game} = create_game()
-    {:ok, Map.put(context, :setup_game, Kodenames.setup_game(game, false))}
+    {:ok, Map.put(context, :setup_game, Kodenames.setup(game, randomize_first_team?: false))}
   end
 
   defp defined_board(game) do
@@ -134,19 +134,19 @@ defmodule KodenamesTest do
     setup [:working_game]
 
     test "board must be initialized with 25 words in 5x5 grid", %{game: game} do
-      new_game = Kodenames.setup_game(game, false)
+      new_game = Kodenames.setup(game, randomize_first_team?: false)
 
       assert map_size(new_game.board) == 25
     end
 
     test "removes words used from deck", %{game: game} do
-      new_game = Kodenames.setup_game(game, false)
+      new_game = Kodenames.setup(game, randomize_first_team?: false)
 
       assert length(new_game.deck) == 0
     end
 
     test "cards with proper counts when starting team is index 0", %{game: game} do
-      new_game = Kodenames.setup_game(game, false)
+      new_game = Kodenames.setup(game, randomize_first_team?: false)
       assert count_card_types(new_game, :red) == 9
       assert count_card_types(new_game, :blue) == 8
       assert count_card_types(new_game, :bystander) == 7
@@ -157,7 +157,7 @@ defmodule KodenamesTest do
       new_game =
         game
         |> TeamGame.end_turn_same_player()
-        |> Kodenames.setup_game(false)
+        |> Kodenames.setup(randomize_first_team?: false)
 
       assert count_card_types(new_game, :blue) == 9
       assert count_card_types(new_game, :red) == 8
@@ -173,7 +173,7 @@ defmodule KodenamesTest do
     end
 
     test "teams with proper score when starting team is index 0", %{game: game} do
-      new_game = Kodenames.setup_game(game, false)
+      new_game = Kodenames.setup(game, randomize_first_team?: false)
       assert new_game.current_team.score == 9
       assert Enum.at(new_game.teams, 1).score == 8
     end
@@ -182,7 +182,7 @@ defmodule KodenamesTest do
       new_game =
         game
         |> TeamGame.end_turn_same_player()
-        |> Kodenames.setup_game(false)
+        |> Kodenames.setup(randomize_first_team?: false)
 
       assert new_game.current_team.score == 9
       assert Enum.at(new_game.teams, 0).score == 8

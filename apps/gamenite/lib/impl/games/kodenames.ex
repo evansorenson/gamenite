@@ -1,7 +1,10 @@
 defmodule Gamenite.Kodenames do
-  use Ecto.Schema
+  @behaviour Gamenite.Game
+  use Accessible
 
-  alias Gamenite.Game
+  use Ecto.Schema
+  import Ecto.Changeset
+
   alias Gamenite.TeamGame
   alias Gamenite.TeamGame.Team
   alias Gamenite.Cards
@@ -21,9 +24,9 @@ defmodule Gamenite.Kodenames do
     field(:winning_team_idx, :integer)
   end
 
-  use Gamenite.TeamGame
-
   @fields [:current_turn, :deck, :timer_length, :timer_enabled?]
+
+  @impl Gamenite.Game
   def changeset(game, attrs) do
     game
     |> cast(attrs, @fields)
@@ -31,6 +34,20 @@ defmodule Gamenite.Kodenames do
     |> validate_length(:teams, is: 2)
     |> validate_number(:timer_length, greater_than_or_equal_to: 30, less_than_or_equal_to: 600)
     |> validate_length(:deck, min: 25)
+  end
+
+  @impl Gamenite.Game
+  def create(attrs), do: TeamGame.create(__MODULE__, %__MODULE__{}, attrs)
+
+  @impl Gamenite.Game
+  def change(game, attrs), do: TeamGame.change(__MODULE__, game, attrs)
+
+  @impl Gamenite.Game
+  def new(), do: %__MODULE__{}
+
+  @impl Gamenite.Game
+  def create_player(attrs) do
+    TeamGame.Player.create(attrs)
   end
 
   @impl Gamenite.Game

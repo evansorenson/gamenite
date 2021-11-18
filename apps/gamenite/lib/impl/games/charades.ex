@@ -1,7 +1,12 @@
 defmodule Gamenite.Charades do
+  @behaviour Gamenite.Game
+  use Accessible
+
   use Ecto.Schema
+  import Ecto.Changeset
 
   alias Gamenite.Charades.{Turn}
+  alias Gamenite.TeamGame
   alias Gamenite.TeamGame.Team
   alias Gamenite.Lists
   alias Gamenite.Cards
@@ -18,9 +23,9 @@ defmodule Gamenite.Charades do
     field(:timer)
   end
 
-  use Gamenite.TeamGame
-
   @fields [:room_slug, :turn_length, :skip_limit, :deck, :current_turn]
+
+  @impl Gamenite.Game
   def changeset(charades_game, attrs) do
     charades_game
     |> cast(attrs, @fields)
@@ -29,6 +34,25 @@ defmodule Gamenite.Charades do
     |> validate_number(:turn_length, greater_than_or_equal_to: 30)
     |> validate_number(:skip_limit, greater_than_or_equal_to: 0)
     |> validate_number(:skip_limit, less_than_or_equal_to: 5)
+  end
+
+  @impl Gamenite.Game
+  def create(attrs), do: TeamGame.create(__MODULE__, %__MODULE__{}, attrs)
+
+  @impl Gamenite.Game
+  def change(game, attrs), do: TeamGame.change(__MODULE__, game, attrs)
+
+  @impl Gamenite.Game
+  def new(), do: %__MODULE__{}
+
+  @impl Gamenite.Game
+  def create_player(attrs) do
+    TeamGame.Player.create(attrs)
+  end
+
+  @impl Gamenite.Game
+  def setup(game, _opts \\ []) do
+    new_turn(game, game.turn_length)
   end
 
   def create_turn(attrs \\ %{}) do

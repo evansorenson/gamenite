@@ -1,36 +1,27 @@
 defmodule Gamenite.Game do
   @callback setup(struct()) :: struct() | {:error, term()}
   @callback changeset(struct(), map()) :: Ecto.Changeset.t()
-
-  defmacro __using__(_opts) do
-    quote do
-      import Ecto.Changeset
-      alias Gamenite.Game
-      @behaviour Gamenite.Game
-      use Accessible
-
-      def change(%__MODULE__{} = game, attrs \\ %{}) do
-        game
-        |> Game.base_changeset(attrs)
-        |> __MODULE__.changeset(attrs)
-      end
-
-      def new() do
-        %__MODULE__{}
-      end
-
-      def create(attrs) do
-        %__MODULE__{}
-        |> Game.base_changeset(attrs)
-        |> __MODULE__.changeset(attrs)
-        |> apply_action(:update)
-      end
-    end
-  end
+  @callback create_player(map()) :: struct()
+  @callback new() :: struct()
+  @callback change(struct(), map()) :: Ecto.Changeset.t()
+  @callback create(map()) :: {:ok, struct()} | {:error, Ecto.Changeset.t()}
 
   import Ecto.Changeset
 
-  def base_changeset(game, attrs) do
+  def change(module, game, attrs \\ %{}) do
+    game
+    |> changeset(attrs)
+    |> module.changeset(attrs)
+  end
+
+  def create(module, game, attrs) do
+    game
+    |> changeset(attrs)
+    |> module.changeset(attrs)
+    |> apply_action(:update)
+  end
+
+  def changeset(game, attrs) do
     game
     |> cast(attrs, [:room_slug])
     |> validate_required(:room_slug)

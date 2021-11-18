@@ -1,5 +1,11 @@
 defmodule Gamenite.SaladBowl do
+  @behaviour Gamenite.Game
+  use Accessible
+
   use Ecto.Schema
+  import Ecto.Changeset
+
+  alias Gamenite.TeamGame
   alias Gamenite.TeamGame.Team
   alias Gamenite.Charades
 
@@ -21,8 +27,6 @@ defmodule Gamenite.SaladBowl do
     field(:timer)
   end
 
-  use Gamenite.TeamGame
-
   @fields [
     :room_slug,
     :turn_length,
@@ -34,6 +38,8 @@ defmodule Gamenite.SaladBowl do
     :starting_deck,
     :cards_per_player
   ]
+
+  @impl Gamenite.Game
   def changeset(salad_bowl_game, attrs) do
     rounds = Map.get(attrs, :rounds, @default_rounds)
     attrs = Map.put(attrs, :current_round, hd(rounds))
@@ -49,6 +55,20 @@ defmodule Gamenite.SaladBowl do
     |> validate_subset(:rounds, Application.get_env(:gamenite, :all_salad_bowl_rounds))
     |> validate_length(:rounds, min: 1)
     |> validate_number(:cards_per_player, greater_than: 2, less_than_or_equal_to: 10)
+  end
+
+  @impl Gamenite.Game
+  def create(attrs), do: TeamGame.create(__MODULE__, %__MODULE__{}, attrs)
+
+  @impl Gamenite.Game
+  def change(game, attrs), do: TeamGame.change(__MODULE__, game, attrs)
+
+  @impl Gamenite.Game
+  def new(), do: %__MODULE__{}
+
+  @impl Gamenite.Game
+  def create_player(attrs) do
+    TeamGame.Player.create(attrs)
   end
 
   @impl Gamenite.Game

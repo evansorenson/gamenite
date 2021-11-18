@@ -1,18 +1,18 @@
 defmodule Gamenite.RoomsTest do
   use ExUnit.Case
-  alias Gamenite.Rooms.{Room, Roommate}
-  alias Gamenite.Rooms
+  alias Gamenite.Room.{Room, Roommate}
+  alias Gamenite.Room
 
   def build_room(num_players) do
     players =
       for i <- 1..num_players, reduce: %{} do
         acc ->
-          user_id = Ecto.UUID.generate()
+          id = Ecto.UUID.generate()
 
           Map.put_new(
             acc,
-            user_id,
-            Rooms.create_roommate(%{user_id: user_id, name: "Player #{i}"})
+            id,
+            Room.create_roommate(%{id: id, name: "Player #{i}"})
             |> elem(1)
           )
       end
@@ -27,11 +27,12 @@ defmodule Gamenite.RoomsTest do
 
   def build_room_with_some(context) do
     some_room = build_room(4)
-    {_k, player_in_room} = hd(Map.to_list(some_room.roommates))
+    {player_id_in_room, player_in_room} = hd(Map.to_list(some_room.roommates))
 
     {:ok,
      context
      |> Map.put(:some_room, some_room)
+     |> Map.put(:player_id_in_room, player_id_in_room)
      |> Map.put(:player_in_room, player_in_room)}
   end
 
@@ -45,7 +46,7 @@ defmodule Gamenite.RoomsTest do
      Map.put(
        context,
        :player_to_join,
-       Rooms.create_roommate(%{user_id: Ecto.UUID.generate(), name: "Player 99"}) |> elem(1)
+       Room.create_roommate(%{id: Ecto.UUID.generate(), name: "Player 99"}) |> elem(1)
      )}
   end
 
@@ -54,7 +55,7 @@ defmodule Gamenite.RoomsTest do
      Map.put(
        context,
        :message,
-       Rooms.create_message(%{roommate: %{}, body: "hello world!"}) |> elem(1)
+       Room.create_message(%{roommate: %{}, body: "hello world!"}) |> elem(1)
      )}
   end
 
@@ -86,21 +87,24 @@ defmodule Gamenite.RoomsTest do
       :player_to_join
     ]
 
-    test "join empty room and make player host", %{empty_room: empty_room, player_to_join: player} do
+    test "join empty room and make player host", %{
+      empty_room: empty_room,
+      player_to_join: player
+    } do
       new_room =
         empty_room
-        |> Rooms.join(player)
-        |> assert_connected(player)
+        |> Room.join(player)
+        |> assert_connected(player.id)
         |> assert_roommates_length(1)
 
-      assert Map.get(new_room.roommates, player.user_id).host? == true
+      assert Map.get(new_room.roommates, player.id).host? == true
     end
 
     test "reassign host when current host leaves", %{some_room: some_room, player_to_join: player} do
     end
 
     test "join full room and get error", %{full_room: full_room, player_to_join: player} do
-      assert {:error, "Room is full."} == Rooms.join(full_room, player)
+      assert {:error, "Room is full."} == Room.join(full_room, player)
     end
 
     test "player already in room and tries to join", %{
@@ -108,26 +112,26 @@ defmodule Gamenite.RoomsTest do
       player_in_room: player
     } do
       some_room
-      |> Rooms.join(player)
-      |> assert_connected(player)
+      |> Room.join(player)
+      |> assert_connected(player.id)
       |> assert_roommates_length(4)
     end
 
     test "player joins successfully", %{some_room: some_room, player_to_join: player} do
       some_room
-      |> Rooms.join(player)
-      |> assert_connected(player)
+      |> Room.join(player)
+      |> assert_connected(player.id)
       |> assert_roommates_length(5)
     end
   end
 
-  defp refute_connected(room, player) do
-    refute Map.get(room.roommates, player.user_id).connected?
+  defp refute_connected(room, player_id) do
+    refute Map.get(room.roommates, player_id).connected?
     room
   end
 
-  defp assert_connected(room, player) do
-    assert Map.get(room.roommates, player.user_id).connected?
+  defp assert_connected(room, player_id) do
+    assert Map.get(room.roommates, player_id).connected?
     room
   end
 
@@ -141,32 +145,33 @@ defmodule Gamenite.RoomsTest do
 
     test "player leaving room when game not in progress, removes player", %{
       some_room: some_room,
-      player_in_room: player
+      player_id_in_room: player_id
     } do
       some_room
-      |> Rooms.leave(player)
+      |> Room.leave(player_id)
       |> assert_roommates_length(3)
     end
 
     test "player leaving room when game in progress, sets player status to disconnected", %{
       some_room: some_room,
-      player_in_room: player
+      player_id_in_room: player_id
     } do
       %{some_room | game_in_progress?: true}
-      |> Rooms.leave(player)
-      |> refute_connected(player)
+      |> Room.leave(player_id)
+      |> refute_connected(player_id)
       |> assert_roommates_length(4)
     end
 
     test "player leaves and joins, when game is started", %{
       some_room: some_room,
+      player_id_in_room: player_id,
       player_in_room: player
     } do
       %{some_room | game_in_progress?: true}
-      |> Rooms.leave(player)
-      |> refute_connected(player)
-      |> Rooms.join(player)
-      |> assert_connected(player)
+      |> Room.leave(player_id)
+      |> refute_connected(player_id)
+      |> Room.join(player)
+      |> assert_connected(player_id)
     end
   end
 
@@ -175,31 +180,31 @@ defmodule Gamenite.RoomsTest do
 
     test "mute unmuted player", %{some_room: some_room, player_in_room: player} do
       some_room
-      |> Rooms.invert_mute(player)
+      |> Room.invert_mute(player)
       |> assert_mute_status(player, true)
     end
 
     test "unmute muted player", %{some_room: some_room, player_in_room: player} do
       some_room
-      |> Rooms.invert_mute(%{player | muted?: true})
+      |> Room.invert_mute(%{player | muted?: true})
       |> assert_mute_status(player, false)
     end
 
     test "unmute all players", %{some_room: some_room} do
       some_room
-      |> Rooms.unmute_all()
+      |> Room.unmute_all()
       |> assert_unmute_all
     end
 
     test "mute all players except host", %{some_room: some_room, player_in_room: host} do
       some_room
-      |> Rooms.mute_all(host)
+      |> Room.mute_all(host)
       |> assert_mute_all
     end
 
     defp assert_mute_status(
            %{roommates: roommates} = room,
-           %{user_id: id} = _player,
+           %{id: id} = _player,
            muted?
          ) do
       player = Map.get(roommates, id)
@@ -250,13 +255,13 @@ defmodule Gamenite.RoomsTest do
 
     test "send message in empty chat", %{message: message, some_room: room} do
       room
-      |> Rooms.send_message(message)
+      |> Room.send_message(message)
       |> assert_message_sent(message)
     end
 
     test "send message with some chat", %{message: message, some_messages: room} do
       room
-      |> Rooms.send_message(message)
+      |> Room.send_message(message)
       |> assert_message_sent(message)
     end
 
@@ -266,7 +271,7 @@ defmodule Gamenite.RoomsTest do
     } do
       new_room =
         room
-        |> Rooms.send_message(message)
+        |> Room.send_message(message)
         |> assert_message_sent(message)
 
       assert length(new_room.messages) == 100

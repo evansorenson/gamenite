@@ -38,6 +38,6 @@ defmodule GameBuilders do
   end
 
   def build_deck(deck_length) do
-    Enum.map(1..deck_length, &%Gamenite.Cards.Card{face: Integer.to_string(&1)})
+    1..deck_length
   end
 end

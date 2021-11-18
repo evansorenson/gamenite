@@ -28,6 +28,10 @@ defmodule Gamenite.TeamGame.Player do
     "2B3D26"
   ]
 
+  def create(attr) do
+    struct!(__MODULE__, attr)
+  end
+
   def new_players_from_roommates(roommates) do
     roommates
     |> Enum.with_index()

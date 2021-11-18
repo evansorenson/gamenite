@@ -94,6 +94,6 @@ defmodule Gamenite.Cards do
   end
 
   def card_in_deck?(deck, card) do
-    Enum.any?(deck, fn x -> x.face == card.face end)
+    Enum.any?(deck, fn x -> x == card end)
   end
 end

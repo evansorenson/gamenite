@@ -3,5 +3,6 @@ defmodule Gamenite.Witbash.Prompt do
             prompt: nil,
             answers: [],
             assigned_player_ids: [],
-            votes: []
+            votes: [],
+            is_final?: false
 end

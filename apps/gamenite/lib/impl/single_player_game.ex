@@ -1,35 +1,7 @@
 defmodule Gamenite.SinglePlayerGame do
-  defmacro __using__(_opts) do
-    quote do
-      import Ecto.Changeset
-      alias Gamenite.Game
-      @behaviour Gamenite.Game
-      alias Gamenite.SinglePlayerGame
-      use Accessible
-
-      def change(%__MODULE__{} = game, attrs \\ %{}) do
-        game
-        |> Game.base_changeset(attrs)
-        |> SinglePlayerGame.changeset(attrs)
-        |> __MODULE__.changeset(attrs)
-      end
-
-      def new() do
-        %__MODULE__{}
-      end
-
-      def create(attrs) do
-        %__MODULE__{}
-        |> Game.base_changeset(attrs)
-        |> SinglePlayerGame.changeset(attrs)
-        |> __MODULE__.changeset(attrs)
-        |> apply_action(:update)
-      end
-    end
-  end
-
   use Ecto.Schema
   import Ecto.Changeset
+  alias Gamenite.Game
   alias Gamenite.Lists
 
   embedded_schema do
@@ -40,6 +12,20 @@ defmodule Gamenite.SinglePlayerGame do
   @fields [:players, :current_player]
   @required [:players, :current_player]
 
+  def change(module, game, attrs \\ %{}) do
+    game
+    |> changeset(attrs)
+    |> module.changeset(attrs)
+  end
+
+  def create(module, game, attrs) do
+    game
+    |> Game.changeset(attrs)
+    |> changeset(attrs)
+    |> module.changeset(attrs)
+    |> apply_action(:update)
+  end
+
   def changeset(game, %{players: players} = params) when length(players) > 0 do
     do_changeset(game, Map.put(params, :current_player, hd(players)))
   end
@@ -48,17 +34,12 @@ defmodule Gamenite.SinglePlayerGame do
     do_changeset(game, params)
   end
 
-  defp do_changeset(team_game, params) do
+  defp do_changeset(team_game, attrs) do
     team_game
-    |> cast(params, @fields)
+    |> Game.changeset(attrs)
+    |> cast(attrs, @fields)
     |> validate_required(@required)
     |> validate_length(:players, min: 2)
-  end
-
-  def new(params) do
-    %__MODULE__{}
-    |> changeset(params)
-    |> apply_action(:update)
   end
 
   def end_turn(game) do
@@ -108,5 +89,12 @@ defmodule Gamenite.SinglePlayerGame do
 
   defp player_exists?(%{players: players} = _game, id) do
     Enum.any?(players, &(&1.id == id))
+  end
+
+  def add_score_to_player(game, player_id, score) do
+    player_idx = Lists.find_element_index_by_id(game.players, player_id)
+
+    game
+    |> update_in([:players, Access.at(player_idx), :score], &(&1 + score))
   end
 end

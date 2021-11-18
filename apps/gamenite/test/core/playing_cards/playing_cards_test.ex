@@ -1,60 +1,73 @@
-defmodule Gamenite.Cards.CardTest do
+defmodule Gamenite.PlayingCardsTest do
   use ExUnit.Case
 
-  alias Gamenite.Cards
-  alias Gamenite.Cards.Card
+  alias Gamenite.PlayingCards
+  alias Gamenite.PlayingCards.Card
+
+  @valid_attrs %{face: "some face"}
+  @update_attrs %{face: "some updated face"}
+  @invalid_attrs %{face: nil}
+
+  def card_fixture(attrs \\ %{}) do
+    {:ok, card} =
+      attrs
+      |> Enum.into(@valid_attrs)
+      |> Card.new()
+
+    card
+  end
 
   defp build_deck_10(context) do
-    deck = for i <- 1..10, do: i
-    {:ok, Map.put(context, :deck, deck)}
+    {:ok, Map.put(context, :deck, build_card_list(10))}
+  end
+
+  defp build_card_list(length) do
+    Enum.map(1..length, &card_fixture(%{face: Integer.to_string(&1)}))
   end
 
   defp build_discard_pile_5(context) do
-    pile = for i <- 1..5, do: i
-    {:ok, Map.put(context, :discard_pile, pile)}
+    {:ok, Map.put(context, :discard_pile, build_card_list(5))}
   end
 
-  describe "drawing cards" do
-    setup [:build_deck_10]
+  defp build_face_up_card(context) do
+    {:ok, Map.put(context, :face_up, card_fixture(%{face_up?: true}))}
+  end
 
-    test "draw/2 draw negative Card", %{deck: deck} do
-      assert Cards.draw(deck, -5) == {:error, "Number of cards drawn must be positive integer."}
+  defp build_face_down_card(context) do
+    {:ok, Map.put(context, :face_down, card_fixture(%{face_up?: false}))}
+  end
+
+  describe "flipping_cards" do
+    setup [:build_face_down_card, :build_face_up_card]
+
+    test "flip_card/1 when face up flips card to face down", %{face_up: card} do
+      flipped_card = Cards.flip(card)
+      assert flipped_card.face_up? == false
     end
 
-    test "draw/2 draw zero Card", %{deck: deck} do
-      assert Cards.draw(deck, 0) == {:error, "Number of cards drawn must be positive integer."}
+    test "flip_card/1 when face down flips card to face up", %{face_down: card} do
+      flipped_card = Cards.flip(card)
+      assert flipped_card.face_up? == true
     end
 
-    test "draw/2 draw decimal Card", %{deck: deck} do
-      assert Cards.draw(deck, 5.6) == {:error, "Number of cards drawn must be positive integer."}
+    test "flip_face_up/1 when face up, flip to face up", %{face_up: card} do
+      flipped_card = Cards.flip_face_up(card)
+      assert flipped_card.face_up? == true
     end
 
-    test "draw/2 draw too many Card", %{deck: deck} do
-      assert Cards.draw(deck, 11) == {:error, "Not enough cards in deck."}
+    test "flip_face_up/1 when face down, flip to face up", %{face_down: card} do
+      flipped_card = Cards.flip_face_up(card)
+      assert flipped_card.face_up? == true
     end
 
-    def test_drawn_card(deck, drawn_card, remaining_deck, num) do
-      assert Kernel.length(drawn_card) == num
-      assert Kernel.length(remaining_deck) == Kernel.length(deck) - num
-      assert drawn_card == Enum.take(deck, num)
+    test "flip_face_up/1 when face up, flip to face down", %{face_up: card} do
+      flipped_card = Cards.flip_face_down(card)
+      assert flipped_card.face_up? == false
     end
 
-    test "draw/2 draw 1 card", %{deck: deck} do
-      num = 1
-      {drawn_card, remaining_deck} = Cards.draw(deck, num)
-      test_drawn_card(deck, drawn_card, remaining_deck, num)
-    end
-
-    test "draw/2 draw 3 Card", %{deck: deck} do
-      num = 3
-      {drawn_card, remaining_deck} = Cards.draw(deck, num)
-      test_drawn_card(deck, drawn_card, remaining_deck, num)
-    end
-
-    test "draw/2 draw all Card in deck", %{deck: deck} do
-      num = 10
-      {drawn_card, remaining_deck} = Cards.draw(deck, num)
-      test_drawn_card(deck, drawn_card, remaining_deck, num)
+    test "flip_face_up/1 when face down, flip to face down", %{face_down: card} do
+      flipped_card = Cards.flip_face_down(card)
+      assert flipped_card.face_up? == false
     end
   end
 
@@ -147,7 +160,7 @@ defmodule Gamenite.Cards.CardTest do
       {hand, remaining_deck} = Cards.draw_into_hand(deck, [])
       assert length(hand) == 1
       assert length(remaining_deck) == 9
-      assert hd(deck) == hd(hand)
+      assert hd(deck).face == hd(hand).face
     end
 
     test "draw multiple cards", %{deck: deck} do
@@ -173,7 +186,7 @@ defmodule Gamenite.Cards.CardTest do
     setup [:build_deck_10, :build_discard_pile_5]
 
     test "card moves successfully", %{deck: deck, discard_pile: discard_pile} do
-      card = 1
+      card = card_fixture(%{face: "1"})
       {changed_deck, changed_discard_pile} = Cards.move_card(card, deck, discard_pile)
       assert length(changed_deck) == 9
       assert length(changed_discard_pile) == 6
@@ -182,20 +195,10 @@ defmodule Gamenite.Cards.CardTest do
     end
 
     test "card not in pile", %{deck: deck, discard_pile: discard_pile} do
-      card = "not in deck"
+      card = card_fixture(%{face: "not in deck"})
       {unchanged_deck, unchanged_discard_pile} = Cards.move_card(card, deck, discard_pile)
       assert deck == unchanged_deck
       assert discard_pile == unchanged_discard_pile
-    end
-  end
-
-  describe "correct cards" do
-    setup [:build_deck_10]
-
-    test "card moves successfully" do
-    end
-
-    test "card not in pile" do
     end
   end
 end

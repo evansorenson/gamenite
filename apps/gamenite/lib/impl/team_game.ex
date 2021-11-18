@@ -1,36 +1,8 @@
 defmodule Gamenite.TeamGame do
-  defmacro __using__(_opts) do
-    quote do
-      import Ecto.Changeset
-      alias Gamenite.Game
-      @behaviour Gamenite.Game
-      alias Gamenite.TeamGame
-      use Accessible
-
-      def change(%__MODULE__{} = game, attrs \\ %{}) do
-        game
-        |> Game.base_changeset(attrs)
-        |> TeamGame.changeset(attrs)
-        |> __MODULE__.changeset(attrs)
-      end
-
-      def new() do
-        %__MODULE__{}
-      end
-
-      def create(attrs) do
-        %__MODULE__{}
-        |> Game.base_changeset(attrs)
-        |> TeamGame.changeset(attrs)
-        |> __MODULE__.changeset(attrs)
-        |> apply_action(:update)
-      end
-    end
-  end
-
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Gamenite.Game
   alias Gamenite.Lists
   alias Gamenite.TeamGame.Team
 
@@ -58,9 +30,17 @@ defmodule Gamenite.TeamGame do
     |> validate_length(:teams, min: 2, max: @max_teams)
   end
 
-  def new(params) do
-    %__MODULE__{}
-    |> changeset(params)
+  def change(module, game, attrs \\ %{}) do
+    game
+    |> Game.changeset(attrs)
+    |> changeset(attrs)
+    |> module.changeset(attrs)
+  end
+
+  def create(module, game, attrs) do
+    game
+    |> changeset(attrs)
+    |> module.changeset(attrs)
     |> apply_action(:update)
   end
 
