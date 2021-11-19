@@ -21,6 +21,13 @@ defmodule Gamenite.Witbash.Server do
   def handle_call({:vote, {voting_player_id, receiving_player_id}}, _from, game) do
     game
     |> Witbash.vote({voting_player_id, receiving_player_id})
+    |> maybe_next_prompt
+    |> game_response(game)
+  end
+
+  def handle_info(:next_prompt, game) do
+    game
+    |> Witbash.next_prompt()
     |> game_response(game)
   end
 
@@ -31,6 +38,17 @@ defmodule Gamenite.Witbash.Server do
   end
 
   defp maybe_start_voting_timer(game), do: game
+
+  defp maybe_next_prompt(game) when game.current_prompt.scored? do
+    send_next_prompt()
+    game
+  end
+
+  defp maybe_next_prompt(game), do: game
+
+  defp send_next_prompt do
+    Process.send_after(self(), :next_prompt, 5000)
+  end
 
   defp submiting_answers_tick(game) when game.time_remaining_in_sec <= 0 do
     game

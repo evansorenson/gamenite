@@ -8,13 +8,11 @@ defmodule GameniteWeb.Components.Kodenames do
   alias Gamenite.Kodenames.API
   alias Gamenite.Kodenames
 
-  data(game, :map)
-  data(user_id, :string)
-  data(slug, :string)
-  data(roommates, :map)
-  data(flash, :map)
-
-  @team_colors Application.get_env(:gamenite, :team_colors)
+  data game, :map
+  data user_id, :string
+  data slug, :string
+  data roommates, :map
+  data flash, :map
 
   def handle_event("select_card", %{"x" => x, "y" => y} = _params, socket) do
     API.select_card(socket.assigns.slug, {String.to_integer(x), String.to_integer(y)})
@@ -76,7 +74,7 @@ defmodule GameniteWeb.Components.Kodenames do
         </form>
       {#elseif is_nil(@game.current_turn.clue) }
         <div class="flex w-full h-full items-center justify-center">
-          <PlayerName player={@game.current_team.current_player} user_id={@user_id} color={@game.current_team.color} />
+          <PlayerName roommate={Map.fetch!(@roommates, @game.current_team.current_player.id)} user_id={@user_id} color={@game.current_team.color} />
           <h2 class="text-3xl">{"is giving a clue"}</h2>
         </div>
       {#elseif TeamGame.on_team?(@game.current_team, @user_id) and not TeamGame.current_player?(@game.current_team, @user_id)}

@@ -12,8 +12,4 @@ defmodule Gamenite.Witbash.API do
   def submit_answer(slug, answer, player_index, prompt_index \\ nil) do
     GenServer.call(via(slug), {:submit_answer, answer, player_index, prompt_index})
   end
-
-  def next_prompt(slug) do
-    GenServer.call(via(slug), :next_prompt)
-  end
 end

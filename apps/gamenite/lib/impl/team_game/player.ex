@@ -1,7 +1,7 @@
 defmodule Gamenite.TeamGame.Player do
   use Accessible
 
-  defstruct name: nil, color: nil, turns: [], score: 0
+  defstruct id: nil, color: nil, turns: [], score: 0
 
   @player_colors [
     "F2F3F4",
@@ -36,7 +36,7 @@ defmodule Gamenite.TeamGame.Player do
     roommates
     |> Enum.with_index()
     |> Enum.map(fn {roommate, index} ->
-      %{id: roommate.id, color: Enum.at(@player_colors, index), name: roommate.name}
+      %{id: roommate.id, color: Enum.at(@player_colors, index)}
     end)
   end
 end

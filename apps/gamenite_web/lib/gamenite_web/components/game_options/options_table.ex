@@ -123,7 +123,8 @@ defmodule GameniteWeb.Components.OptionsTable do
            :ok <- Game.API.start_game(game_config.server, setup_game, socket.assigns.slug) do
         {:noreply, socket}
       else
-        {:error, _reason} ->
+        {:error, reason} ->
+          IO.inspect(reason)
           {:noreply, put_flash(socket, :error, "Error creating game.")}
       end
     end
@@ -146,7 +147,7 @@ defmodule GameniteWeb.Components.OptionsTable do
     <div>
     <p class="alert alert-info" role="alert">{live_flash(@flash, :info)}</p>
     <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
-    <GameniteWeb.Components.SaladBowl.Options submit={"start", target: @myself} change={"validate", target: @myself} game_changeset={@game_changeset} />
+    <GameniteWeb.Components.Witbash.Options submit={"start", target: @myself} change={"validate", target: @myself} game_changeset={@game_changeset} />
     </div>
     """
   end

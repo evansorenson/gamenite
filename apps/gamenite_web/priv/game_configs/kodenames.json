@@ -5,9 +5,7 @@
     "team_game?": true,
     "server": "Elixir.Gamenite.Kodenames.Server",
     "impl": "Elixir.Gamenite.Kodenames",
-    "player": "Elixir.Gamenite.TeamGame.Player",
     "components": {
-        "scoreboard": "Elixir.GameniteWeb.Components.TeamsScoreboard",
         "options": "Elixir.GameniteWeb.Components.Kodenames.Options",
         "game": "Elixir.GameniteWeb.Components.Kodenames"
     },

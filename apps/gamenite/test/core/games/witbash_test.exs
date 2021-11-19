@@ -3,7 +3,7 @@ defmodule WitbashTest do
   use GameBuilders
 
   alias Gamenite.Witbash
-  alias Gamenite.Witbash.Prompt
+  alias Gamenite.Witbash.{Prompt, Answer}
   alias Gamenite.TeamGame.Player
 
   @prompts [
@@ -113,7 +113,7 @@ defmodule WitbashTest do
             0,
             fn
               prompt, acc ->
-                if player.id in prompt.assigned_player_ids do
+                if player.id in prompt.assigned_user_ids do
                   acc + 1
                 else
                   acc
@@ -127,7 +127,7 @@ defmodule WitbashTest do
 
     test "each prompt has two unique players assigned", %{setup_game: game} do
       for prompt <- game.prompts do
-        assert length(Enum.uniq(prompt.assigned_player_ids)) == 2
+        assert length(Enum.uniq(prompt.assigned_user_ids)) == 2
       end
     end
 
@@ -150,24 +150,28 @@ defmodule WitbashTest do
 
     test "player1 submits valid answer", %{game: game} do
       new_game =
-        %{game | prompts: [%Prompt{id: 0, assigned_player_ids: [1, 2]}]}
+        %{game | prompts: [%Prompt{assigned_user_ids: [1, 2]}]}
         |> Witbash.submit_answer("My booty.", 1, 0)
 
-      assert hd(Enum.at(new_game.prompts, 0).answers) == {1, "My booty."}
+      assert hd(Enum.at(new_game.prompts, 0).answers) == %Answer{user_id: 1, answer: "My booty."}
       assert length(Enum.at(new_game.prompts, 0).answers) == 1
     end
 
     test "player2 submits valid answer", %{game: game} do
       new_game =
-        %{game | prompts: [%Prompt{id: 0, assigned_player_ids: [1, 2]}]}
+        %{game | prompts: [%Prompt{assigned_user_ids: [1, 2]}]}
         |> Witbash.submit_answer("Your booty.", 2, 0)
 
-      assert hd(Enum.at(new_game.prompts, 0).answers) == {2, "Your booty."}
+      assert hd(Enum.at(new_game.prompts, 0).answers) == %Answer{
+               user_id: 2,
+               answer: "Your booty."
+             }
+
       assert length(Enum.at(new_game.prompts, 0).answers) == 1
     end
 
     test "player not assigned to prompt", %{game: game} do
-      new_game = %{game | prompts: [%Prompt{id: 0, assigned_player_ids: [1, 2]}]}
+      new_game = %{game | prompts: [%Prompt{assigned_user_ids: [1, 2]}]}
 
       assert {:error, "Player not assigned to prompt."} ==
                Witbash.submit_answer(new_game, "My booty.", 3, 0)
@@ -191,7 +195,7 @@ defmodule WitbashTest do
 
     test "player submits valid answer", %{final_round: game} do
       new_game = Witbash.submit_answer(game, "valid answer", 1)
-      assert hd(new_game.current_prompt.answers) == {1, "valid answer"}
+      assert hd(new_game.current_prompt.answers) == %Answer{user_id: 1, answer: "valid answer"}
       assert length(new_game.current_prompt.answers) == 1
     end
   end
@@ -205,17 +209,18 @@ defmodule WitbashTest do
 
     test "voting when your answered prompt is up", %{setup_game: game} do
       assert {:error, "Cannot vote when your answer is up."} ==
-               %{game | current_prompt: %Prompt{assigned_player_ids: [1]}}
+               %{game | current_prompt: %Prompt{assigned_user_ids: [1]}}
                |> Witbash.vote({1, 2})
     end
 
     test "valid vote", %{setup_game: game} do
       new_game =
-        %{game | current_prompt: %Prompt{}}
+        %{game | current_prompt: %Prompt{answers: [%Answer{user_id: 2, votes: []}]}}
         |> Witbash.vote({1, 2})
 
-      assert length(new_game.current_prompt.votes) == 1
-      assert hd(new_game.current_prompt.votes) == {1, 2}
+      answer = hd(new_game.current_prompt.answers)
+      assert length(answer.votes) == 1
+      assert hd(answer.votes) == 1
     end
 
     # test "next prompt", %{game_with_prompts: game_with_prompts} do
@@ -229,7 +234,12 @@ defmodule WitbashTest do
 
     test "one player gets all votes", %{setup_game: game} do
       new_game =
-        %{game | current_prompt: %Prompt{votes: [{2, 1}, {3, 1}, {4, 1}, {5, 1}]}}
+        %{
+          game
+          | current_prompt: %Prompt{
+              answers: [%Answer{user_id: 1, votes: [2, 3, 4, 5]}, %Answer{user_id: 2, votes: []}]
+            }
+        }
         |> Witbash.score_votes()
 
       assert Enum.at(new_game.players, 0).score == 100
@@ -238,7 +248,12 @@ defmodule WitbashTest do
 
     test "votes 3/4 and 1/4", %{setup_game: game} do
       new_game =
-        %{game | current_prompt: %Prompt{votes: [{2, 1}, {3, 1}, {4, 1}, {5, 2}]}}
+        %{
+          game
+          | current_prompt: %Prompt{
+              answers: [%Answer{user_id: 1, votes: [2, 3, 4]}, %Answer{user_id: 2, votes: [5]}]
+            }
+        }
         |> Witbash.score_votes()
 
       assert Enum.at(new_game.players, 0).score == 75
@@ -247,7 +262,12 @@ defmodule WitbashTest do
 
     test "votes half and half", %{setup_game: game} do
       new_game =
-        %{game | current_prompt: %Prompt{votes: [{2, 2}, {3, 1}, {4, 1}, {5, 2}]}}
+        %{
+          game
+          | current_prompt: %Prompt{
+              answers: [%Answer{user_id: 1, votes: [3, 4]}, %Answer{user_id: 2, votes: [2, 5]}]
+            }
+        }
         |> Witbash.score_votes()
 
       assert Enum.at(new_game.players, 0).score == 50
@@ -259,7 +279,9 @@ defmodule WitbashTest do
         %{
           game
           | current_round: 3,
-            current_prompt: %Prompt{votes: [{2, 1}, {3, 1}, {4, 1}, {5, 1}]}
+            current_prompt: %Prompt{
+              answers: [%Answer{user_id: 1, votes: [2, 3, 4, 5]}, %Answer{votes: []}]
+            }
         }
         |> Witbash.score_votes()
 
@@ -272,7 +294,13 @@ defmodule WitbashTest do
         %{
           game
           | current_round: 3,
-            current_prompt: %Prompt{votes: [{2, 1}, {3, 2}, {4, 1}, {5, 3}]}
+            current_prompt: %Prompt{
+              answers: [
+                %Answer{user_id: 1, votes: [2, 3]},
+                %Answer{user_id: 2, votes: [4]},
+                %Answer{user_id: 3, votes: [5]}
+              ]
+            }
         }
         |> Witbash.score_votes()
 
@@ -286,7 +314,14 @@ defmodule WitbashTest do
         %{
           game
           | current_round: 3,
-            current_prompt: %Prompt{votes: [{2, 4}, {3, 3}, {4, 2}, {5, 1}]}
+            current_prompt: %Prompt{
+              answers: [
+                %Answer{user_id: 1, votes: [3]},
+                %Answer{user_id: 2, votes: [2]},
+                %Answer{user_id: 3, votes: [4]},
+                %Answer{user_id: 4, votes: [5]}
+              ]
+            }
         }
         |> Witbash.score_votes()
 
@@ -307,8 +342,8 @@ defmodule WitbashTest do
           | current_round: 1,
             submitted_user_ids: [1, 2, 3],
             prompts: [
-              %Prompt{assigned_player_ids: [1, 4]},
-              %Prompt{assigned_player_ids: [1, 4]}
+              %Prompt{assigned_user_ids: [1, 4]},
+              %Prompt{assigned_user_ids: [1, 4]}
             ]
         }
         |> Witbash.submit_answer("answer", 4, 0)
@@ -323,12 +358,14 @@ defmodule WitbashTest do
           game
           | prompts: [%Prompt{}],
             submitted_user_ids: [3],
-            current_prompt: %Prompt{assigned_player_ids: [1, 2], votes: [{3, 1}]}
+            current_prompt: %Prompt{
+              answers: [%Answer{user_id: 1}],
+              assigned_user_ids: [2]
+            }
         }
-        |> Witbash.vote({4, 2})
+        |> Witbash.vote({3, 1})
 
-      assert Enum.at(new_game.players, 0).score == 50
-      assert Enum.at(new_game.players, 1).score == 50
+      assert Enum.at(new_game.players, 0).score == 100
     end
 
     test "next prompt", %{setup_game: game} do
@@ -337,7 +374,7 @@ defmodule WitbashTest do
           game
           | prompts: [%Prompt{}],
             submitted_user_ids: [1, 3, 4],
-            current_prompt: %Prompt{assigned_player_ids: [1, 2], votes: [{3, 1}]}
+            current_prompt: %Prompt{assigned_user_ids: [1, 2]}
         }
         |> Witbash.next_prompt()
 
@@ -350,7 +387,7 @@ defmodule WitbashTest do
         %{
           game
           | prompts: [],
-            current_prompt: %Prompt{assigned_player_ids: [1, 2], votes: [{3, 1}]}
+            current_prompt: %Prompt{assigned_user_ids: [1, 2]}
         }
         |> Witbash.next_prompt()
 
@@ -366,7 +403,7 @@ defmodule WitbashTest do
           game
           | current_round: 3,
             prompts: [1, 3],
-            current_prompt: %Prompt{assigned_player_ids: [1, 2], votes: [{3, 1}]}
+            current_prompt: %Prompt{assigned_user_ids: [1, 2]}
         }
         |> Witbash.next_prompt()
 

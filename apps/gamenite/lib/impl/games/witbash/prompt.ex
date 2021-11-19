@@ -1,8 +1,8 @@
 defmodule Gamenite.Witbash.Prompt do
-  defstruct id: nil,
-            prompt: nil,
+  use Accessible
+
+  defstruct prompt: nil,
             answers: [],
-            assigned_player_ids: [],
-            votes: [],
+            assigned_user_ids: [],
             is_final?: false
 end

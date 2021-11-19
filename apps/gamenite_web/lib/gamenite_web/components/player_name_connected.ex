@@ -1,7 +1,6 @@
 defmodule GameniteWeb.Components.PlayerNameConnected do
   use Surface.Component
 
-  prop player, :map, required: true
   prop user_id, :any, required: true
   prop roommate, :map, required: true
   prop color, :string, required: true
@@ -16,10 +15,10 @@ defmodule GameniteWeb.Components.PlayerNameConnected do
           <div class="h-3 w-3 bg-red-600 rounded-full"/>
         {/if}
         <h1 style={"color:#{@color}"} class="text-lg font-semibold pl-1">
-          {#if @player.id == @user_id}
-            {@player.name} (You)
+          {#if @roommate.id == @user_id}
+            {@roommate.name} (You)
           {#else}
-            {@player.name}
+            {@roommate.name}
           {/if}
         </h1>
       </div>

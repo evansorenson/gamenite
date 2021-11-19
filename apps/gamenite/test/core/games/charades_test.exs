@@ -64,7 +64,7 @@ defmodule CharadesCoreTest do
 
     test "new turn created", %{game: game} do
       turn = Charades.new_turn(game)
-      assert turn.player_name == game.current_team.current_player.name
+      assert turn.user_id == game.current_team.current_player.id
     end
   end
 
