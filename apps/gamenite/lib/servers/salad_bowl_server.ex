@@ -4,6 +4,8 @@ defmodule Gamenite.SaladBowl.Server do
   alias Gamenite.TeamGame
   alias Gamenite.Charades
 
+  use Gamenite.Timing
+
   def setup(game) do
     Charades.new_turn(game, game.turn_length)
   end
@@ -15,7 +17,7 @@ defmodule Gamenite.SaladBowl.Server do
   def handle_call(:start_turn, _from, game) do
     game
     |> Charades.start_turn()
-    |> start_timer
+    |> Timing.start_timer(&tick/1)
     |> game_response(game)
   end
 
@@ -29,7 +31,8 @@ defmodule Gamenite.SaladBowl.Server do
     case Charades.add_card_to_completed(game, outcome) do
       {:review, new_game} ->
         new_game
-        |> stop_timer
+        |> Timing.stop_timer()
+        |> Charades.needs_review()
         |> game_response(game)
 
       new_game ->
@@ -50,40 +53,28 @@ defmodule Gamenite.SaladBowl.Server do
     |> game_response(game)
   end
 
-  def handle_info(:tick, %{current_turn: %{time_remaining_in_sec: time}} = game)
+  def tick(%{current_turn: %{time_remaining_in_sec: time}} = game)
       when time <= 0 do
     new_game =
       game
-      |> stop_timer
+      |> Timing.stop_timer()
+      |> Charades.needs_review()
 
     broadcast_game_update(new_game)
     {:noreply, new_game}
   end
 
-  def handle_info(:tick, game) do
+  def tick(game) do
     new_game =
       game
-      |> start_timer
+      |> Timing.start_timer(&tick/1)
       |> decrement_time_remaining
 
     broadcast_game_update(new_game)
-    {:noreply, new_game}
-  end
-
-  defp start_timer(game) do
-    timer = Process.send_after(self(), :tick, 1000)
-    Map.put(game, :timer, timer)
   end
 
   defp decrement_time_remaining(game) do
     game
     |> update_in([:current_turn, :time_remaining_in_sec], &(&1 - 1))
-  end
-
-  defp stop_timer(%{timer: timer} = game) do
-    Process.cancel_timer(timer)
-
-    game
-    |> put_in([:current_turn, :review?], true)
   end
 end

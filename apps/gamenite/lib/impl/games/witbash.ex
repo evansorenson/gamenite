@@ -9,7 +9,6 @@ defmodule Gamenite.Witbash do
   alias Gamenite.TeamGame.Player
   alias Gamenite.Cards
   alias Gamenite.SinglePlayerGame
-  alias Gamenite.Lists
 
   embedded_schema do
     field(:room_slug, :string)
@@ -21,7 +20,11 @@ defmodule Gamenite.Witbash do
     field :current_prompt, :map
     field :num_rounds, :integer, default: 3
     field :current_round, :integer, default: 1
+    field :answer_length_in_sec, :integer, default: 120
+    field :vote_length_in_sec, :integer, default: 60
+    field :time_remaining_in_sec, :integer
     field :answering?, :boolean
+    field :finished?, :boolean, default: false
   end
 
   @fields [:deck_of_prompts, :num_rounds]
@@ -86,7 +89,7 @@ defmodule Gamenite.Witbash do
     |> put_answering(true)
   end
 
-  defp voting_phase(game) do
+  def start_voting_phase(game) do
     game
     |> clear_submitted_user_ids
     |> next_prompt
@@ -169,7 +172,23 @@ defmodule Gamenite.Witbash do
     end
   end
 
-  def submit_answer(%{prompts: prompts} = game, prompt_index, answer, player_id) do
+  def submit_answer(game, answer, player_id, prompt_index \\ nil)
+
+  def submit_answer(%{current_prompt: final_prompt} = game, answer, player_id, nil) do
+    with :ok <- validate_answer(final_prompt, answer, player_id),
+         submitted_final <-
+           put_player_answer_in_prompt(final_prompt, answer, player_id) do
+      game
+      |> Map.put(:current_prompt, submitted_final)
+      |> append_user_to_submitted(player_id)
+      |> maybe_start_voting
+    else
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def submit_answer(%{prompts: prompts} = game, answer, player_id, prompt_index) do
     with prompt <- Enum.at(prompts, prompt_index),
          :ok <- validate_answer(prompt, answer, player_id),
          submitted_prompt <- put_player_answer_in_prompt(prompt, answer, player_id) do
@@ -192,20 +211,6 @@ defmodule Gamenite.Witbash do
     |> put_in([:prompts, Access.at!(index)], prompt)
   end
 
-  def submit_final_answer(%{current_prompt: final_prompt} = game, answer, player_id) do
-    with :ok <- validate_answer(final_prompt, answer, player_id),
-         submitted_final <-
-           put_player_answer_in_prompt(final_prompt, answer, player_id) do
-      game
-      |> Map.put(:current_prompt, submitted_final)
-      |> append_user_to_submitted(player_id)
-      |> maybe_start_voting
-    else
-      {:error, reason} ->
-        {:error, reason}
-    end
-  end
-
   defp append_user_to_submitted(game, player_id) do
     game
     |> Map.update!(:submitted_user_ids, fn ids -> [player_id | ids] end)
@@ -214,7 +219,7 @@ defmodule Gamenite.Witbash do
   defp maybe_start_voting(game)
        when length(game.submitted_user_ids) == length(game.players) do
     game
-    |> voting_phase()
+    |> start_voting_phase()
   end
 
   defp maybe_start_voting(game), do: game
@@ -240,6 +245,14 @@ defmodule Gamenite.Witbash do
   end
 
   def vote(game, {voting_player_id, receiving_vote_id}) do
+    if voting_player_id in game.current_prompt.assigned_player_ids do
+      {:error, "Cannot vote when your answer is up."}
+    else
+      do_vote(game, {voting_player_id, receiving_vote_id})
+    end
+  end
+
+  def do_vote(game, {voting_player_id, receiving_vote_id}) do
     game
     |> append_vote({voting_player_id, receiving_vote_id})
     |> append_user_to_submitted(voting_player_id)
@@ -258,7 +271,13 @@ defmodule Gamenite.Witbash do
   end
 
   defp maybe_score_votes(game)
-       when length(game.submitted_user_ids) == length(game.players) do
+       when game.current_round == game.num_rounds and
+              length(game.submitted_user_ids) == length(game.players) do
+    score_votes(game)
+  end
+
+  defp maybe_score_votes(game)
+       when length(game.submitted_user_ids) == length(game.players) - 2 do
     game
     |> score_votes
   end
@@ -309,13 +328,15 @@ defmodule Gamenite.Witbash do
     |> SinglePlayerGame.add_score_to_player(player_id, score)
   end
 
-  def next_prompt(%{prompts: []} = game) do
+  def next_prompt(%{prompts: prompts} = game)
+      when prompts == [] or game.current_round == game.num_rounds do
     game
     |> next_round
   end
 
   def next_prompt(%{prompts: [current_prompt | remaining]} = game) do
     %{game | current_prompt: current_prompt, prompts: remaining}
+    |> clear_submitted_user_ids()
   end
 
   defp next_round(%{current_round: current_round, num_rounds: num_rounds} = game)

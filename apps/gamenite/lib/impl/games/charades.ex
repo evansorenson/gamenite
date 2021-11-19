@@ -291,6 +291,11 @@ defmodule Gamenite.Charades do
     |> TeamGame.add_score(score)
   end
 
+  def needs_review(game) do
+    game
+    |> put_in([:current_turn, :review?], true)
+  end
+
   # Salad Bowl Logic
   def inc_round(%{rounds: rounds, current_round: current_round} = game) do
     case Lists.next_list_index(rounds, current_round) do
