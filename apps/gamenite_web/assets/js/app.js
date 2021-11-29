@@ -1,6 +1,4 @@
 
-
-
 // window.onload = () => {
 //   const removeElement = ({target}) => {
 //     let el = document.getElementById(target.dataset.id);
@@ -37,12 +35,20 @@
 // };
 
 // assets/js/app.js
+
+import Alpine from "alpinejs";
+
+// Add this before your liveSocket call.
+window.Alpine = Alpine;
+Alpine.start();
+
 import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 
 let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 
+let Hooks = {};
 let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken },
   hooks: Hooks,
@@ -58,6 +64,13 @@ let liveSocket = new LiveSocket("/live", Socket, {
 // Connect if there are any LiveViews on the page
 liveSocket.connect()
 
+import { Room } from "./room";
+function joinRoom() {
+  const room = new Room(liveSocket);
+  room.join();
+}
+
+
 // Expose liveSocket on window for web console debug logs and latency simulation:
 // >> liveSocket.enableDebug()
 // >> liveSocket.enableLatencySim(1000)
@@ -65,4 +78,3 @@ liveSocket.connect()
 // Call disableLatencySim() to disable:
 // >> liveSocket.disableLatencySim()
 window.liveSocket = liveSocket
-

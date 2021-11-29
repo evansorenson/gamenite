@@ -3,6 +3,7 @@ defmodule GameniteWeb.UserSocket do
 
   ## Channels
   # channel "room:*", GameniteWeb.RoomChannel
+  channel("room:*", GameniteWeb.RoomChannel)
 
   # Socket params are passed from the client and can
   # be used to verify and authenticate a user. After

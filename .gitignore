@@ -24,3 +24,6 @@ gamenite-*.tar
 
 # If NPM crashes, it generates a log, let's ignore it too.
 npm-debug.log
+
+/apps/*/assets/node_modules/
+/apps/*/priv/static/assets/

@@ -13,7 +13,7 @@ import {
   Peer,
   SerializedMediaEvent,
 } from "membrane_rtc_engine";
-import { Push, Socket } from "phoenix";
+import {LiveSocket, Push} from "phoenix_live_view"
 import { parse } from "query-string";
 
 export class Room {
@@ -22,13 +22,12 @@ export class Room {
   private localStream: MediaStream | undefined;
   private webrtc: MembraneWebRTC;
 
-  private socket;
   private webrtcSocketRefs: string[] = [];
   private webrtcChannel;
+  private socket: LiveSocket;
 
-  constructor() {
-    this.socket = new Socket("/socket");
-    this.socket.connect();
+  constructor(socket: LiveSocket) {
+    this.socket = socket
     this.displayName = this.parseUrl();
     this.webrtcChannel = this.socket.channel(`room:${getRoomId()}`);
 

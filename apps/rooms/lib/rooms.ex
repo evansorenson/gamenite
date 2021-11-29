@@ -42,6 +42,11 @@ defmodule Rooms do
     GenServer.call(via(room_slug), {:add_peer_channel, peer_channel_pid, peer_id})
   end
 
+  def media_event(room_slug, event, user_id) do
+    IO.inspect(event)
+    GenServer.call(via(room_slug), {event, user_id}})
+  end
+
   def slug_exists?(slug) do
     case Registry.lookup(Rooms.Registry.Room, slug) do
       [{_pid, _val}] -> true
