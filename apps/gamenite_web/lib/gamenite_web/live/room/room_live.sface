@@ -1,14 +1,20 @@
 
 <div class="flex flex-col justify-center items-center">
 
-  {#if is_nil(@roommate)}
+  {#if not @joined?}
     <h1 class="block text-center pb-10 text-bold text-6xl">Enter Room</h1>
     <div class="flex flex-col items-center w-1/2 bg-white rounded-xl shadow-xl">
       <Form for={@roommate_changeset} class="w-full px-8 space-y-8" submit="join_room" change="validate_roommate" opts={autocomplete: "off"}>
-        <Field name={:name} class="py-4">
+      <Field name={:name} class="py-4">
         <Label class="font-semibold text-gray-dark" >Display Name</Label> 
         <TextInput/>
         <ErrorTag/>
+      </Field>
+      <Field name={:id}>
+        <TextInput value={@user_id} opts={type: "hidden"}/>
+      </Field>
+      <Field name={:color}>
+        <TextInput value={hd(@room.available_colors)} opts={type: "hidden"}/>
       </Field>
       <div class="flex items-center justify-center">
         <Submit class="btn-blurple w-full">Join Room</Submit>
@@ -16,15 +22,15 @@
       </Form>
     </div>
   {#else}
-  <div class="grid grid-cols-1 lg:grid-cols-4 w-full px-8">
-    <div class="lg:col-span-3">
+  <div class="grid grid-cols-1 lg:grid-cols-3 w-full px-8">
+    <div class="lg:col-span-2">
     {#if @room.game_in_progress?}
       <Dynamic.LiveComponent id="game" module={@game_config.components.game} {=@game} {=@slug} roommates={@room.roommates} {=@game_config} {=@user_id} />
     {#else}
       <OptionsTable id="options" {=@slug} {=@game_config} {=@user_id} roommates={@room.roommates} />
     {/if}
     </div>
-    <div class="flex flex-col justify-center items-center hidden lg:block pl-12">
+    <div class="col-span-1 flex flex-col justify-center items-center hidden lg:block pl-12">
       <Chat {=@room} {=@user_id} {=@message} />
     </div>
   </div>
@@ -39,7 +45,7 @@
       {#for {_id, roommate} <- Map.to_list(@room.roommates)}
         <div class="container px-4 py-4 items-center justify-center">
           <div class="flex justify-center items-center">
-            <button class="block h-10 w-10 bg-black rounded-full border-0"></button>
+            <button  style={"background-color:#{roommate.color}"} class="block h-10 w-10 rounded-full border-0"></button>
           </div>
           <h1 class="text-center">{roommate.name}</h1>
         </div>
@@ -47,5 +53,34 @@
     </div>
   {/if}
 {/if}
+
+  <div id="room" class="flex flex-col h-screen relative"  data-room-id={@room_id} 
+    x-data="{ joined: {@joined} }"
+    x-init="() => {
+        $watch('joined', value => joinRoom() )
+      }">
+      <!-- mb-14 to keep disconnect with absolute value above the videos-->
+      <section class="flex flex-col max-h-screen mb-14">
+          <div id="videochat-error" class="VideoChatError" style="display: none;"> </div>
+          <div id="videochat" class="px-2 md:px-20 overflow-y-auto">
+              <template id="video-feed-template">
+                  <div name="video-feed" class="relative bg-gray-900 shadow rounded-md overflow-hidden h-full w-full ratio-video">
+                      <audio></audio>
+                      <video class="w-full"></video>
+                      <div name="video-label" class="absolute text-white text-shadow-lg bottom-0 left-0 p-2">Placeholder</div>
+                  </div>
+              </template>
+              <div class="flex flex-col justify-center items-center">
+                  <div id="videos-grid" class="grid grid-cols-2 grid-flow-row gap-4 justify-items-center"></div>
+              </div>
+          </div>
+          <div class="h-20"></div>
+      </section>
+      <div id="controls", class="flex-none flex justify-center h-8 pb-2 absolute inset-x-0 bottom-2">
+          <button id="disconnect" class="text-white text-2xl font-normal hover:text-gray-400">Disconnect</button>
+      </div>
+  </div>
+
+  <!-- <script defer type="text/javascript" src={Routes.static_path(@socket, "/priv/static/assets/app.js")}></script> -->
 </div>
 

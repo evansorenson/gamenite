@@ -1,5 +1,66 @@
 import Config
 
+config :rooms,
+  roommate_colors: [
+    "#222222",
+    "#F3C300",
+    "#875692",
+    "#F38400",
+    "#A1CAF1",
+    "#BE0032",
+    "#C2B280",
+    "#848482",
+    "#008856",
+    "#E68FAC",
+    "#0067A5",
+    "#F99379",
+    "#604E97",
+    "#F6A600",
+    "#B3446C",
+    "#DCD300",
+    "#882D17",
+    "#8DB600",
+    "#654522",
+    "#E25822",
+    "#2B3D26"
+  ],
+  stun_servers:
+    System.get_env("STUN_SERVERS", "64.233.163.127:19302") |> ConfigParser.parse_stun_servers(),
+  turn_servers: System.get_env("TURN_SERVERS", "") |> ConfigParser.parse_turn_servers(),
+  use_integrated_turn:
+    System.get_env("USE_INTEGRATED_TURN", "false") |> ConfigParser.parse_use_integrated_turn(),
+  integrated_turn_ip:
+    System.get_env("INTEGRATED_TURN_IP", "127.0.0.1") |> ConfigParser.parse_integrated_turn_ip()
+
+# protocol = if System.get_env("USE_TLS") == "true", do: :https, else: :http
+
+# get_env = fn env, default ->
+#   if config_env() == :prod do
+#     System.fetch_env!(env)
+#   else
+#     System.get_env(env, default)
+#   end
+# end
+
+# host = get_env.("VIRTUAL_HOST", "localhost")
+
+# args =
+#   if protocol == :https do
+#     [
+#       keyfile: get_env.("KEY_FILE_PATH", "priv/certs/key.pem"),
+#       certfile: get_env.("CERT_FILE_PATH", "priv/certs/certificate.pem"),
+#       cipher_suite: :strong
+#     ]
+#   else
+#     []
+#   end
+#   |> Keyword.merge(otp_app: :gamenite_web, port: port)
+
+# config :gamenite_web, GameniteWeb.Endpoint, [
+#   {:url, [host: host]},
+#   {protocol, args}
+# ]
+
 if config_env() == :prod do
   secret_key_base =
     System.get_env("SECRET_KEY_BASE") ||

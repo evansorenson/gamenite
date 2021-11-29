@@ -4,5 +4,5 @@ defmodule Gamenite.Witbash.Prompt do
   defstruct prompt: nil,
             answers: [],
             assigned_user_ids: [],
-            is_final?: false
+            scored?: false
 end

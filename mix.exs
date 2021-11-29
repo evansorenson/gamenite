@@ -13,7 +13,8 @@ defmodule Gamenite.Umbrella.MixProject do
           applications: [
             gamenite: :permanent,
             gamenite_web: :permanent,
-            gamenite_persistance: :permanent
+            gamenite_persistance: :permanent,
+            rooms: :permanent
           ]
         ]
       ]

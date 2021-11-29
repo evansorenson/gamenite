@@ -1,16 +1,15 @@
 defmodule GameniteWeb.Components.Game do
   import Phoenix.LiveView, only: [assign: 2, put_flash: 3]
 
-  def update(
-        %{slug: slug, game: game, user: user, roommates: roommates} = _assigns,
-        socket
+  def assign_data(
+        socket,
+        %{slug: slug, game: game, user_id: user_id, roommates: roommates} = _assigns
       ) do
-    {:ok,
-     socket
-     |> assign(user: user)
-     |> assign(game: game)
-     |> assign(slug: slug)
-     |> assign(roommates: roommates)}
+    socket
+    |> assign(user_id: user_id)
+    |> assign(game: game)
+    |> assign(slug: slug)
+    |> assign(roommates: roommates)
   end
 
   def update(

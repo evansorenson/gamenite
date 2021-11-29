@@ -36,13 +36,45 @@ defmodule WitbashTest do
   defp create_game() do
     players = build_players(4, Player.create(%{}))
 
-    Witbash.create(%{room_slug: "ABCDEF", players: players, deck_of_prompts: @prompts})
+    Witbash.create(%{room_slug: "ABCDEF", players: players, deck: @prompts})
   end
 
   defp working_game(context) do
-    {:ok, game} = create_game()
+    game =
+      create_game()
+      |> elem(1)
+      |> Map.put(:prompts, [%Prompt{assigned_user_ids: [1, 2]}])
 
     {:ok, Map.put(context, :game, game)}
+  end
+
+  defp answers(context) do
+    {:ok, game} = create_game()
+
+    new_context =
+      context
+      |> Map.put(
+        :player1_answer,
+        %Answer{user_id: 1, answer: "player 1 answer", prompt_index: 0}
+      )
+      |> Map.put(
+        :player2_answer,
+        %Answer{user_id: 2, answer: "player 2 answer", prompt_index: 0}
+      )
+      |> Map.put(
+        :blank_answer,
+        %Answer{user_id: 1, answer: "", prompt_index: 0}
+      )
+      |> Map.put(
+        :too_long_answer,
+        %Answer{user_id: 1, answer: String.duplicate("d", 81), prompt_index: 0}
+      )
+      |> Map.put(
+        :unassigned_user_answer,
+        %Answer{user_id: 3, answer: "player 3 answer", prompt_index: 0}
+      )
+
+    {:ok, new_context}
   end
 
   def game_already_setup(context) do
@@ -57,7 +89,16 @@ defmodule WitbashTest do
      Map.put(context, :final_round, %{
        game
        | current_round: 3,
-         current_prompt: %Prompt{is_final?: true}
+         final_round?: true,
+         current_prompt: %Prompt{
+           assigned_user_ids: [1, 2, 3, 4],
+           answers: [
+             %Answer{user_id: 1, prompt_index: 0},
+             %Answer{user_id: 2, prompt_index: 0},
+             %Answer{user_id: 3, prompt_index: 0},
+             %Answer{user_id: 4, prompt_index: 0}
+           ]
+         }
      })}
   end
 
@@ -67,7 +108,7 @@ defmodule WitbashTest do
 
       assert match?(
                {:error, _},
-               Witbash.create(%{room_slug: "ABCDEF", players: players, deck_of_prompts: @prompts})
+               Witbash.create(%{room_slug: "ABCDEF", players: players, deck: @prompts})
              )
     end
 
@@ -79,7 +120,7 @@ defmodule WitbashTest do
                Witbash.create(%{
                  room_slug: "ABCDEF",
                  players: players,
-                 deck_of_prompts: @prompts
+                 deck: @prompts
                })
              )
     end
@@ -92,7 +133,7 @@ defmodule WitbashTest do
                Witbash.create(%{
                  room_slug: "ABCDEF",
                  players: players,
-                 deck_of_prompts: @prompts
+                 deck: @prompts
                })
              )
     end
@@ -136,71 +177,52 @@ defmodule WitbashTest do
     end
   end
 
-  describe "submitting prompts" do
-    setup [:game_already_setup, :working_game]
+  describe "submitting answers" do
+    setup [:working_game, :answers]
 
-    test "submit blank answer", %{setup_game: game} do
-      assert {:error, "Answer cannot be blank."} == Witbash.submit_answer(game, "", 0, 0)
+    test "submit blank answer", %{game: game, blank_answer: blank_answer} do
+      assert {:error, "Answer cannot be blank."} ==
+               Witbash.submit_answer(game, blank_answer)
     end
 
-    test "submit answer over max characters", %{setup_game: game} do
+    test "submit answer over max characters", %{
+      game: game,
+      too_long_answer: too_long_answer
+    } do
       assert {:error, "Answer is over 80 characters."} ==
-               Witbash.submit_answer(game, String.duplicate("d", 81), 0, 0)
+               Witbash.submit_answer(game, too_long_answer)
     end
 
-    test "player1 submits valid answer", %{game: game} do
-      new_game =
-        %{game | prompts: [%Prompt{assigned_user_ids: [1, 2]}]}
-        |> Witbash.submit_answer("My booty.", 1, 0)
+    test "player1 submits valid answer", %{game: game, player1_answer: player1_answer} do
+      new_game = Witbash.submit_answer(game, player1_answer)
 
-      assert hd(Enum.at(new_game.prompts, 0).answers) == %Answer{user_id: 1, answer: "My booty."}
+      assert hd(Enum.at(new_game.prompts, 0).answers) == player1_answer
       assert length(Enum.at(new_game.prompts, 0).answers) == 1
     end
 
-    test "player2 submits valid answer", %{game: game} do
-      new_game =
-        %{game | prompts: [%Prompt{assigned_user_ids: [1, 2]}]}
-        |> Witbash.submit_answer("Your booty.", 2, 0)
+    test "player2 submits valid answer", %{game: game, player2_answer: player2_answer} do
+      new_game = Witbash.submit_answer(game, player2_answer)
 
-      assert hd(Enum.at(new_game.prompts, 0).answers) == %Answer{
-               user_id: 2,
-               answer: "Your booty."
-             }
-
+      assert hd(Enum.at(new_game.prompts, 0).answers) == player2_answer
       assert length(Enum.at(new_game.prompts, 0).answers) == 1
     end
 
-    test "player not assigned to prompt", %{game: game} do
-      new_game = %{game | prompts: [%Prompt{assigned_user_ids: [1, 2]}]}
-
+    test "player not assigned to prompt", %{
+      game: game,
+      unassigned_user_answer: unassigned_answer
+    } do
       assert {:error, "Player not assigned to prompt."} ==
-               Witbash.submit_answer(new_game, "My booty.", 3, 0)
+               Witbash.submit_answer(game, unassigned_answer)
     end
 
-    test "player submits both prompts, add to submitted users" do
-    end
-  end
-
-  describe "final round" do
-    setup [:final_round]
-
-    test "submit blank answer", %{final_round: game} do
-      assert {:error, "Answer cannot be blank."} == Witbash.submit_answer(game, "", 1)
+    test "player submits both answers (not final round), add to submitted users" do
     end
 
-    test "submit answer over max characters", %{final_round: game} do
-      assert {:error, "Answer is over 80 characters."} ==
-               Witbash.submit_answer(game, String.duplicate("d", 81), 1)
-    end
-
-    test "player submits valid answer", %{final_round: game} do
-      new_game = Witbash.submit_answer(game, "valid answer", 1)
-      assert hd(new_game.current_prompt.answers) == %Answer{user_id: 1, answer: "valid answer"}
-      assert length(new_game.current_prompt.answers) == 1
+    test "player submits answer (final round), add to submitted users" do
     end
   end
 
-  describe "voting on answers:" do
+  describe "voting on answers (not final round):" do
     setup [:game_already_setup]
 
     test "voting for self", %{setup_game: game} do
@@ -222,11 +244,44 @@ defmodule WitbashTest do
       assert length(answer.votes) == 1
       assert hd(answer.votes) == 1
     end
+  end
 
-    # test "next prompt", %{game_with_prompts: game_with_prompts} do
-    #   Witbash.next_prompt(game_with_prompts)
-    #   # pop prompt from prompts map -> move to current_prompt
-    # end
+  describe "voting on answers final round:" do
+    setup [:final_round]
+
+    test "voting for self", %{final_round: game} do
+      assert Witbash.vote(game, {1, 1}) == {:error, "Cannot vote for yourself."}
+    end
+
+    test "valid vote", %{final_round: game} do
+      new_game =
+        game
+        |> Witbash.vote({2, 1})
+
+      answer = hd(new_game.current_prompt.answers)
+      assert length(answer.votes) == 1
+      assert hd(answer.votes) == 2
+    end
+
+    test "player votes 2 times -> user is not submitted", %{final_round: game} do
+      new_game =
+        game
+        |> Witbash.vote({2, 1})
+        |> Witbash.vote({2, 3})
+
+      assert length(new_game.submitted_user_ids) == 0
+    end
+
+    test "player votes 3 times -> user is fully submitted", %{final_round: game} do
+      new_game =
+        game
+        |> Witbash.vote({2, 1})
+        |> Witbash.vote({2, 3})
+        |> Witbash.vote({2, 1})
+
+      assert length(new_game.submitted_user_ids) == 1
+      assert hd(new_game.submitted_user_ids) == 2
+    end
   end
 
   describe "scoring votes:" do
@@ -278,7 +333,7 @@ defmodule WitbashTest do
       new_game =
         %{
           game
-          | current_round: 3,
+          | final_round?: true,
             current_prompt: %Prompt{
               answers: [%Answer{user_id: 1, votes: [2, 3, 4, 5]}, %Answer{votes: []}]
             }
@@ -293,7 +348,7 @@ defmodule WitbashTest do
       new_game =
         %{
           game
-          | current_round: 3,
+          | final_round?: true,
             current_prompt: %Prompt{
               answers: [
                 %Answer{user_id: 1, votes: [2, 3]},
@@ -313,7 +368,7 @@ defmodule WitbashTest do
       new_game =
         %{
           game
-          | current_round: 3,
+          | final_round?: true,
             current_prompt: %Prompt{
               answers: [
                 %Answer{user_id: 1, votes: [3]},
@@ -346,8 +401,8 @@ defmodule WitbashTest do
               %Prompt{assigned_user_ids: [1, 4]}
             ]
         }
-        |> Witbash.submit_answer("answer", 4, 0)
-        |> Witbash.submit_answer("answer", 4, 1)
+        |> Witbash.submit_answer(%Answer{answer: "answer", user_id: 4, prompt_index: 0})
+        |> Witbash.submit_answer(%Answer{answer: "answer", user_id: 4, prompt_index: 1})
 
       refute new_game.answering?
     end
@@ -382,6 +437,23 @@ defmodule WitbashTest do
       assert length(new_game.submitted_user_ids) == 0
     end
 
+    test "move onto final round -> check setup", %{setup_game: game} do
+      new_game =
+        %{
+          game
+          | current_round: 2,
+            deck: ["Some prompt."],
+            prompts: [],
+            current_prompt: %Prompt{assigned_user_ids: [1, 2]}
+        }
+        |> Witbash.next_prompt()
+
+      assert new_game.final_round?
+      assert length(new_game.prompts) == 1
+      assert hd(new_game.prompts).prompt == "Some prompt."
+      assert hd(new_game.prompts).assigned_user_ids == Enum.map(game.players, & &1.id)
+    end
+
     test "no prompts left-> next round and answering phase", %{setup_game: game} do
       new_game =
         %{
@@ -401,9 +473,8 @@ defmodule WitbashTest do
       new_game =
         %{
           game
-          | current_round: 3,
-            prompts: [1, 3],
-            current_prompt: %Prompt{assigned_user_ids: [1, 2]}
+          | final_round?: true,
+            prompts: []
         }
         |> Witbash.next_prompt()
 

@@ -10,9 +10,7 @@ defmodule Gamenite.Application do
     children = [
       {Phoenix.PubSub, name: Gamenite.PubSub},
       {Registry, [name: Gamenite.Registry.Game, keys: :unique]},
-      {DynamicSupervisor, [name: Gamenite.Supervisor.Game, strategy: :one_for_one]},
-      {Registry, [name: Gamenite.Registry.Room, keys: :unique]},
-      {DynamicSupervisor, [name: Gamenite.Supervisor.Room, strategy: :one_for_one]}
+      {DynamicSupervisor, [name: Gamenite.Supervisor.Game, strategy: :one_for_one]}
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

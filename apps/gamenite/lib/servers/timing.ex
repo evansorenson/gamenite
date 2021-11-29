@@ -2,9 +2,12 @@ defmodule Gamenite.Timing do
   defmacro __using__(_opts) do
     quote do
       alias Gamenite.Timing
+      alias Gamenite.Game.Server
 
       def handle_info({:tick, func}, game) do
-        {:noreply, func.(game)}
+        new_game = func.(game)
+        Server.broadcast_game_update(new_game)
+        {:noreply, new_game}
       end
     end
   end

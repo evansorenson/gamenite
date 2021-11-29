@@ -19,6 +19,31 @@ config :gamenite,
   salad_bowl_default_rounds: ["Catchphrase", "Password", "Charades"],
   salad_bowl_all_rounds: ["Catchphrase", "Password", "Charades", "Pictionary"]
 
+config :rooms,
+  roommate_colors: [
+    "#222222",
+    "#F3C300",
+    "#875692",
+    "#F38400",
+    "#A1CAF1",
+    "#BE0032",
+    "#C2B280",
+    "#848482",
+    "#008856",
+    "#E68FAC",
+    "#0067A5",
+    "#F99379",
+    "#604E97",
+    "#F6A600",
+    "#B3446C",
+    "#DCD300",
+    "#882D17",
+    "#8DB600",
+    "#654522",
+    "#E25822",
+    "#2B3D26"
+  ]
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
@@ -31,11 +56,13 @@ config :gamenite_web, GameniteWeb.Endpoint,
   code_reloader: true,
   check_origin: false,
   watchers: [
-    node: [
-      "node_modules/webpack/bin/webpack.js",
-      "--mode",
-      "development",
-      "--watch-options-stdin",
+    # Start the esbuild watcher by calling Esbuild.install_and_run(:default, args)
+    esbuild: {Esbuild, :install_and_run, [:default, ~w(--sourcemap=inline --watch)]},
+    npx: [
+      "tailwindcss",
+      "--input=./css/app.scss",
+      "--output=../priv/static/assets/app.css",
+      "--postcss",
       "--watch",
       cd: Path.expand("../apps/gamenite_web/assets", __DIR__)
     ]

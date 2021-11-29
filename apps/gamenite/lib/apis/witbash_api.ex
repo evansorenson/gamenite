@@ -9,7 +9,7 @@ defmodule Gamenite.Witbash.API do
     GenServer.call(via(slug), {:vote, {voting_player_id, receiving_player_id}})
   end
 
-  def submit_answer(slug, answer, player_index, prompt_index \\ nil) do
-    GenServer.call(via(slug), {:submit_answer, answer, player_index, prompt_index})
+  def submit_answer(slug, answer) do
+    GenServer.call(via(slug), {:submit_answer, answer})
   end
 end

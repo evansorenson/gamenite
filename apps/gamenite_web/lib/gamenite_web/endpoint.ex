@@ -5,10 +5,10 @@ defmodule GameniteWeb.Endpoint do
   # this means its contents can be read but not tampered with.
   # Set :encryption_salt if you would also like to encrypt it.
   @session_options [
-      store: PhoenixLiveSession,
-      pub_sub: GamenitePersistance.PubSub,
-      signing_salt: "OoQoTAPW",
-      key: "session"
+    store: PhoenixLiveSession,
+    pub_sub: GamenitePersistance.PubSub,
+    signing_salt: "OoQoTAPW",
+    key: "session"
   ]
 
   socket "/socket", GameniteWeb.UserSocket,
@@ -25,7 +25,7 @@ defmodule GameniteWeb.Endpoint do
     at: "/",
     from: :gamenite_web,
     gzip: false,
-    only: ~w(css fonts images js favicon.ico robots.txt)
+    only: ~w(assets fonts images favicon.ico robots.txt)
 
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.

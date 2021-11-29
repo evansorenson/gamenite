@@ -7,8 +7,8 @@ defmodule GameniteWeb.RoomLive do
 
   alias GameniteWeb.ParseHelpers
   alias Phoenix.PubSub
-  alias Gamenite.Room
-  alias Gamenite.Room.API
+  alias Rooms.Room
+  alias Rooms
   alias GameniteWeb.LiveMonitor
   alias GameniteWeb.GameConfig
   alias Gamenite.Game.API, as: GameAPI
@@ -18,19 +18,19 @@ defmodule GameniteWeb.RoomLive do
   alias Surface.Components.Form.{Field, TextInput, Submit, Label, ErrorTag}
   alias GameniteWeb.Components.{Game, OptionsTable, Chat}
 
-  data(game, :map, default: nil)
-  data(game_info, :map, default: nil)
-  data(user, :map)
-  data(slug, :string)
-  data(roommates, :map)
-  data(roommate, :map)
+  data game, :map, default: nil
+  data game_info, :map, default: nil
+  data user, :map
+  data slug, :string
+  data roommates, :map
+  data joined?, :boolean, default: false
 
   @impl true
   def mount(%{"slug" => slug} = _params, session, socket) do
     user_id = mount_socket_user(socket, session)
 
-    with true <- API.slug_exists?(slug),
-         room <- API.state(slug) do
+    with true <- Rooms.slug_exists?(slug),
+         room <- Rooms.state(slug) do
       game_config = GameConfig.get_config(room.game_title)
       PubSub.subscribe(Gamenite.PubSub, "room:" <> slug)
       PubSub.subscribe(Gamenite.PubSub, "game:" <> slug)
@@ -66,13 +66,13 @@ defmodule GameniteWeb.RoomLive do
   end
 
   defp join_room_if_previous_or_current_roommate(socket, slug, user_id) do
-    case API.join_if_previous_or_current(slug, user_id) do
-      {:ok, roommate} ->
+    case Rooms.join_if_previous_or_current(slug, user_id) do
+      :ok ->
         monitor_live_view_process(slug, user_id)
-        assign(socket, roommate: roommate)
+        assign(socket, joined?: true)
 
       {:error, _reason} ->
-        assign(socket, roommate: nil)
+        socket
     end
   end
 
@@ -92,7 +92,7 @@ defmodule GameniteWeb.RoomLive do
   """
   def unmount(_reason, %{user_id: user_id, room_slug: room_slug}) do
     Logger.info("Unmounting LiveView")
-    API.leave(room_slug, user_id)
+    Rooms.leave(room_slug, user_id)
   end
 
   defp mount_socket_user(socket, params) do
@@ -125,16 +125,9 @@ defmodule GameniteWeb.RoomLive do
     end
   end
 
-  defp build_roommate(roommate, socket) do
-    roommate
-    |> ParseHelpers.key_to_atom()
-    |> Map.put(:id, socket.assigns.user_id)
-  end
-
   def handle_event("validate_roommate", %{"roommate" => roommate}, socket) do
     roommate_changeset =
       roommate
-      |> build_roommate(socket)
       |> Room.change_roommate()
       |> Map.put(:action, :validate)
 
@@ -142,18 +135,14 @@ defmodule GameniteWeb.RoomLive do
   end
 
   def handle_event("join_room", %{"roommate" => roommate}, socket) do
-    new_roommate =
-      roommate
-      |> build_roommate(socket)
-
-    with {:ok, roommate} <-
-           Room.create_roommate(new_roommate),
-         :ok <- API.join(socket.assigns.slug, roommate) do
+    with {:ok, new_roommate} <-
+           Room.create_roommate(roommate),
+         :ok <- Rooms.join(socket.assigns.slug, new_roommate) do
       monitor_live_view_process(socket.assigns.slug, socket.assigns.user_id)
 
       {:noreply,
        socket
-       |> assign(roommate: roommate)}
+       |> assign(joined?: true)}
     else
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, reason)}
@@ -188,7 +177,7 @@ defmodule GameniteWeb.RoomLive do
          |> build_message(socket)
          |> Room.create_message() do
       {:ok, created_message} ->
-        API.send_message(socket.assigns.slug, created_message)
+        Rooms.send_message(socket.assigns.slug, created_message)
         |> room_response(assign(socket, message: Room.change_message()))
 
       {:error, reason} ->
@@ -197,7 +186,7 @@ defmodule GameniteWeb.RoomLive do
   end
 
   def handle_event("mute", %{"user_id" => user_id}, socket) do
-    API.invert_mute(
+    Rooms.invert_mute(
       socket.assigns.slug,
       Map.get(socket.assigns.room.roommates, user_id)
     )
@@ -206,14 +195,12 @@ defmodule GameniteWeb.RoomLive do
 
   @impl true
   def handle_info({:room_update, room}, socket) do
-    roommate = Map.get(room.roommates, socket.assigns.user_id)
-
     # send_update(OptionsTable, %{
     #   id: "options",
     #   roommates: room.roommates
     # })
 
-    {:noreply, assign(socket, room: room, roommate: roommate)}
+    {:noreply, assign(socket, room: room)}
   end
 
   def handle_info({:game_update, game}, socket) do

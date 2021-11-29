@@ -1,19 +1,23 @@
 defmodule Gamenite.Witbash.Server do
+  use GenStateMachine
   use Gamenite.Game.Server
   use Gamenite.Timing
 
   alias Gamenite.Witbash
 
-  def handle_call(:start_round, _from, game) do
-    game
-    |> Map.put(:time_remaining_in_sec, game.answer_length_in_sec)
-    |> Timing.start_timer(&submiting_answers_tick/1)
-    |> game_response(game)
+  def init({game, _room_uuid}) do
+    new_game =
+      game
+      |> Map.put(:time_remaining_in_sec, game.answer_length_in_sec)
+      |> Timing.start_timer(&submiting_answers_tick/1)
+
+    broadcast_game_update(new_game)
+    {:ok, new_game}
   end
 
-  def handle_call({:submit_answer, answer, player_index, prompt_index}, _from, game) do
+  def handle_call({:submit_answer, answer}, _from, game) do
     game
-    |> Witbash.submit_answer(answer, player_index, prompt_index)
+    |> Witbash.submit_answer(answer)
     |> maybe_start_voting_timer
     |> game_response(game)
   end
@@ -26,55 +30,70 @@ defmodule Gamenite.Witbash.Server do
   end
 
   def handle_info(:next_prompt, game) do
-    game
-    |> Witbash.next_prompt()
-    |> game_response(game)
+    new_game =
+      Witbash.next_prompt(game)
+      |> maybe_start_voting_timer()
+      |> maybe_start_answering_timer()
+
+    broadcast_game_update(new_game)
+    {:noreply, new_game}
   end
 
   defp maybe_start_voting_timer(game) when not game.answering? do
     game
+    |> Timing.stop_timer()
     |> Map.put(:time_remaining_in_sec, game.vote_length_in_sec)
     |> Timing.start_timer(&voting_tick/1)
   end
 
   defp maybe_start_voting_timer(game), do: game
 
-  defp maybe_next_prompt(game) when game.current_prompt.scored? do
-    send_next_prompt()
+  defp maybe_start_answering_timer(game) when game.answering? do
     game
+    |> Timing.stop_timer()
+    |> Map.put(:time_remaining_in_sec, game.answer_length_in_sec)
+    |> Timing.start_timer(&submiting_answers_tick/1)
+  end
+
+  defp maybe_start_answering_timer(game), do: game
+
+  defp maybe_next_prompt(game) when game.current_prompt.scored? do
+    Process.send_after(self(), :next_prompt, 5000)
+
+    game
+    |> Timing.stop_timer()
   end
 
   defp maybe_next_prompt(game), do: game
 
-  defp send_next_prompt do
-    Process.send_after(self(), :next_prompt, 5000)
-  end
-
-  defp submiting_answers_tick(game) when game.time_remaining_in_sec <= 0 do
+  defp submiting_answers_tick(game) when game.time_remaining_in_sec <= 1 do
     game
+    |> decrement_time()
     |> Timing.stop_timer()
     |> Witbash.start_voting_phase()
   end
 
   defp submiting_answers_tick(game) do
     game
-    |> decrement_time_and_start_timer(&submiting_answers_tick/1)
+    |> decrement_time()
+    |> Timing.start_timer(&submiting_answers_tick/1)
   end
 
-  defp voting_tick(game) when game.time_remaining_in_sec <= 0 do
+  defp voting_tick(game) when game.time_remaining_in_sec <= 1 do
     game
+    |> decrement_time()
     |> Timing.stop_timer()
     |> Witbash.score_votes()
   end
 
   defp voting_tick(game) do
     game
-    |> decrement_time_and_start_timer(&voting_tick/1)
+    |> decrement_time
+    |> Timing.start_timer(&voting_tick/1)
   end
 
-  defp decrement_time_and_start_timer(game, func) do
+  defp decrement_time(game) do
     game
     |> Map.update!(:time_remaining_in_sec, &(&1 - 1))
-    |> Timing.start_timer(func)
   end
 end

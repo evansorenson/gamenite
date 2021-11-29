@@ -1,13 +1,7 @@
 const colors = require('tailwindcss/colors')
 
 module.exports = {
-  purge: [
-    "../**/*.html.eex",
-    "../**/*.html.leex",
-    "../**/views/**/*.ex",
-    "../**/live/**/*.ex",
-    "./js/**/*.js"
-  ],
+  purge: ["./js/**/*.js", "../lib/*_web/**/*.*ex"],
   darkMode: false, // or 'media' or 'class'
   theme: {
     colors: {
@@ -45,7 +39,13 @@ module.exports = {
       'xl': '1280px',
       '2xl': '1536px',
     },
+    extend: {
+      fontFamily: {
+        'sans': ['Indie-Flower', 'Helvetica', 'Arial', 'sans-serif']
+      }
+    },
   },
+
   variants: {
     opacity: ({ after }) => after(['disabled']),
     extend: {},

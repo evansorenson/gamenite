@@ -42,6 +42,7 @@ defmodule GameniteWeb.MixProject do
       {:phoenix_html, "~> 3.0"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
       {:phoenix_live_dashboard, "~> 0.5"},
+      {:esbuild, "~> 0.2", runtime: Mix.env() == :dev},
       {:floki, ">= 0.30.0", only: :test},
       {:phoenix_live_session, "~> 0.1"},
       {:telemetry_metrics, "~> 0.4"},
@@ -49,12 +50,11 @@ defmodule GameniteWeb.MixProject do
       {:gettext, "~> 0.11"},
       {:gamenite_persistance, in_umbrella: true},
       {:gamenite, in_umbrella: true},
+      {:rooms, in_umbrella: true},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:phoenix_live_view, "~> 0.16.4"},
-      {:surface,
-       github: "tiberiuc/surface", branch: "add-dynamic-live-component", override: true},
-      {:surface_formatter, "~> 0.6.0", override: true}
+      {:surface, github: "tiberiuc/surface", branch: "add-dynamic-live-component", override: true}
     ]
   end
 
@@ -63,9 +63,14 @@ defmodule GameniteWeb.MixProject do
   # See the documentation for `Mix` for more info on aliases.
   defp aliases do
     [
-      setup: ["deps.get", "cmd npm install --prefix assets"],
+      setup: ["deps.get", "ecto.setup", "cmd --cd assets npm install"],
       test: ["ecto.create --quiet", "ecto.migrate --quiet", "test"],
-      prettier: "cmd ./assets/node_modules/.bin/prettier --check . --color"
+      prettier: "cmd ./assets/node_modules/.bin/prettier --check . --color",
+      "assets.deploy": [
+        "cmd --cd assets npm run deploy",
+        "esbuild default --minify",
+        "phx.digest"
+      ]
     ]
   end
 end

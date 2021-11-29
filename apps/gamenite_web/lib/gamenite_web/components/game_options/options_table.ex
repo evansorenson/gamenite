@@ -1,8 +1,8 @@
 defmodule GameniteWeb.Components.OptionsTable do
   use Surface.LiveComponent
+  require Logger
 
   alias Surface.Components.Dynamic
-
   alias GameniteWeb.ParseHelpers
   alias Gamenite.TeamGame
   alias Gamenite.Game
@@ -124,7 +124,7 @@ defmodule GameniteWeb.Components.OptionsTable do
         {:noreply, socket}
       else
         {:error, reason} ->
-          IO.inspect(reason)
+          Logger.error(title: "Error creating game.", error: reason)
           {:noreply, put_flash(socket, :error, "Error creating game.")}
       end
     end

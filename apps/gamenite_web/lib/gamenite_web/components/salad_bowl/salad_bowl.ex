@@ -3,7 +3,7 @@ defmodule GameniteWeb.Components.SaladBowl do
   import GameniteWeb.Components.Game
 
   alias GameniteWeb.Components.Charades.{Card}
-  alias GameniteWeb.Components.{TeamsScoreboard, PlayerName}
+  alias GameniteWeb.Components.{TeamsScoreboard, PlayerName, SubmittedUsers, Timer}
 
   alias Gamenite.SaladBowl.API
   alias Gamenite.TeamGame

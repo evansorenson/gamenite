@@ -6,7 +6,7 @@ defmodule GameniteWeb.Game.IndexLive do
 
   alias GamenitePersistance.Gaming
   alias GameniteWeb.GameConfig
-  alias Gamenite.Room
+  alias Rooms
 
   def mount(_params, _session, socket) do
     games = GameConfig.list_configs()
@@ -27,8 +27,8 @@ defmodule GameniteWeb.Game.IndexLive do
   end
 
   def handle_event("host_game", %{"game_title" => game_title}, socket) do
-    with {:ok, room_slug} <- Room.API.start_room(),
-         :ok <- Room.API.set_game(room_slug, game_title) do
+    with {:ok, room_slug} <- Rooms.start_room(),
+         :ok <- Rooms.set_game(room_slug, game_title) do
       {:noreply,
        socket
        |> push_redirect(to: Routes.room_path(socket, :new, room_slug, %{slug: room_slug}))}

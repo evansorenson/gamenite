@@ -8,11 +8,6 @@ defmodule Gamenite.Game.Server do
 
       import Gamenite.Game.Server, only: [game_response: 2, broadcast_game_update: 1]
 
-      def init({game, _room_uuid}) do
-        broadcast_game_update(game)
-        {:ok, game}
-      end
-
       def start_link({game, room_uuid}) do
         GenServer.start_link(
           __MODULE__,
