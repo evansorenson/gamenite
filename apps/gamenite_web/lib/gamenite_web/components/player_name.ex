@@ -28,4 +28,8 @@ defmodule GameniteWeb.Components.PlayerName do
     assigns
     |> Map.put(:color, roommate.color)
   end
+
+  defp set_color(assigns) do
+    assigns
+  end
 end

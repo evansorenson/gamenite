@@ -1,10 +1,31 @@
 ###
 ### Fist Stage - Building the Release
 ###
-FROM hexpm/elixir:1.12.1-erlang-24.0.1-alpine-3.13.3 AS build
+ARG BUILDER_IMAGE="hexpm/elixir:1.12.3-erlang-24.1.4-debian-bullseye-20210902-slim"
+ARG RUNNER_IMAGE="debian:bullseye-20210902-slim"
+
+FROM ${BUILDER_IMAGE} as builder
 
 # install build dependencies
-RUN apk add --no-cache build-base npm
+RUN apt-get update -y && \
+    apt-get install -y \
+    build-essential \
+    git \
+    nodejs \
+    npm \
+    yarn \
+    python3 \
+    make \
+    cmake \
+    openssl \ 
+    libssl-dev \
+    libsrtp2-dev \
+    libnice-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libavutil-dev \
+    libopus-dev \
+    && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # prepare build dir
 WORKDIR /app
@@ -24,35 +45,31 @@ ENV SECRET_KEY_BASE=nokey
 # files don't change, then we don't keep re-fetching and rebuilding the deps.
 COPY mix.exs mix.lock ./
 COPY config config
+
 COPY apps/gamenite/mix.exs /app/apps/gamenite/
 COPY apps/gamenite_web/mix.exs /app/apps/gamenite_web/
 COPY apps/gamenite_persistance/mix.exs /app/apps/gamenite_persistance/
+COPY apps/rooms/mix.exs /app/apps/rooms/
 
-RUN mix deps.get --only prod && \
-    mix deps.compile
-
-# install npm dependencies
-WORKDIR /app/apps/gamenite_web
-RUN MIX_ENV=prod mix compile
-COPY apps/gamenite_web/assets/package.json apps/gamenite_web/assets/package-lock.json ./assets/
-RUN npm --prefix ./assets ci --progress=false --no-audit --loglevel=error
-
-COPY apps/gamenite_web/assets /app/apps/gamenite_web/assets
+# NOTE: If using TailwindCSS, it uses a special "purge" step and that requires
+# the code in `lib` to see what is being used.
+COPY apps/gamenite/lib /app/apps/gamenite/lib
+COPY apps/gamenite_web/lib /app/apps/gamenite_web/lib
+COPY apps/gamenite_persistance/lib /app/apps/gamenite_persistance/lib
+COPY apps/rooms/lib /app/apps/rooms/lib
 
 COPY apps/gamenite_web/priv /app/apps/gamenite_web/priv
 COPY apps/gamenite_persistance/priv /app/apps/gamenite_persistance/priv
 
-# NOTE: If using TailwindCSS, it uses a special "purge" step and that requires
-# the code in `lib` to see what is being used. Uncomment that here before
-# running the npm deploy script if that's the case.
-COPY apps/gamenite/lib /app/apps/gamenite/lib
-COPY apps/gamenite_web/lib /app/apps/gamenite_web/lib
-COPY apps/gamenite_persistance/lib /app/apps/gamenite_persistance/lib
+RUN mix deps.get --only prod && \ 
+    mix deps.compile
 
 # build assets
 WORKDIR /app/apps/gamenite_web
-RUN npm run --prefix ./assets deploy
-RUN mix phx.digest
+RUN MIX_ENV=prod mix compile
+COPY apps/gamenite_web/assets ./assets/
+RUN npm --prefix ./assets ci --progress=false --no-audit --loglevel=error
+RUN mix assets.deploy
 
 # compile and build release
 WORKDIR /app
@@ -64,16 +81,35 @@ RUN mix do compile, release
 ###
 
 # prepare release docker image
-FROM alpine:3.13.3 AS app
-RUN apk add --no-cache libstdc++ openssl ncurses-libs
+FROM ${RUNNER_IMAGE}
 
-WORKDIR /app
+RUN apt-get update -y && \
+    apt-get install -y \
+    libstdc++6 \
+    openssl \
+    libncurses5 \
+    locales \
+    ffmpeg \
+    libsrtp2-dev \
+    libnice-dev \
+    libopus-dev \
+    clang \ 
+    curl && \
+    apt-get clean && rm -f /var/lib/apt/lists/*_*
+    
+# Set the locale
+RUN sed -i '/en_US.UTF-8/s/^# //g' /etc/locale.gen && locale-gen
 
-RUN chown nobody:nobody /app
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
 
-USER nobody:nobody
+WORKDIR "/app"
+RUN chown nobody /app
 
-COPY --from=build --chown=nobody:nobody /app/_build/prod/rel/gamenite ./
+COPY --from=builder --chown=nobody:root /app/_build/prod/rel/gamenite ./
+
+USER nobody
 
 ENV HOME=/app
 ENV MIX_ENV=prod

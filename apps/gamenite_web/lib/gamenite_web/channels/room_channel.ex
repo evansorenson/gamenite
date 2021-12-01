@@ -4,12 +4,11 @@ defmodule GameniteWeb.RoomChannel do
   require Logger
 
   @impl true
-  def join("room:" <> room_slug, %{user_id: user_id} = params, socket) do
-    IO.inspect(params)
-
+  def join("room:" <> room_slug, _params, socket) do
     if Rooms.slug_exists?(room_slug) do
-      Rooms.add_peer_channel(room_slug, self(), user_id)
-      {:ok, Phoenix.Socket.assign(socket, %{room_slug: room_slug, user_id: user_id})}
+      Rooms.add_peer_channel(room_slug, self(), socket.assigns.user_id)
+
+      {:ok, Phoenix.Socket.assign(socket, %{room_slug: room_slug})}
     else
       Logger.error("""
       Room does not exist.
@@ -22,7 +21,7 @@ defmodule GameniteWeb.RoomChannel do
 
   @impl true
   def handle_in("mediaEvent", %{"data" => event}, socket) do
-    Rooms.media_event(socket.assigns.room_slug, event, socket.assigns.user_id)
+    Rooms.media_event(socket.assigns.room_slug, socket.assigns.user_id, event)
 
     {:noreply, socket}
   end

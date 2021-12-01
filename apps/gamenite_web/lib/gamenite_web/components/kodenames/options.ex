@@ -1,7 +1,7 @@
 defmodule GameniteWeb.Components.Kodenames.Options do
   use Surface.Component
   alias Surface.Components.Form
-  alias Surface.Components.Form.{Submit, Select, Checkbox, NumberInput}
+  alias Surface.Components.Form.{Field, ErrorTag, Submit, Select, Checkbox, NumberInput}
   alias GameniteWeb.Components.OptionsTable.Row
 
   prop(game_changeset, :map, required: true)
@@ -36,6 +36,9 @@ defmodule GameniteWeb.Components.Kodenames.Options do
 
       </tbody>
     </table>
+    <Field name={:teams}>
+      <ErrorTag/>
+    </Field>
     <Submit class="btn-blurple w-full">Start Game</Submit>
     </Form>
     """

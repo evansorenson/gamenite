@@ -15,11 +15,15 @@ config :gamenite_web, GameniteWeb.Endpoint,
   check_origin: ["//gamenite.fly.dev", "//gamenite.xyz"]
 
 config :gamenite,
-  room_timeout: 900_000,
   game_timeout: 900_000,
   max_teams: 4,
   min_players: 2,
   team_colors: ["#C0392B", "#2980B9", "#27AE60", "#884EA0", "#D35400", "#FF33B8", "#F1C40F"],
+  salad_bowl_default_rounds: ["Catchphrase", "Password", "Charades"],
+  salad_bowl_all_rounds: ["Catchphrase", "Password", "Charades", "Pictionary"]
+
+config :rooms,
+  room_timeout: 900_000,
   roommate_colors: [
     "#222222",
     "#F3C300",
@@ -42,9 +46,7 @@ config :gamenite,
     "#654522",
     "#E25822",
     "#2B3D26"
-  ],
-  salad_bowl_default_rounds: ["Catchphrase", "Password", "Charades"],
-  salad_bowl_all_rounds: ["Catchphrase", "Password", "Charades", "Pictionary"]
+  ]
 
 # ## SSL Support
 #

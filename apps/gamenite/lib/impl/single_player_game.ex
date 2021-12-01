@@ -14,15 +14,13 @@ defmodule Gamenite.SinglePlayerGame do
 
   def change(module, game, attrs \\ %{}) do
     game
+    |> Game.changeset(attrs)
     |> changeset(attrs)
     |> module.changeset(attrs)
   end
 
   def create(module, game, attrs) do
-    game
-    |> Game.changeset(attrs)
-    |> changeset(attrs)
-    |> module.changeset(attrs)
+    change(module, game, attrs)
     |> apply_action(:update)
   end
 

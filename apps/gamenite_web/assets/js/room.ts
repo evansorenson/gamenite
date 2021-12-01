@@ -1,12 +1,10 @@
 import { MEDIA_CONSTRAINTS, LOCAL_PEER_ID } from "./consts";
 import {
   addVideoElement,
-  getRoomId,
   removeVideoElement,
   setErrorMessage,
   setParticipantsList,
-  attachStream,
-  setupDisconnectButton,
+  attachStream
 } from "./room_ui";
 import {
   MembraneWebRTC,
@@ -26,13 +24,13 @@ export class Room {
   private webrtcChannel;
   private socket: LiveSocket;
 
-  constructor(socket: LiveSocket) {
+  constructor(socket: LiveSocket, slug: string, user_id: string) {
     this.socket = socket
-    this.displayName = this.parseUrl();
-    this.webrtcChannel = this.socket.channel(`room:${getRoomId()}`);
+    this.displayName = user_id;
+    this.webrtcChannel = this.socket.channel(`room:${slug}`);
 
-    this.webrtcSocketRefs.push(this.socket.onError(this.leave));
-    this.webrtcSocketRefs.push(this.socket.onClose(this.leave));
+    // this.webrtcSocketRefs.push(this.socket.onError(this.leave));
+    // this.webrtcSocketRefs.push(this.socket.onClose(this.leave));
 
     this.webrtc = new MembraneWebRTC({
       callbacks: {
@@ -49,7 +47,6 @@ export class Room {
           this.peers.forEach((peer) => {
             addVideoElement(peer.id, peer.metadata.displayName, false);
           });
-          this.updateParticipantsList();
         },
         onJoinError: (metadata) => {
           throw `Peer denied.`;
@@ -61,13 +58,11 @@ export class Room {
         onTrackRemoved: (ctx) => {},
         onPeerJoined: (peer) => {
           this.peers.push(peer);
-          this.updateParticipantsList();
           addVideoElement(peer.id, peer.metadata.displayName, false);
         },
         onPeerLeft: (peer) => {
           this.peers = this.peers.filter((p) => p.id !== peer.id);
           removeVideoElement(peer.id);
-          this.updateParticipantsList();
         },
         onPeerUpdated: (ctx) => {},
       },
@@ -81,10 +76,6 @@ export class Room {
   public join = async () => {
     try {
       await this.init();
-      setupDisconnectButton(() => {
-        this.leave();
-        window.location.replace("");
-      });
       this.webrtc.join({ displayName: this.displayName });
     } catch (error) {
       console.error("Error while joining to the room:", error);
@@ -107,7 +98,7 @@ export class Room {
     addVideoElement(LOCAL_PEER_ID, "Me", true);
     attachStream(this.localStream!, LOCAL_PEER_ID);
 
-    await this.phoenixChannelPushResult(this.webrtcChannel.join());
+    await this.phoenixChannelPushResult(this.webrtcChannel.join(this.displayName));
   };
 
   private leave = () => {
@@ -119,15 +110,6 @@ export class Room {
     }
   };
 
-  private parseUrl = (): string => {
-    const { display_name: displayName } = parse(document.location.search);
-
-    // remove query params without reloading the page
-    window.history.replaceState(null, "", window.location.pathname);
-
-    return displayName as string;
-  };
-
   private updateParticipantsList = (): void => {
     const participantsNames = this.peers.map((p) => p.metadata.displayName);
 
@@ -135,7 +117,6 @@ export class Room {
       participantsNames.push(this.displayName);
     }
 
-    setParticipantsList(participantsNames);
   };
 
   private phoenixChannelPushResult = async (push: Push): Promise<any> => {

@@ -1,26 +1,30 @@
 <div>
-
-    {#if length(@game.submitted_users) < map_size(@roommates)}
-    {#if @user_id not in @game.submitted_users}
-      <div class="container items-center justify-center max-w-max py-10">
-        <h1 class="py-8 text-4xl font-bold"> Enter your words to be added to the Salad Bowl!</h1>
-        <form phx-target={@myself} phx-submit="submit_words">
-                <div class="flex-wrap">
+    <p class="alert alert-info" role="alert">{live_flash(@flash, :info)}</p>
+    <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
+    {#if @game.finished?}
+      <h1>Game Finished</h1>
+      <TeamsScoreboard {=@game} {=@user_id} {=@roommates} bg={"gray-light"} shadow={"none"}/>
+    {#elseif length(@game.submitted_users) < map_size(@roommates)}
+      {#if @user_id not in @game.submitted_users}
+        <div class="container items-center justify-center max-w-max py-10">
+          <h1 class="py-8 text-4xl font-bold"> Enter your words to be added to the Salad Bowl!</h1>
+            <form phx-target={@myself} phx-submit="submit_words">
+              <div class="flex-wrap">
                 {#for i <- 1..@game.cards_per_player}
                     <input class="mx-2 my-2 shadow-md h-48 text-center" name={"word-#{i}"}/>
-    {/for}
-    </div>
-    <button class="my-8 px-4 rounded-md bg-blurple text-white border-0">Submit</button>
-    </form>
-    </div>
-    {#else}
-       <SubmittedUsers submitted_users={@game.submitted_users} {=@roommates} />
-    {/if}
+                {/for}
+              </div>
+              <button class="my-8 px-4 rounded-md bg-blurple text-white border-0">Submit</button>
+            </form>
+        </div>
+      {#else}
+        <SubmittedUsers submitted_users={@game.submitted_users} {=@roommates} />
+      {/if}
     {#else}
     <h1 class="text-center font-bold text-5xl text-gray-darkest pb-2 border-b-2">{"Round #{Enum.find_index(@game.rounds, &(&1 == @game.current_round)) + 1} - #{@game.current_round}"}</h1>
     <div class="flex py-8 space-y-4 items-center justify-center flex-col">
       <div class="flex justify-evenly w-full">
-        <PlayerName player={@game.current_team.current_player} {=@user_id} color={@game.current_team.color} font_size={"text-3xl"} />
+        <PlayerName roommate={Map.fetch!(@roommates, @game.current_team.current_player.id)} {=@user_id} color={@game.current_team.color} font_size={"text-3xl"} />
         <div class="flex items-center justify-end">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />

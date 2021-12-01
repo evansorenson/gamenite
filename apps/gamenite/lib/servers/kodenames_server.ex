@@ -2,6 +2,15 @@ defmodule Gamenite.Kodenames.Server do
   use Gamenite.Game.Server
   alias Gamenite.{Kodenames, TeamGame}
 
+  def init({game, _room_uuid}) do
+    setup_game =
+      game
+      |> Kodenames.setup()
+
+    broadcast_game_update(setup_game)
+    {:ok, setup_game}
+  end
+
   def handle_call({:give_clue, clue_word, number_of_words}, _from, game) do
     game
     |> Kodenames.give_clue(clue_word, number_of_words)

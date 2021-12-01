@@ -10,12 +10,14 @@ defmodule GameniteWeb.Components.OptionsTable do
   prop(slug, :string, required: true)
   prop(game_config, :map, required: true)
   prop(roommates, :map, required: true)
+  prop user_id, :any, required: true
 
   data(game_changeset, :map)
   data flash, :any
 
   def update(
-        %{slug: slug, game_config: game_config, roommates: roommates} = _assigns,
+        %{slug: slug, game_config: game_config, roommates: roommates, user_id: user_id} =
+          _assigns,
         socket
       ) do
     {:ok,
@@ -23,6 +25,7 @@ defmodule GameniteWeb.Components.OptionsTable do
      |> assign(game_config: game_config)
      |> assign(slug: slug)
      |> assign(roommates: roommates)
+     |> assign(user_id: user_id)
      |> assign_game_changeset(%{})}
   end
 
@@ -95,8 +98,12 @@ defmodule GameniteWeb.Components.OptionsTable do
 
     game = new_game(socket.assigns.game_config)
 
-    apply(socket.assigns.game_config.impl, :change, [game, converted_params])
-    |> Map.put(:action, :validate)
+    changeset =
+      apply(socket.assigns.game_config.impl, :change, [game, converted_params])
+      |> Map.put(:action, :validate)
+
+    IO.inspect(changeset)
+    changeset
   end
 
   defp roommates_to_players(roommates, impl_module) do
@@ -119,12 +126,12 @@ defmodule GameniteWeb.Components.OptionsTable do
     else
       with conv_params <- convert_changeset_params(params, socket),
            {:ok, game} <- apply(game_config.impl, :create, [conv_params]),
-           setup_game <- apply(game_config.impl, :setup, [game]),
-           :ok <- Game.API.start_game(game_config.server, setup_game, socket.assigns.slug) do
+           :ok <- Game.API.start_game(game_config.server, game, socket.assigns.slug),
+           :ok <- Rooms.set_game_in_progress(socket.assigns.slug, true) do
         {:noreply, socket}
       else
         {:error, reason} ->
-          Logger.error(title: "Error creating game.", error: reason)
+          Logger.log(:error, title: "Error creating game.", error: reason)
           {:noreply, put_flash(socket, :error, "Error creating game.")}
       end
     end
@@ -147,7 +154,14 @@ defmodule GameniteWeb.Components.OptionsTable do
     <div>
     <p class="alert alert-info" role="alert">{live_flash(@flash, :info)}</p>
     <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
-    <GameniteWeb.Components.Witbash.Options submit={"start", target: @myself} change={"validate", target: @myself} game_changeset={@game_changeset} />
+    {#case @game_config.title}
+    {#match "Witbash"}
+      <GameniteWeb.Components.Witbash.Options submit={"start", target: @myself} change={"validate", target: @myself} game_changeset={@game_changeset} />
+    {#match "Salad Bowl"}
+      <GameniteWeb.Components.SaladBowl.Options submit={"start", target: @myself} change={"validate", target: @myself} game_changeset={@game_changeset} />
+    {#match "Kodenames"}
+      <GameniteWeb.Components.Kodenames.Options submit={"start", target: @myself} change={"validate", target: @myself} game_changeset={@game_changeset} />
+    {/case}
     </div>
     """
   end

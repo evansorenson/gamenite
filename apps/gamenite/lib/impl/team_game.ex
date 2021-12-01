@@ -13,7 +13,7 @@ defmodule Gamenite.TeamGame do
   end
 
   @max_teams Application.get_env(:gamenite, :max_teams)
-  def changeset(team_game, %{teams: teams} = params) when length(teams) > 0 do
+  def changeset(team_game, %{teams: teams} = params) when teams != [] do
     team_changeset(team_game, Map.put(params, :current_team, hd(teams)))
   end
 
@@ -28,6 +28,36 @@ defmodule Gamenite.TeamGame do
     |> cast_embed(:teams)
     |> validate_required([:teams, :current_team])
     |> validate_length(:teams, min: 2, max: @max_teams)
+    |> validate_change(:teams, &validate_teams/2)
+  end
+
+  defp validate_teams(field, teams, opts \\ [min_players: 4, max_players: 8])
+
+  defp validate_teams(field, [%Ecto.Changeset{} = _head | _tail] = teams_changeset, opts) do
+    teams = Enum.map(teams_changeset, fn team_changeset -> team_changeset.changes end)
+    do_validate_teams(field, teams, opts)
+  end
+
+  defp validate_teams(field, teams, opts) do
+    IO.inspect(teams)
+    do_validate_teams(field, teams, opts)
+  end
+
+  defp do_validate_teams(field, teams, opts) do
+    cond do
+      num_players(teams) < opts[:min_players] ->
+        [{field, "At least #{opts[:min_players]} players required to start."}]
+
+      num_players(teams) > opts[:max_players] ->
+        [{field, "Need fewer than #{opts[:max_players]} players to start."}]
+
+      true ->
+        []
+    end
+  end
+
+  defp num_players(teams) do
+    Enum.reduce(teams, 0, fn team, acc -> acc + length(team.players) end)
   end
 
   def change(module, game, attrs \\ %{}) do
@@ -38,9 +68,7 @@ defmodule Gamenite.TeamGame do
   end
 
   def create(module, game, attrs) do
-    game
-    |> changeset(attrs)
-    |> module.changeset(attrs)
+    change(module, game, attrs)
     |> apply_action(:update)
   end
 

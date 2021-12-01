@@ -1,17 +1,15 @@
 {
+  "scripts": {
+    "deploy": "NODE_ENV=production postcss css/app.scss -o ../priv/static/assets/app.css"
+  },
+  "dependencies": {
+    "topbar": "^1.0.1"
+  },
   "devDependencies": {
     "autoprefixer": "^10.4.0",
     "postcss": "^8.4.4",
     "postcss-cli": "^9.0.2",
     "postcss-import": "^14.0.2",
     "tailwindcss": "^2.2.19"
-  },
-  "dependencies": {
-    "membrane_rtc_engine": "file:../../../deps/membrane_rtc_engine/",
-    "alpinejs": "^3.5.2",
-    "regenerator-runtime": "^0.13.9",
-    "topbar": "^1.0.1",
-    "query-string": "^7.0.0",
-    "uuid": "^8.3.2"
   }
 }

@@ -32,7 +32,7 @@ defmodule GameniteWeb.RoomLive do
     with true <- Rooms.slug_exists?(slug),
          room <- Rooms.state(slug) do
       game_config = GameConfig.get_config(room.game_title)
-      PubSub.subscribe(Gamenite.PubSub, "room:" <> slug)
+      PubSub.subscribe(Rooms.PubSub, "room:" <> slug)
       PubSub.subscribe(Gamenite.PubSub, "game:" <> slug)
 
       {:ok,
@@ -50,7 +50,7 @@ defmodule GameniteWeb.RoomLive do
        )}
     else
       false ->
-        IO.puts("false")
+        IO.puts("room does not exist")
 
         {:ok,
          socket
@@ -58,6 +58,8 @@ defmodule GameniteWeb.RoomLive do
          |> push_redirect(to: Routes.game_path(socket, :index))}
 
       {:error, reason} ->
+        IO.inspect(reason)
+
         {:ok,
          socket
          |> put_flash(:error, reason)
@@ -68,8 +70,7 @@ defmodule GameniteWeb.RoomLive do
   defp join_room_if_previous_or_current_roommate(socket, slug, user_id) do
     case Rooms.join_if_previous_or_current(slug, user_id) do
       :ok ->
-        monitor_live_view_process(slug, user_id)
-        assign(socket, joined?: true)
+        joined_room(socket, slug, user_id)
 
       {:error, _reason} ->
         socket
@@ -84,6 +85,14 @@ defmodule GameniteWeb.RoomLive do
     )
   end
 
+  defp joined_room(socket, slug, user_id) do
+    monitor_live_view_process(slug, user_id)
+
+    socket
+    |> assign(joined?: true)
+    |> push_event("joined_room", %{user_id: user_id, slug: slug})
+  end
+
   @doc """
   Callback that happens when the LV process is terminating.
   This allows the player to be removed from the game, and
@@ -92,7 +101,7 @@ defmodule GameniteWeb.RoomLive do
   """
   def unmount(_reason, %{user_id: user_id, room_slug: room_slug}) do
     Logger.info("Unmounting LiveView")
-    Rooms.leave(room_slug, user_id)
+    :ok = Rooms.leave(room_slug, user_id)
   end
 
   defp mount_socket_user(socket, params) do
@@ -138,11 +147,7 @@ defmodule GameniteWeb.RoomLive do
     with {:ok, new_roommate} <-
            Room.create_roommate(roommate),
          :ok <- Rooms.join(socket.assigns.slug, new_roommate) do
-      monitor_live_view_process(socket.assigns.slug, socket.assigns.user_id)
-
-      {:noreply,
-       socket
-       |> assign(joined?: true)}
+      {:noreply, joined_room(socket, socket.assigns.slug, socket.assigns.user_id)}
     else
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, reason)}

@@ -1,6 +1,4 @@
-
 <div class="flex flex-col justify-center items-center">
-
   {#if not @joined?}
     <h1 class="block text-center pb-10 text-bold text-6xl">Enter Room</h1>
     <div class="flex flex-col items-center w-1/2 bg-white rounded-xl shadow-xl">
@@ -38,29 +36,9 @@
   <div class="lg:hidden py-8 w-full">
     <Chat {=@room} {=@user_id} {=@message} />
   </div>
-    
-
-  {#if not @room.game_in_progress?}
-    <div class="fixed w-full h-24 left-0 bottom-0 bg-blurple flex">
-      {#for {_id, roommate} <- Map.to_list(@room.roommates)}
-        <div class="container px-4 py-4 items-center justify-center">
-          <div class="flex justify-center items-center">
-            <button  style={"background-color:#{roommate.color}"} class="block h-10 w-10 rounded-full border-0"></button>
-          </div>
-          <h1 class="text-center">{roommate.name}</h1>
-        </div>
-      {/for}
-    </div>
-  {/if}
 {/if}
 
-  <div id="room" class="flex flex-col h-screen relative"  data-room-id={@room_id} 
-    x-data="{ joined: {@joined} }"
-    x-init="() => {
-        $watch('joined', value => joinRoom() )
-      }">
-      <!-- mb-14 to keep disconnect with absolute value above the videos-->
-      <section class="flex flex-col max-h-screen mb-14">
+  <div id="room" class="flex flex-col h-screen relative"  data-room-id={@slug} phx-hook="JoinRoom">
           <div id="videochat-error" class="VideoChatError" style="display: none;"> </div>
           <div id="videochat" class="px-2 md:px-20 overflow-y-auto">
               <template id="video-feed-template">
@@ -75,12 +53,8 @@
               </div>
           </div>
           <div class="h-20"></div>
-      </section>
       <div id="controls", class="flex-none flex justify-center h-8 pb-2 absolute inset-x-0 bottom-2">
-          <button id="disconnect" class="text-white text-2xl font-normal hover:text-gray-400">Disconnect</button>
       </div>
   </div>
-
-  <!-- <script defer type="text/javascript" src={Routes.static_path(@socket, "/priv/static/assets/app.js")}></script> -->
 </div>
 

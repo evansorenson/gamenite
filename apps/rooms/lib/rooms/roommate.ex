@@ -16,7 +16,7 @@ defmodule Rooms.Roommate do
   def changeset(roommate, attrs) do
     roommate
     |> cast(attrs, @fields)
-    |> validate_required([:name, :color])
+    |> validate_required([:name])
     |> validate_length(:name, min: 2, max: 15)
   end
 end

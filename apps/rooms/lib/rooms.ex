@@ -10,8 +10,8 @@ defmodule Rooms do
     GenServer.call(via(room_slug), :state)
   end
 
-  def join(room_slug, player) do
-    GenServer.call(via(room_slug), {:join, player})
+  def join(room_slug, roommate) do
+    GenServer.call(via(room_slug), {:join, roommate})
   end
 
   def join_if_previous_or_current(room_slug, user_id) do
@@ -42,9 +42,8 @@ defmodule Rooms do
     GenServer.call(via(room_slug), {:add_peer_channel, peer_channel_pid, peer_id})
   end
 
-  def media_event(room_slug, event, user_id) do
-    IO.inspect(event)
-    GenServer.call(via(room_slug), {event, user_id}})
+  def media_event(room_slug, user_id, event) do
+    GenServer.call(via(room_slug), {:media_event, user_id, event})
   end
 
   def slug_exists?(slug) do

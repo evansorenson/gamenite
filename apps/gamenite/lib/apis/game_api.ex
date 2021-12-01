@@ -1,17 +1,11 @@
 defmodule Gamenite.Game.API do
-  alias Gamenite.Room
-
-  def start_game(module, game, room_slug, notify_room? \\ true) do
+  def start_game(module, game, room_slug) do
     case DynamicSupervisor.start_child(
            Gamenite.Supervisor.Game,
            child_spec(module, {game, room_slug})
          ) do
       {:ok, _pid} ->
-        if notify_room? do
-          Room.API.set_game_in_progress(room_slug, true)
-        else
-          :ok
-        end
+        :ok
 
       {:error, reason} ->
         {:error, reason}

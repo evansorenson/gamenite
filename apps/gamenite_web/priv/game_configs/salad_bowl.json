@@ -5,7 +5,7 @@
     "team_game?": true,
     "server": "Elixir.Gamenite.SaladBowl.Server",
     "impl": "Elixir.Gamenite.SaladBowl",
-    "player": "Elixir.Gamenite.Charades.Player",
+    "player": "Elixir.Gamenite.TeamGame.Player",
     "components": {
         "scoreboard": "Elixir.GameniteWeb.Components.TeamsScoreboard",
         "options": "Elixir.GameniteWeb.Components.SaladBowl.Options",

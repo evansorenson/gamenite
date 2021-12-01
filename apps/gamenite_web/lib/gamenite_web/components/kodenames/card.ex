@@ -43,7 +43,7 @@ defmodule GameniteWeb.Components.Kodenames.Card do
       # cards for guessers, if disabled show cursor as not allowed
       true ->
         if assigns.disabled? do
-          base <> " bg-white text-black cursor-not-allowed hover:bg-white"
+          base <> "bg-white text-black cursor-not-allowed hover:bg-white"
         else
           base <>
             "bg-white text-black hover:shadow-xl hover:bg-gray-light"

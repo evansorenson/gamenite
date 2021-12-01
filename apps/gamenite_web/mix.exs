@@ -54,7 +54,7 @@ defmodule GameniteWeb.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:phoenix_live_view, "~> 0.16.4"},
-      {:surface, github: "tiberiuc/surface", branch: "add-dynamic-live-component", override: true}
+      {:surface, github: "surface-ui/surface"}
     ]
   end
 

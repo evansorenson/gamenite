@@ -1,5 +1,4 @@
 defmodule Gamenite.Game do
-  @callback setup(struct()) :: struct() | {:error, term()}
   @callback changeset(struct(), map()) :: Ecto.Changeset.t()
   @callback create_player(map()) :: struct()
   @callback new() :: struct()

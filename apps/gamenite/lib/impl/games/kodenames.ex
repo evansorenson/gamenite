@@ -50,7 +50,6 @@ defmodule Gamenite.Kodenames do
     TeamGame.Player.create(attrs)
   end
 
-  @impl Gamenite.Game
   def setup(game, opts \\ [randomize_first_team?: true])
 
   def setup(game, randomize_first_team?: true) do

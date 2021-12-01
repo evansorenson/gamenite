@@ -185,9 +185,9 @@ defmodule Rooms.Room.Server do
   end
 
   @impl true
-  def handle_info({:media_event, _from, _event} = msg, state) do
+  def handle_call({:media_event, _user_id, _event} = msg, _from, state) do
     send(state.sfu_engine, msg)
-    {:noreply, state}
+    {:reply, :ok, state}
   end
 
   @impl true

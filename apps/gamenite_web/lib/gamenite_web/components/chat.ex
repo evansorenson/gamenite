@@ -1,7 +1,7 @@
 defmodule GameniteWeb.Components.Chat do
   use Surface.Component
 
-  alias Gamenite.Room
+  alias Rooms.Room
 
   alias Surface.Components.Form
   alias Surface.Components.Form.{Field, TextInput, Submit, Label, ErrorTag}

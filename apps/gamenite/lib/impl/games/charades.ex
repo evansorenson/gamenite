@@ -50,11 +50,6 @@ defmodule Gamenite.Charades do
     TeamGame.Player.create(attrs)
   end
 
-  @impl Gamenite.Game
-  def setup(game, _opts \\ []) do
-    new_turn(game, game.turn_length)
-  end
-
   def create_turn(attrs \\ %{}) do
     Turn.new(attrs)
   end

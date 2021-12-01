@@ -10,7 +10,6 @@ config :gamenite_persistance, GamenitePersistance.Repo,
   pool_size: 10
 
 config :gamenite,
-  room_timeout: 900_000,
   game_timeout: 900_000,
   max_teams: 4,
   max_deck: 50,
@@ -20,6 +19,7 @@ config :gamenite,
   salad_bowl_all_rounds: ["Catchphrase", "Password", "Charades", "Pictionary"]
 
 config :rooms,
+  room_timeout: 900_000,
   roommate_colors: [
     "#222222",
     "#F3C300",

@@ -1,5 +1,4 @@
 defmodule Gamenite.Witbash.Server do
-  use GenStateMachine
   use Gamenite.Game.Server
   use Gamenite.Timing
 

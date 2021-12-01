@@ -1,3 +1,57 @@
+import topbar from "topbar"
+// Show progress bar on live navigation and form submits
+topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
+window.addEventListener("phx:page-loading-start", info => topbar.show())
+window.addEventListener("phx:page-loading-stop", info => topbar.hide())
+
+// import Alpine from "alpinejs"
+// window.Alpine = Alpine
+// Alpine.start()
+
+import {Socket} from "phoenix"
+import {LiveSocket} from "phoenix_live_view"
+let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+let userToken = document.querySelector('meta[name="channel_token"]').getAttribute('content')
+
+let Hooks = {}
+import { Room } from "./room";
+function joinRoom(slug, user_id) {
+  const room = new Room(liveSocket, slug, user_id);
+  room.join();
+}
+Hooks.JoinRoom = {
+  mounted(){
+    this.handleEvent("joined_room", (data) => { joinRoom(data.slug, data.user_id); })
+  }
+}
+
+let liveSocket = new LiveSocket("/live", Socket, {
+  params: { _csrf_token: csrfToken, user_token: userToken },
+  hooks: Hooks,
+  // dom: {
+  //   onBeforeElUpdated(from, to){
+  //     if(from._x_dataStack){ 
+  //       window.Alpine.clone(from, to); 
+  //     }
+  //   }
+  // },
+})
+
+
+// Connect if there are any LiveViews on the page
+liveSocket.connect()
+
+// Expose liveSocket on window for web console debug logs and latency simulation:
+// >> liveSocket.enableDebug()
+// >> liveSocket.enableLatencySim(1000)
+// The latency simulator is enabled for the duration of the browser session.
+// Call disableLatencySim() to disable:
+// >> liveSocket.disableLatencySim()
+window.liveSocket = liveSocket
+
+
+
+
 
 // window.onload = () => {
 //   const removeElement = ({target}) => {
@@ -35,46 +89,3 @@
 // };
 
 // assets/js/app.js
-
-import Alpine from "alpinejs";
-
-// Add this before your liveSocket call.
-window.Alpine = Alpine;
-Alpine.start();
-
-import "phoenix_html"
-import {Socket} from "phoenix"
-import {LiveSocket} from "phoenix_live_view"
-
-let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
-
-let Hooks = {};
-let liveSocket = new LiveSocket("/live", Socket, {
-  params: { _csrf_token: csrfToken },
-  hooks: Hooks,
-  dom: {
-    onBeforeElUpdated(from, to) {
-      if (from._x_dataStack) {
-        window.Alpine.clone(from, to);
-      }
-    },
-  },
-});
-
-// Connect if there are any LiveViews on the page
-liveSocket.connect()
-
-import { Room } from "./room";
-function joinRoom() {
-  const room = new Room(liveSocket);
-  room.join();
-}
-
-
-// Expose liveSocket on window for web console debug logs and latency simulation:
-// >> liveSocket.enableDebug()
-// >> liveSocket.enableLatencySim(1000)
-// The latency simulator is enabled for the duration of the browser session.
-// Call disableLatencySim() to disable:
-// >> liveSocket.disableLatencySim()
-window.liveSocket = liveSocket

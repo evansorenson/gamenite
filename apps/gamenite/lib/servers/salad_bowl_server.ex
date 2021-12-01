@@ -6,8 +6,13 @@ defmodule Gamenite.SaladBowl.Server do
 
   use Gamenite.Timing
 
-  def setup(game) do
-    Charades.new_turn(game, game.turn_length)
+  def init({game, _room_uuid}) do
+    setup_game =
+      game
+      |> Charades.new_turn(game.turn_length)
+
+    broadcast_game_update(setup_game)
+    {:ok, setup_game}
   end
 
   def handle_call({:add_player, player}, _from, game) do
@@ -54,23 +59,17 @@ defmodule Gamenite.SaladBowl.Server do
   end
 
   def tick(%{current_turn: %{time_remaining_in_sec: time}} = game)
-      when time <= 0 do
-    new_game =
-      game
-      |> Timing.stop_timer()
-      |> Charades.needs_review()
-
-    broadcast_game_update(new_game)
-    {:noreply, new_game}
+      when time <= 1 do
+    game
+    |> decrement_time_remaining
+    |> Timing.stop_timer()
+    |> Charades.needs_review()
   end
 
   def tick(game) do
-    new_game =
-      game
-      |> Timing.start_timer(&tick/1)
-      |> decrement_time_remaining
-
-    broadcast_game_update(new_game)
+    game
+    |> Timing.start_timer(&tick/1)
+    |> decrement_time_remaining
   end
 
   defp decrement_time_remaining(game) do

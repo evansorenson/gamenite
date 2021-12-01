@@ -4,21 +4,20 @@ defmodule GameniteWeb.Auth do
   alias GameniteWeb.Router.Helpers, as: Routes
   alias GamenitePersistance.Accounts
 
-  alias Ecto.UUID
-
   def init(opts), do: opts
 
   def call(conn, _opts) do
-    if get_session(conn, :user_id) do
-      user_id = get_session(conn, :user_id)
-      user = user_id && Accounts.get_user(user_id)
-      assign(conn, :current_user, user)
-    else
-      user_id = UUID.generate()
+    case get_session(conn, :user_id) do
+      nil ->
+        IO.puts("no user_id yet")
 
-      conn
-      |> assign(:user_id, user_id)
-      |> put_session(:user_id, user_id)
+        user_id = Ecto.UUID.generate()
+
+        conn
+        |> login(user_id)
+
+      user_id ->
+        login(conn, user_id)
     end
   end
 
@@ -51,5 +50,16 @@ defmodule GameniteWeb.Auth do
       user_id = Ecto.UIID.generate()
       login(conn, user_id)
     end
+  end
+
+  @salt "1Z73WxH/cDS96wsHXXI8QVAFOy5tg/APqIufGTO8nO2cTn/Mtp7zCnrx+0fSVY1/"
+  @max_age 86_400
+
+  def sign(conn, data) do
+    Phoenix.Token.sign(conn, @salt, data)
+  end
+
+  def verify_token(token) do
+    Phoenix.Token.verify(GameniteWeb.Endpoint, @salt, token, max_age: @max_age)
   end
 end

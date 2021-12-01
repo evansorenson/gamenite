@@ -19,11 +19,16 @@ config :gamenite_web, GameniteWeb.Endpoint,
   server: false
 
 config :gamenite,
-  room_timeout: 900_000,
   game_timeout: 900_000,
   max_teams: 4,
   max_deck: 50,
   min_players: 2,
+  team_colors: ["#C0392B", "#2980B9", "#27AE60", "#884EA0", "#D35400", "#FF33B8", "#F1C40F"],
+  default_salad_bowl_rounds: ["Catchphrase", "Password", "Charades"],
+  all_salad_bowl_rounds: ["Catchphrase", "Password", "Charades", "Pictionary"]
+
+config :rooms,
+  room_timeout: 900_000,
   roommate_colors: [
     "#222222",
     "#F3C300",
@@ -46,10 +51,7 @@ config :gamenite,
     "#654522",
     "#E25822",
     "#2B3D26"
-  ],
-  team_colors: ["#C0392B", "#2980B9", "#27AE60", "#884EA0", "#D35400", "#FF33B8", "#F1C40F"],
-  default_salad_bowl_rounds: ["Catchphrase", "Password", "Charades"],
-  all_salad_bowl_rounds: ["Catchphrase", "Password", "Charades", "Pictionary"]
+  ]
 
 # Print only warnings and errors during test
 config :logger, level: :warn

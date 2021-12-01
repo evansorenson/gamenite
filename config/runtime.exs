@@ -1,5 +1,78 @@
 import Config
 
+defmodule ConfigParser do
+  def parse_stun_servers(""), do: []
+
+  def parse_stun_servers(servers) do
+    servers
+    |> String.split(",")
+    |> Enum.map(fn server ->
+      with [addr, port] <- String.split(server, ":"),
+           {port, ""} <- Integer.parse(port) do
+        %{server_addr: parse_addr(addr), server_port: port}
+      else
+        _ -> raise("Bad STUN server format. Expected addr:port, got: #{inspect(server)}")
+      end
+    end)
+  end
+
+  def parse_turn_servers(""), do: []
+
+  def parse_turn_servers(servers) do
+    servers
+    |> String.split(",")
+    |> Enum.map(fn server ->
+      with [addr, port, username, password, proto] when proto in ["udp", "tcp", "tls"] <-
+             String.split(server, ":"),
+           {port, ""} <- Integer.parse(port) do
+        %{
+          server_addr: parse_addr(addr),
+          server_port: port,
+          username: username,
+          password: password,
+          relay_type: String.to_atom(proto)
+        }
+      else
+        _ ->
+          raise("""
+          "Bad TURN server format. Expected addr:port:username:password:proto, got: \
+          #{inspect(server)}
+          """)
+      end
+    end)
+  end
+
+  def parse_integrated_turn_ip(ip) do
+    with {:ok, parsed_ip} <- ip |> to_charlist() |> :inet.parse_address() do
+      parsed_ip
+    else
+      _ ->
+        raise("""
+        Bad integrated TURN IP format. Expected IPv4, got: \
+        #{inspect(ip)}
+        """)
+    end
+  end
+
+  def parse_use_integrated_turn("true"), do: true
+  def parse_use_integrated_turn("false"), do: false
+
+  def parse_use_integrated_turn(env) do
+    raise("""
+    Bad USE_INTEGRATED_TURN enviroment variable value. Expected "true" or "false", got: \
+    #{inspect(env)}
+    """)
+  end
+
+  def parse_addr(addr) do
+    case :inet.parse_address(String.to_charlist(addr)) do
+      {:ok, ip} -> ip
+      # FQDN?
+      {:error, :einval} -> addr
+    end
+  end
+end
+
 config :rooms,
   roommate_colors: [
     "#222222",
