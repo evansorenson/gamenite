@@ -14,16 +14,6 @@ let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("
 let userToken = document.querySelector('meta[name="channel_token"]').getAttribute('content')
 
 let Hooks = {}
-import { Room } from "./room";
-function joinRoom(slug, user_id) {
-  const room = new Room(liveSocket, slug, user_id);
-  room.join();
-}
-Hooks.JoinRoom = {
-  mounted(){
-    this.handleEvent("joined_room", (data) => { joinRoom(data.slug, data.user_id); })
-  }
-}
 
 let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken, user_token: userToken },

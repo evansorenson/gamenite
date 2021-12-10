@@ -102,7 +102,6 @@ defmodule GameniteWeb.Components.OptionsTable do
       apply(socket.assigns.game_config.impl, :change, [game, converted_params])
       |> Map.put(:action, :validate)
 
-    IO.inspect(changeset)
     changeset
   end
 

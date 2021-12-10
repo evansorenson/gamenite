@@ -39,19 +39,9 @@ config :surface, :components, [
    default_class: "invalid-feedback"}
 ]
 
-config :logger,
-  compile_time_purge_matching: [
-    [level_lower_than: :info],
-    # Silence irrelevant warnings caused by resending handshake events
-    [module: Membrane.SRTP.Encryptor, function: "handle_event/4", level_lower_than: :error],
-    [module: MDNS.Client, level_lower_than: :error]
-  ]
-
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:room, :peer, :request_id]
-
-config :ex_libnice, impl: NIF
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason

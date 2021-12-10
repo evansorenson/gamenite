@@ -20,7 +20,7 @@
       </Form>
     </div>
   {#else}
-  <div class="grid grid-cols-1 lg:grid-cols-3 w-full px-8">
+  <div class="grid grid-cols-1 lg:grid-cols-3 lg:h-full w-full px-8">
     <div class="lg:col-span-2">
     {#if @room.game_in_progress?}
       <Dynamic.LiveComponent id="game" module={@game_config.components.game} {=@game} {=@slug} roommates={@room.roommates} {=@game_config} {=@user_id} />
@@ -28,33 +28,18 @@
       <OptionsTable id="options" {=@slug} {=@game_config} {=@user_id} roommates={@room.roommates} />
     {/if}
     </div>
-    <div class="col-span-1 flex flex-col justify-center items-center hidden lg:block pl-12">
-      <Chat {=@room} {=@user_id} {=@message} />
+    <div class="col-span-1 flex flex-col space-y-8 justify-center items-center hidden lg:block lg:h-full pl-12">
+      <ConnectedUsers roommates={@room.roommates}  {=@user_id} />
+      <div class="h-1/2">
+        <Chat {=@room} {=@user_id} {=@message} height={"h-full"} />
+      </div>
     </div>
   </div>
 
-  <div class="lg:hidden py-8 w-full">
-    <Chat {=@room} {=@user_id} {=@message} />
+  <div class="grid grid-cols-2 space-x-8 lg:hidden pt-16 w-full">
+    <ConnectedUsers roommates={@room.roommates}  {=@user_id} flex={"col"} />
+    <Chat {=@room} {=@user_id} {=@message}/>
   </div>
 {/if}
-
-  <div id="room" class="flex flex-col h-screen relative"  data-room-id={@slug} phx-hook="JoinRoom">
-          <div id="videochat-error" class="VideoChatError" style="display: none;"> </div>
-          <div id="videochat" class="px-2 md:px-20 overflow-y-auto">
-              <template id="video-feed-template">
-                  <div name="video-feed" class="relative bg-gray-900 shadow rounded-md overflow-hidden h-full w-full ratio-video">
-                      <audio></audio>
-                      <video class="w-full"></video>
-                      <div name="video-label" class="absolute text-white text-shadow-lg bottom-0 left-0 p-2">Placeholder</div>
-                  </div>
-              </template>
-              <div class="flex flex-col justify-center items-center">
-                  <div id="videos-grid" class="grid grid-cols-2 grid-flow-row gap-4 justify-items-center"></div>
-              </div>
-          </div>
-          <div class="h-20"></div>
-      <div id="controls", class="flex-none flex justify-center h-8 pb-2 absolute inset-x-0 bottom-2">
-      </div>
-  </div>
 </div>
 

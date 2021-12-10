@@ -13,18 +13,6 @@ RUN apt-get update -y && \
     git \
     nodejs \
     npm \
-    yarn \
-    python3 \
-    make \
-    cmake \
-    openssl \ 
-    libssl-dev \
-    libsrtp2-dev \
-    libnice-dev \
-    libavcodec-dev \
-    libavformat-dev \
-    libavutil-dev \
-    libopus-dev \
     && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 # prepare build dir
@@ -86,14 +74,7 @@ FROM ${RUNNER_IMAGE}
 RUN apt-get update -y && \
     apt-get install -y \
     libstdc++6 \
-    openssl \
-    libncurses5 \
     locales \
-    ffmpeg \
-    libsrtp2-dev \
-    libnice-dev \
-    libopus-dev \
-    clang \ 
     curl && \
     apt-get clean && rm -f /var/lib/apt/lists/*_*
     

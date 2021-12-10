@@ -3,7 +3,7 @@ defmodule GameniteWeb.Components.Witbash do
   import GameniteWeb.Components.Game
 
   alias GameniteWeb.Components.{TeamsScoreboard, PlayerName, SubmittedUsers, Timer}
-  alias GameniteWeb.Components.Witbash.{AnswerComp}
+  alias GameniteWeb.Components.Witbash.{Answers}
   alias Surface.Components.Form
   alias Surface.Components.Form.{Submit, Label, TextInput, Field, ErrorTag}
 
@@ -80,6 +80,10 @@ defmodule GameniteWeb.Components.Witbash do
         {#match nil}
           <SubmittedUsers submitted_users={@game.submitted_user_ids} {=@roommates} />
         {#match {prompt, index}}
+        {#if @game.final_round?}
+        <h5>For the final round, the points are doubled!</h5>
+        {/if}
+
         <div class="flex flex-wrap justify-center font-serif py-4 px-4">
           <h1 class="xs:text-4xl sm:text-5xl md:text-6xl text-gray-dark font-bold text-center">{prompt.prompt}</h1>
         </div>
@@ -102,33 +106,17 @@ defmodule GameniteWeb.Components.Witbash do
         </div>
         {/case}
       {#else}
-        {#if @user_id not in @game.submitted_user_ids and (@user_id not in @game.current_prompt.assigned_user_ids or @game.final_round?)}
+        {#if @game.current_prompt.scored?}
+          <Answers prompt={@game.current_prompt} {=@roommates} {=@user_id} show_votes?={true} on_click={"vote", target: @myself}/>
+        {#elseif @user_id not in @game.submitted_user_ids and (@user_id not in @game.current_prompt.assigned_user_ids or @game.final_round?)}
           <h2 class="text-6xl font-bold text-center">Vote for your favorite answer!</h2>
           {#if @game.final_round?}
-            <h5>For the final round, you get three votes. You can vote for an answer more than once.</h5>
+          <h5>For the final round, you get three votes. You can vote for an answer more than once.</h5>
           {/if}
-          <div class="flex flex-wrap justify-center space-x-8 w-full">
-            {#for answer <- @game.current_prompt.answers }
-              <div class="pb-4">
-              <AnswerComp answer={answer} {=@roommates} {=@user_id} on_click={"vote", target: @myself} />
-              </div>
-            {/for}
-          </div>
-        {#elseif not @game.current_prompt.scored?}
-          <div class="flex flex-wrap justify-center space-x-8 w-full">
-            {#for answer <- @game.current_prompt.answers }
-                  <AnswerComp answer={answer} {=@roommates} {=@user_id}/>
-            {/for}
-          </div>
+          <Answers prompt={@game.current_prompt} {=@roommates} {=@user_id} on_click={"vote", target: @myself}/>
+        {#else @game.current_prompt.scored?}
+          <Answers prompt={@game.current_prompt} {=@roommates} {=@user_id}/>
           <SubmittedUsers submitted_users={@game.submitted_user_ids} excluded_users={@game.current_prompt.assigned_user_ids} {=@roommates} />
-        {#else}
-        <div class="flex flex-wrap justify-center">
-          {#for answer <- @game.current_prompt.answers }
-          <div class="pb-8 w-1/2 px-4">
-              <AnswerComp answer={answer} {=@roommates} {=@user_id} show_votes?={true}/>
-              </div>
-          {/for}
-          </div>
         {/if}
       {/if}
     </div>

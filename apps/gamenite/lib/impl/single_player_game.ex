@@ -37,7 +37,6 @@ defmodule Gamenite.SinglePlayerGame do
     |> Game.changeset(attrs)
     |> cast(attrs, @fields)
     |> validate_required(@required)
-    |> validate_length(:players, min: 2)
   end
 
   def end_turn(game) do

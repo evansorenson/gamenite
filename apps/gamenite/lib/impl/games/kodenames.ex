@@ -133,6 +133,7 @@ defmodule Gamenite.Kodenames do
       cards
       |> Enum.with_index()
       |> Enum.map(&assign_card_type(&1, current_team))
+      |> Enum.shuffle()
 
     {assigned_cards, remaining_deck}
   end

@@ -16,7 +16,7 @@ defmodule GameniteWeb.RoomLive do
   alias Surface.Components.Dynamic
   alias Surface.Components.Form
   alias Surface.Components.Form.{Field, TextInput, Submit, Label, ErrorTag}
-  alias GameniteWeb.Components.{Game, OptionsTable, Chat}
+  alias GameniteWeb.Components.{Game, OptionsTable, Chat, ConnectedUsers}
 
   data game, :map, default: nil
   data game_info, :map, default: nil
@@ -50,16 +50,12 @@ defmodule GameniteWeb.RoomLive do
        )}
     else
       false ->
-        IO.puts("room does not exist")
-
         {:ok,
          socket
          |> put_flash(:error, "Room does not exist.")
          |> push_redirect(to: Routes.game_path(socket, :index))}
 
       {:error, reason} ->
-        IO.inspect(reason)
-
         {:ok,
          socket
          |> put_flash(:error, reason)

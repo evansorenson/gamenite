@@ -1,7 +1,7 @@
 defmodule GameniteWeb.Components.Witbash.Options do
   use Surface.Component
   alias Surface.Components.Form
-  alias Surface.Components.Form.{Submit, NumberInput}
+  alias Surface.Components.Form.{Field, ErrorTag, Submit, NumberInput}
   alias GameniteWeb.Components.OptionsTable.Row
 
   prop game_changeset, :map, required: true
@@ -11,7 +11,7 @@ defmodule GameniteWeb.Components.Witbash.Options do
   def render(assigns) do
     ~F"""
     <Form for={@game_changeset} as={:game} {=@change} {=@submit} opts={autocomplete: "off"}>
-    <table class="table shadow-md">
+    <table class="table shadow-lg rounded-xl">
       <tbody>
       <Row name={:num_rounds} label={"Number of Rounds"} first?={true}>
       <:icon>
@@ -33,7 +33,7 @@ defmodule GameniteWeb.Components.Witbash.Options do
     <NumberInput/>
     </:input>
     </Row>
-    <Row name={:vote_length_in_sec} label={"Voting Length"}>
+    <Row name={:vote_length_in_sec} label={"Voting Length"} last?={true}>
       <:icon>
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -45,6 +45,10 @@ defmodule GameniteWeb.Components.Witbash.Options do
     </Row>
       </tbody>
     </table>
+    <Field name={:players}>
+      <ErrorTag/>
+    </Field>
+
     <Submit class="btn-blurple w-full">Start Game</Submit>
     </Form>
     """

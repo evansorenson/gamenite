@@ -1,7 +1,7 @@
 defmodule GameniteWeb.Components.SaladBowl.Options do
   use Surface.Component
   alias Surface.Components.Form
-  alias Surface.Components.Form.{Submit, Select, NumberInput}
+  alias Surface.Components.Form.{Field, ErrorTag, Submit, Select, NumberInput}
   alias GameniteWeb.Components.OptionsTable.Row
 
   prop game_changeset, :map, required: true
@@ -58,6 +58,9 @@ defmodule GameniteWeb.Components.SaladBowl.Options do
     </Row>
       </tbody>
     </table>
+    <Field name={:teams}>
+      <ErrorTag/>
+    </Field>
     <Submit class="btn-blurple w-full">Start Game</Submit>
     </Form>
     """

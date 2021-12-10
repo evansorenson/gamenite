@@ -9,11 +9,12 @@ defmodule GameniteWeb.Components.Chat do
   prop room, :map, required: true
   prop user_id, :any, required: true
   prop message, :map, required: true
+  prop height, :string, default: "h-96"
 
   def render(assigns) do
     ~F"""
-      <div class="bg-white pt-4 shadow-md rounded-lg">
-        <div class="flex h-96 flex-col-reverse overflow-y-auto">
+      <div class={"#{@height} bg-white pt-4 shadow-md rounded-lg"}>
+        <div class="flex h-5/6 flex-col-reverse overflow-y-auto">
         {#for roommate_msgs <- Enum.chunk_by(@room.messages, &(&1.user_id))}
           <div class="pb-4">
           <div class="flex flex-col-reverse">
@@ -42,15 +43,14 @@ defmodule GameniteWeb.Components.Chat do
         {/for}
         </div>
 
-        <Form for={@message} class="rounded-b-lg flex w-full bg-gray-light items-center justify-center py-4" change="validate_message" submit="send" opts={autocomplete: "off"}>
+        <Form for={@message} class="h-1/6 mb-0 rounded-b-lg flex w-full bg-gray-light items-center justify-center py-4" change="validate_message" submit="send" opts={autocomplete: "off"}>
           <div class="w-11/12 px-4">
             <Field name={:body}>
-              <TextInput class="bg-opacity-50 bg-black focus:ring-1 focus:ring-blurple focus:bg-white"/>
-              <ErrorTag/>
+              <TextInput class={"h-12 lg:h-16 bg-opacity-50 bg-black focus:ring-1 focus:ring-blurple focus:bg-white"}/>
             </Field>
           </div>
           <div class="flex items-center justify-center pr-4">
-            <Submit class="btn-blurple">Send</Submit>
+            <Submit class="btn-blurple h-12 lg:h-16">Send</Submit>
           </div>
         </Form>
       </div>

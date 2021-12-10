@@ -70,9 +70,4 @@ defmodule Gamenite.SaladBowl do
   def create_player(attrs) do
     TeamGame.Player.create(attrs)
   end
-
-  @impl Gamenite.Game
-  def setup(game, _opts \\ []) do
-    Charades.new_turn(game, game.turn_length)
-  end
 end

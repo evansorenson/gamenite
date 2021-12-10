@@ -9,6 +9,7 @@ defmodule Gamenite.Witbash.Server do
       game
       |> Map.put(:time_remaining_in_sec, game.answer_length_in_sec)
       |> Timing.start_timer(&submiting_answers_tick/1)
+      |> Witbash.setup()
 
     broadcast_game_update(new_game)
     {:ok, new_game}
@@ -36,6 +37,13 @@ defmodule Gamenite.Witbash.Server do
 
     broadcast_game_update(new_game)
     {:noreply, new_game}
+  end
+
+  defp maybe_start_voting_timer(game) when not game.answering? and length(game.answers) < 2 do
+    game
+    |> Timing.stop_timer()
+    |> Map.put(:time_remaining_in_sec, 5)
+    |> Timing.start_timer(&voting_tick/1)
   end
 
   defp maybe_start_voting_timer(game) when not game.answering? do

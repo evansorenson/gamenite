@@ -21,7 +21,6 @@ config :gamenite,
 config :rooms,
   room_timeout: 900_000,
   roommate_colors: [
-    "#222222",
     "#F3C300",
     "#875692",
     "#F38400",

@@ -46,7 +46,7 @@ defmodule Gamenite.Witbash do
       less_than_or_equal_to: 120
     )
     |> validate_length(:deck, min: length(Map.get(attrs, :players, 0)) * 4 + 1)
-    |> validate_length(:players, min: 3)
+    |> validate_length(:players, min: 3, message: "Need at least three players to start.")
   end
 
   @impl Gamenite.Game
@@ -312,10 +312,16 @@ defmodule Gamenite.Witbash do
 
   def score_votes(game)
       when game.final_round? do
-    do_score_votes(game, 100 * length(game.players))
+    do_score_votes(game, 100 * length(game.players) * 2)
   end
 
   def score_votes(game), do: do_score_votes(game, 100)
+
+  def do_score_votes(%{current_prompt: current_prompt} = game, _total_points)
+      when current_prompt.answers == [] do
+    game
+    |> put_in([:current_prompt, :scored?], true)
+  end
 
   def do_score_votes(%{current_prompt: current_prompt} = game, total_points) do
     total_votes = length(Enum.flat_map(current_prompt.answers, fn answer -> answer.votes end))
@@ -327,10 +333,13 @@ defmodule Gamenite.Witbash do
             acc_game
 
           answer_idx ->
+            num_votes = length(Enum.fetch!(current_prompt.answers, answer_idx).votes)
+            score = score_player_votes(num_votes, total_points, total_votes)
+
             _acc_game =
-              length(Enum.fetch!(current_prompt.answers, answer_idx).votes)
-              |> score_player_votes(total_points, total_votes)
-              |> update_player_score(player.id, acc_game)
+              acc_game
+              |> add_score_to_answer(score, answer_idx)
+              |> update_player_score(score, player.id)
         end
       end)
       |> put_in([:current_prompt, :scored?], true)
@@ -349,9 +358,14 @@ defmodule Gamenite.Witbash do
     round(total_points * fraction_of_points)
   end
 
-  defp update_player_score(score, player_id, game) do
+  defp update_player_score(game, score, player_id) do
     game
     |> SinglePlayerGame.add_score_to_player(player_id, score)
+  end
+
+  defp add_score_to_answer(game, score, answer_idx) do
+    game
+    |> put_in([:current_prompt, :answers, Access.at!(answer_idx), :score], score)
   end
 
   def next_prompt(%{prompts: prompts} = game)

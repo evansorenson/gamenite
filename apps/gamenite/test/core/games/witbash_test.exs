@@ -287,6 +287,36 @@ defmodule WitbashTest do
   describe "scoring votes:" do
     setup [:game_already_setup]
 
+    test "one player didn't submit answer, other did -> gets all 100 points", %{setup_game: game} do
+      new_game =
+        %{
+          game
+          | current_prompt: %Prompt{
+              assigned_user_ids: [1, 2],
+              answers: [%Answer{user_id: 1}]
+            }
+        }
+        |> Witbash.score_votes()
+
+      assert Enum.at(new_game.players, 0).score == 100
+      assert Enum.at(new_game.players, 1).score == 0
+    end
+
+    test "both players didn't submit answer -> no points", %{setup_game: game} do
+      new_game =
+        %{
+          game
+          | current_prompt: %Prompt{
+              assigned_user_ids: [1, 2],
+              answers: []
+            }
+        }
+        |> Witbash.score_votes()
+
+      assert Enum.at(new_game.players, 0).score == 0
+      assert Enum.at(new_game.players, 1).score == 0
+    end
+
     test "one player gets all votes", %{setup_game: game} do
       new_game =
         %{

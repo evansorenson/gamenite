@@ -39,7 +39,6 @@ defmodule Gamenite.TeamGame do
   end
 
   defp validate_teams(field, teams, opts) do
-    IO.inspect(teams)
     do_validate_teams(field, teams, opts)
   end
 
