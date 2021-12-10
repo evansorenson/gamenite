@@ -31,7 +31,6 @@ defmodule GameniteWeb.RoomLive do
 
     with true <- Rooms.slug_exists?(slug),
          room <- Rooms.state(slug) do
-      game_config = GameConfig.get_config(room.game_title)
       PubSub.subscribe(Rooms.PubSub, "room:" <> slug)
       PubSub.subscribe(Gamenite.PubSub, "game:" <> slug)
 
@@ -42,8 +41,6 @@ defmodule GameniteWeb.RoomLive do
        |> assign(
          user_id: user_id,
          room: room,
-         game_title: room.game_title,
-         game_config: game_config,
          roommate_changeset: Room.change_roommate(),
          slug: slug,
          message: Room.change_message()
@@ -169,11 +166,6 @@ defmodule GameniteWeb.RoomLive do
   end
 
   def handle_event("send", %{"message" => message}, socket) do
-    created_message =
-      message
-      |> build_message(socket)
-      |> Room.create_message()
-
     case message
          |> build_message(socket)
          |> Room.create_message() do
@@ -181,9 +173,21 @@ defmodule GameniteWeb.RoomLive do
         Rooms.send_message(socket.assigns.slug, created_message)
         |> room_response(assign(socket, message: Room.change_message()))
 
-      {:error, reason} ->
+      {:error, _reason} ->
         {:noreply, put_flash(socket, :error, "Could not send message.")}
     end
+  end
+
+  def handle_event("select_game", %{"current_game" => curr_game}, socket) do
+    Rooms.set_game_config(socket.assigns.slug, GameConfig.get_config(curr_game))
+    |> room_response(socket)
+  end
+
+  def handle_event("exit_game", _params, socket) do
+    GameAPI.end_game(socket.assigns.slug)
+
+    Rooms.set_game_in_progress(socket.assigns.slug, false)
+    |> room_response(socket)
   end
 
   def handle_event("mute", %{"user_id" => user_id}, socket) do

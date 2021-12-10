@@ -20,6 +20,10 @@ defmodule Gamenite.Game.Server do
         {:reply, {:ok, game}, game}
       end
 
+      def terminate(reason, game) do
+        Logger.info("Game exiting.")
+      end
+
       def handle_info(:timeout, game) do
         Logger.info("Game inactive. Shutting down.")
         {:stop, :normal, game}

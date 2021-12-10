@@ -148,9 +148,9 @@ defmodule Rooms.Room do
     %{room | roommates: users}
   end
 
-  def set_game(room, game_title) do
+  def set_game_config(room, game_config) do
     room
-    |> Map.put(:game_title, game_title)
+    |> Map.put(:game_config, game_config)
   end
 
   def change_message(attrs \\ %{}) do

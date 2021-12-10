@@ -26,8 +26,8 @@ defmodule Rooms do
     GenServer.call(via(room_slug), {:invert_mute, player})
   end
 
-  def set_game(room_slug, game_id) do
-    GenServer.call(via(room_slug), {:set_game, game_id})
+  def set_game_config(room_slug, game_config) do
+    GenServer.call(via(room_slug), {:set_game_config, game_config})
   end
 
   def set_game_in_progress(room_slug, in_progress?) do

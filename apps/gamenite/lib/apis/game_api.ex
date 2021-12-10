@@ -31,6 +31,10 @@ defmodule Gamenite.Game.API do
     end
   end
 
+  def end_game(room_slug) do
+    GenServer.stop(via(room_slug))
+  end
+
   def state(room_slug) do
     GenServer.call(via(room_slug), :state)
   end

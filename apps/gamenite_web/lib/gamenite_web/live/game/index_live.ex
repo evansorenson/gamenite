@@ -4,7 +4,6 @@ defmodule GameniteWeb.Game.IndexLive do
   alias Surface.Components.Form
   alias Surface.Components.Form.{Field, Label, SearchInput, Submit}
 
-  alias GamenitePersistance.Gaming
   alias GameniteWeb.GameConfig
   alias Rooms
 
@@ -17,18 +16,19 @@ defmodule GameniteWeb.Game.IndexLive do
      |> assign(:games, sorted_games)}
   end
 
-  def handle_event("search", %{"query" => nil}, socket) do
-    {:noreply, assign(socket, :games, GameConfig.list_configs())}
-  end
+  # def handle_event("search", %{"query" => nil}, socket) do
+  #   {:noreply, assign(socket, :games, GameConfig.list_configs())}
+  # end
 
-  def handle_event("search", %{"query" => query}, socket) do
-    games_search = GameConfig.search_games(query)
-    {:noreply, assign(socket, :games, games_search)}
-  end
+  # def handle_event("search", %{"query" => query}, socket) do
+  #   games_search = GameConfig.search_games(query)
+  #   {:noreply, assign(socket, :games, games_search)}
+  # end
 
   def handle_event("host_game", %{"game_title" => game_title}, socket) do
     with {:ok, room_slug} <- Rooms.start_room(),
-         :ok <- Rooms.set_game(room_slug, game_title) do
+         game_config <- GameConfig.get_config(game_title),
+         :ok <- Rooms.set_game_config(room_slug, game_config) do
       {:noreply,
        socket
        |> push_redirect(to: Routes.room_path(socket, :new, room_slug, %{slug: room_slug}))}
@@ -42,13 +42,13 @@ defmodule GameniteWeb.Game.IndexLive do
 
   def render(assigns) do
     ~F"""
-    <h1 class="text-7xl py-4 font-bold text-black">Games</h1>
+    <h1 class="text-7xl pb-8 font-bold text-black">Games</h1>
 
-    <Form for={:hi} class="search-form focus-within:border-blurple" change="search">
+    <!-- <Form for={:hi} class="search-form focus-within:border-blurple" change="search">
       <Field name="query" field="query">
         <SearchInput opts={autofocus: "autofocus", phx_debounnce: 100, placeholder: "Search for games"} />
       </Field>
-    </Form>
+    </Form> -->
 
     <div class="space-y-8">
       {#for game <- @games}

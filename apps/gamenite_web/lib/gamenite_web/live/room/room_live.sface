@@ -23,9 +23,26 @@
   <div class="grid grid-cols-1 lg:grid-cols-3 lg:h-full w-full px-8">
     <div class="lg:col-span-2">
     {#if @room.game_in_progress?}
-      <Dynamic.LiveComponent id="game" module={@game_config.components.game} {=@game} {=@slug} roommates={@room.roommates} {=@game_config} {=@user_id} />
+      <button phx-click="exit_game" class="bg-red-500 border-0 rounded-lg px-8 text-gray-light shadow-lg hover:opacity-70">Exit Game</button>
+      <Dynamic.LiveComponent id="game" module={@room.game_config.components.game} {=@game} {=@slug} roommates={@room.roommates} game_config={@room.game_config} {=@user_id} />
     {#else}
-      <OptionsTable id="options" {=@slug} {=@game_config} {=@user_id} roommates={@room.roommates} />
+      <div class="pb-8">
+        <label class="inline font-semibold">Select the game to play: </label>
+        <form phx-change="select_game" class="inline">
+          <select name="current_game" class="h-12 w-1/4">
+          {#for game <- GameniteWeb.GameConfig.list_configs()}
+            {#if game.title == @room.game_config.title}
+                <option value={game.title} selected>{game.title}</option>
+            {#else}
+                <option value={game.title}>{game.title}</option>
+            {/if}
+          {/for}
+          </select>
+        </form>
+      </div>
+      <!-- <h1 class="text-6xl text-center pb-8 font-bold">{@game_config.title}</h1> -->
+
+      <OptionsTable id="options" {=@slug} game_config={@room.game_config} {=@user_id} roommates={@room.roommates} />
     {/if}
     </div>
     <div class="col-span-1 flex flex-col space-y-8 justify-center items-center hidden lg:block lg:h-full pl-12">

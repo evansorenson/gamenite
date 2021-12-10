@@ -151,6 +151,7 @@ defmodule GameniteWeb.Components.OptionsTable do
     # </div>
     ~F"""
     <div>
+
     <p class="alert alert-info" role="alert">{live_flash(@flash, :info)}</p>
     <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
     {#case @game_config.title}

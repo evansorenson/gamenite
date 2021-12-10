@@ -109,9 +109,9 @@ defmodule Rooms.Room.Server do
     |> response(room)
   end
 
-  def handle_call({:set_game, game_id}, _from, room) do
+  def handle_call({:set_game_config, game_id}, _from, room) do
     room
-    |> Room.set_game(game_id)
+    |> Room.set_game_config(game_id)
     |> response(room)
   end
 
