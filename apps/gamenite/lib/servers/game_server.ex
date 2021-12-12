@@ -33,6 +33,7 @@ defmodule Gamenite.Game.Server do
 
   def broadcast_game_update(game) do
     PubSub.broadcast(Gamenite.PubSub, "game:" <> game.room_slug, {:game_update, game})
+    game
   end
 
   @timeout Application.get_env(:gamenite, :game_timeout)
