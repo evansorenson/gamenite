@@ -46,16 +46,15 @@ defmodule Gamenite.Witbash.Server do
 
   defp maybe_start_voting_timer(game) when not game.answering? and length(game.answers) < 2 do
     game
-    |> Timing.stop_timer()
-    |> Map.put(:time_remaining_in_sec, 5)
-    |> Timing.start_timer(&voting_tick/1)
+    |> Timing.set_time(:voting_timer, 5)
+    |> Timing.start_timer(&voting_timer_ends/3)
   end
 
   defp maybe_start_voting_timer(game) when not game.answering? do
     game
     |> Timing.stop_timer()
     |> Map.put(:time_remaining_in_sec, game.vote_length_in_sec)
-    |> Timing.start_timer(&voting_tick/1)
+    |> Timing.start_timer(&voting_timer_ends/3)
   end
 
   defp maybe_start_voting_timer(game), do: game
@@ -63,8 +62,7 @@ defmodule Gamenite.Witbash.Server do
   defp maybe_start_answering_timer(game) when game.answering? do
     game
     |> Timing.stop_timer()
-    |> Map.put(:time_remaining_in_sec, game.answer_length_in_sec)
-    |> Timing.start_timer(&submiting_answers_tick/1)
+    |> Timing.start_timer(:answer_timer, &submiting_answers_ends/3, game.answer_length_in_sec)
   end
 
   defp maybe_start_answering_timer(game), do: game
@@ -78,15 +76,15 @@ defmodule Gamenite.Witbash.Server do
 
   defp maybe_next_prompt(game), do: game
 
-  defp submiting_answers_tick(game) do
+  defp submiting_answers_tick(game, timer, :answers_timer) do
     game
-    |> Timing.stop_timer()
+    |> Timing.stop_timer(timer, :answers_timer)
     |> Witbash.start_voting_phase()
   end
 
-  defp voting_timer_ends(game) do
+  defp voting_timer_ends(game, timer, :voting_timer) do
     game
-    |> Timing.stop_timer()
+    |> Timing.stop_timer(timer, :voting_timer)
     |> Witbash.score_votes()
   end
 end
