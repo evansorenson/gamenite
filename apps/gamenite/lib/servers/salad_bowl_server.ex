@@ -22,7 +22,7 @@ defmodule Gamenite.SaladBowl.Server do
   def handle_call(:start_turn, _from, game) do
     game
     |> Charades.start_turn()
-    |> Timing.start_timer(&tick/1)
+    |> Timing.start_timer(:timer, &turn_timer_ends/1)
     |> game_response(game)
   end
 
@@ -36,7 +36,7 @@ defmodule Gamenite.SaladBowl.Server do
     case Charades.add_card_to_completed(game, outcome) do
       {:review, new_game} ->
         new_game
-        |> Timing.stop_timer()
+        |> Timing.stop_timer(:timer)
         |> Charades.needs_review()
         |> game_response(game)
 
@@ -58,22 +58,8 @@ defmodule Gamenite.SaladBowl.Server do
     |> game_response(game)
   end
 
-  def tick(%{current_turn: %{time_remaining_in_sec: time}} = game)
-      when time <= 1 do
+  def turn_timer_ends(game) do
     game
-    |> decrement_time_remaining
-    |> Timing.stop_timer()
     |> Charades.needs_review()
-  end
-
-  def tick(game) do
-    game
-    |> Timing.start_timer(&tick/1)
-    |> decrement_time_remaining
-  end
-
-  defp decrement_time_remaining(game) do
-    game
-    |> update_in([:current_turn, :time_remaining_in_sec], &(&1 - 1))
   end
 end

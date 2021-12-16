@@ -32,6 +32,7 @@ defmodule Gamenite.Witbash.Server do
   def handle_info(:next_prompt, game) do
     new_game =
       Witbash.next_prompt(game)
+      |> maybe_next_prompt()
       |> maybe_start_voting_timer()
       |> maybe_start_answering_timer()
 
@@ -39,54 +40,60 @@ defmodule Gamenite.Witbash.Server do
     {:noreply, new_game}
   end
 
-  defp start_show_votes_timer(game) do
+  defp maybe_start_voting_timer(game)
+       when not game.answering? and length(game.current_prompt.answers > 1) do
     game
-    |> Timing.start_timer(&submiting_answers_tick/1)
-  end
-
-  defp maybe_start_voting_timer(game) when not game.answering? and length(game.answers) < 2 do
-    game
-    |> Timing.stop_timer()
-    |> Map.put(:time_remaining_in_sec, 5)
-    |> Timing.start_timer(&voting_tick/1)
-  end
-
-  defp maybe_start_voting_timer(game) when not game.answering? do
-    game
-    |> Timing.stop_timer()
-    |> Map.put(:time_remaining_in_sec, game.vote_length_in_sec)
-    |> Timing.start_timer(&voting_tick/1)
+    |> stop_answering_and_start_voting_timer()
   end
 
   defp maybe_start_voting_timer(game), do: game
 
+  defp stop_answering_and_start_voting_timer(game) do
+    game
+    |> Timing.stop_timer(:answering_timer)
+    |> Timing.set_time(:voting_timer, game.voting_length_in_sec)
+    |> Timing.start_timer(:voting_timer, &voting_timer_ends/1)
+  end
+
   defp maybe_start_answering_timer(game) when game.answering? do
     game
-    |> Timing.stop_timer()
-    |> Map.put(:time_remaining_in_sec, game.answer_length_in_sec)
-    |> Timing.start_timer(&submiting_answers_tick/1)
+    |> stop_voting_and_start_answering()
   end
 
   defp maybe_start_answering_timer(game), do: game
 
-  defp maybe_next_prompt(game) when game.current_prompt.scored? do
-    Process.send_after(self(), :next_prompt, 5000)
-
+  defp stop_voting_and_start_answering(game) do
     game
-    |> Timing.stop_timer()
+    |> Timing.stop_timer(:voting_timer)
+    |> Timing.set_time(:answering_timer, game.answer_length_in_sec)
+    |> Timing.start_timer(:answering_timer, &submiting_answers_ends/1)
+  end
+
+  defp maybe_next_prompt(game)
+       when not game.answering? and length(game.current_prompt.answers) < 2 do
+    next_prompt(game)
+  end
+
+  defp maybe_next_prompt(game) when not game.answering? and game.current_prompt.scored? do
+    next_prompt(game)
   end
 
   defp maybe_next_prompt(game), do: game
 
-  defp submiting_answers_tick(game) do
+  defp next_prompt(game) do
+    Process.send_after(self(), :next_prompt, 5000)
+
     game
-    |> Timing.stop_timer()
+    |> Timing.stop_timer(:voting_timer)
+  end
+
+  defp submiting_answers_ends(game) do
+    game
     |> Witbash.start_voting_phase()
   end
 
   defp voting_timer_ends(game) do
     game
-    |> Timing.stop_timer()
     |> Witbash.score_votes()
   end
 end

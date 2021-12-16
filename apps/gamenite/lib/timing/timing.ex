@@ -6,7 +6,7 @@ defmodule Gamenite.Timing do
       alias Gamenite.Timing.{Timer}
 
       def handle_info({:tick, timer_field}, game) do
-        case get_timer(game, timer_field) do
+        case Timing.get_timer(game, timer_field) do
           nil ->
             {:noreply, game}
 
@@ -24,7 +24,7 @@ defmodule Gamenite.Timing do
 
       def apply_tick(game, timer, timer_field) when timer.time_remaining <= 1 do
         stopped_timer = Timing.stop_timer(game, timer, timer_field)
-        new_game = timer.end_func(game, stopped_timer, timer_field)
+        new_game = timer.end_func(game)
       end
 
       def apply_tick(game, timer, timer_field) do
@@ -33,9 +33,11 @@ defmodule Gamenite.Timing do
     end
   end
 
-  def stop_timer(game, nil, _timer_field) do
-    game
+  def stop_timer(game, timer_field) do
+    do_stop_timer(game, get_timer(game, timer_field), timer_field)
   end
+
+  def do_stop_timer(game, nil, _timer_field), do: game
 
   def do_stop_timer(game, timer, timer_field) do
     Process.cancel_timer(timer.timer_ref)
