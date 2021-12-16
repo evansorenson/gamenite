@@ -78,7 +78,11 @@ defmodule Gamenite.Witbash.Server do
     Timing.start_timer(
       game,
       :voting_timer,
-      fn game -> Witbash.score_votes(game) end,
+      fn game ->
+        game
+        |> Witbash.score_votes()
+        |> next_prompt()
+      end,
       game.vote_length_in_sec
     )
   end

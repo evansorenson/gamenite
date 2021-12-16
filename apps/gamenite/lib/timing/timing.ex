@@ -14,20 +14,25 @@ defmodule Gamenite.Timing do
           timer ->
             new_game =
               game
-              |> apply_tick(Timing.decrement_time(timer), timer_field)
+              |> Timing.decrement_timer(timer_field)
+              |> apply_tick(timer_field)
               |> Server.broadcast_game_update()
 
             {:noreply, new_game}
         end
       end
 
-      def apply_tick(game, timer, timer_field) when timer.time_remaining <= 0 do
-        stopped_timer = Timing.stop_timer(game, timer_field)
-        new_game = timer.end_func.(game)
-      end
+      def apply_tick(game, timer_field) do
+        timer = Timing.get_timer(game, timer_field)
 
-      def apply_tick(game, timer, timer_field) do
-        new_game = timer.tick_func.(game, timer, timer_field)
+        if timer.time_remaining > 0 do
+          game
+          |> timer.tick_func.(timer_field)
+        else
+          game
+          |> Timing.stop_timer(timer_field)
+          |> timer.end_func.()
+        end
       end
     end
   end
@@ -48,7 +53,7 @@ defmodule Gamenite.Timing do
   def start_timer(
         game,
         timer_field,
-        tick_func \\ &default_tick_func/3,
+        tick_func \\ &default_tick_func/2,
         end_func,
         length,
         interval \\ 1000
@@ -67,11 +72,13 @@ defmodule Gamenite.Timing do
     Map.put(game, timer_field, timer)
   end
 
-  def default_tick_func(game, timer, timer_field) do
-    new_timer = send_tick(timer, timer_field)
+  def default_tick_func(game, timer_field) do
+    timer =
+      get_timer(game, timer_field)
+      |> send_tick(timer_field)
 
     game
-    |> put_timer(timer_field, new_timer)
+    |> put_timer(timer_field, timer)
   end
 
   def send_tick(timer, timer_field) do
@@ -95,7 +102,9 @@ defmodule Gamenite.Timing do
     |> put_timer(timer_field, %{timer | time_remaining: new_time})
   end
 
-  def decrement_time(timer) do
-    %{timer | time_remaining: timer.time_remaining - timer.decrement}
+  def decrement_timer(game, timer_field) do
+    timer = get_timer(game, timer_field)
+    decremented_timer = Map.put(timer, :time_remaining, timer.time_remaining - timer.decrement)
+    put_timer(game, timer_field, decremented_timer)
   end
 end
