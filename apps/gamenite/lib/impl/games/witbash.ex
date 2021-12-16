@@ -22,7 +22,9 @@ defmodule Gamenite.Witbash do
     field(:current_round, :integer, default: 1)
     field(:answer_length_in_sec, :integer, default: 120)
     field(:vote_length_in_sec, :integer, default: 60)
-    field(:time_remaining_in_sec, :integer)
+    field :answering_timer, :map
+    field :voting_timer, :map
+    field :show_votes_timer, :map
     field(:answering?, :boolean)
     field :final_round?, :boolean, default: false
     field(:finished?, :boolean, default: false)

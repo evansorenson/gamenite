@@ -92,7 +92,7 @@ defmodule Gamenite.Witbash.Server do
     |> Witbash.start_voting_phase()
   end
 
-  defp voting_timer_ends(game) do
+  defp voting_timer_ends(game, timer, :voting_timer) do
     game
     |> Witbash.score_votes()
   end

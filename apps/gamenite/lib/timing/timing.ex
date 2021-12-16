@@ -1,9 +1,8 @@
-defmodule Gamenite.Timing do
+defmodule Gamenite.Timer do
   defmacro __using__(_opts) do
     quote do
-      alias Gamenite.Timing
+      alias Gamenite.Timer
       alias Gamenite.Game.Server
-      alias Gamenite.Timing.{Timer}
 
       def handle_info({:tick, timer_field}, game) do
         case Timing.get_timer(game, timer_field) do
@@ -11,7 +10,7 @@ defmodule Gamenite.Timing do
             {:noreply, game}
 
           timer ->
-            decremented_timer = Timing.decrement_time(timer)
+            decremented_timer = Timer.decrement_time(timer)
 
             new_game =
               game
@@ -90,6 +89,13 @@ defmodule Gamenite.Timing do
   def put_timer(game, timer_field, new_timer) do
     game
     |> Map.put(timer_field, new_timer)
+  end
+
+  def set_time(game, timer_field, new_time) do
+    timer = get_timer(game, timer_field)
+
+    game
+    |> put_timer(timer_field, %{timer | time_remaining: new_time})
   end
 
   def decrement_time(timer) do
