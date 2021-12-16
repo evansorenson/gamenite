@@ -104,7 +104,7 @@ defmodule Gamenite.Witbash.Server do
   defp maybe_next_prompt(game), do: game
 
   defp next_prompt(game) do
-    Process.send_after(self(), :next_prompt, 5000)
+    Process.send_after(self(), :next_prompt, 7000)
 
     game
     |> Timing.stop_timer(:voting_timer)

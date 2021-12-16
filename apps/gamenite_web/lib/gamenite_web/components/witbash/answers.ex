@@ -2,6 +2,7 @@ defmodule GameniteWeb.Components.Witbash.Answers do
   use Surface.Component
 
   alias GameniteWeb.Components.PlayerName
+  alias GameniteWeb.Components.Witbash.Answer
 
   prop prompt, :map, required: true
   prop roommates, :map, required: true
@@ -11,45 +12,33 @@ defmodule GameniteWeb.Components.Witbash.Answers do
 
   def render(assigns) do
     ~F"""
+    <div class="flex flex-wrap items-start justify-center space-x-8">
     {#case @prompt.answers}
       {#match []}
-        <div class="flex flex-wrap justify-center">
         {#for user_id <- @prompt.assigned_user_ids}
           <PlayerName roommate={Map.fetch!(@roommates, user_id)} {=@user_id} font_size={"text-3xl"} />
         {/for}
-        </div>
         <h3>Did not submit any answers! No points for you :(</h3>}
       {#match [only_answer | []]}
         {#for user_id <- @prompt.assigned_user_ids}
+          {#if only_answer.user_id == user_id }
+            <Answer answer={only_answer} {=@roommates} {=@user_id} />
+          {#else}
+
+          <Answer answer={%Gamenite.Witbash.Answer{answer: "", user_id: @user_id}} {=@roommates} {=@user_id} />
             <PlayerName roommate={Map.fetch!(@roommates, user_id)} {=@user_id} font_size={"text-3xl"} />
+          {/if}
         {/for}
       {#match answers}
-        <div class="flex flex-wrap justify-center">
         {#for answer <- answers }
-          <div class="pb-8 w-96 px-4">
-            <div :on-click={if answer.user_id == @user_id do nil else @on_click end} phx-value-voting_user_id={@user_id} phx-value-receiving_user_id={answer.user_id}
-                class={"flex flex-col shadow-lg bg-white w-full h-full items-center justify-center"}>
-
-            {#if @show_votes?}
-              <div class="flex flex-wrap justify-center py-2">
-                {#for voter_id <- answer.votes}
-                  <PlayerName roommate={Map.fetch!(@roommates, voter_id)} {=@user_id} font_size={"text-3xl"} />
-                {/for}
-              </div>
-            {/if}
-              <div class="flex h-64 items-center">
-                <h1 class="text-center text-6xl text-wrap font-sans:Indie-Flower">{answer.answer}</h1>
-              </div>
-            {#if @show_votes?}
-              <div class="pb-4">
-                <PlayerName roommate={Map.fetch!(@roommates, answer.user_id)} {=@user_id} font_size={"text-3xl"} />
-              </div>
-            {/if}
-            </div>
-          </div>
+          {#if @user_id in @prompt.assigned_user_ids}
+            <Answer answer={answer} {=@roommates} {=@user_id} {=@show_votes?} />
+          {#else}
+            <Answer answer={answer} {=@roommates} {=@user_id} {=@show_votes?} {=@on_click} />
+          {/if}
         {/for}
-        </div>
     {/case}
+    </div>
     """
   end
 end

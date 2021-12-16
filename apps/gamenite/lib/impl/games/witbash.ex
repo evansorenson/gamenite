@@ -314,7 +314,7 @@ defmodule Gamenite.Witbash do
 
   def score_votes(game)
       when game.final_round? do
-    do_score_votes(game, 100 * length(game.players) * 2)
+    do_score_votes(game, 400)
   end
 
   def score_votes(game), do: do_score_votes(game, 100)
@@ -323,6 +323,15 @@ defmodule Gamenite.Witbash do
       when current_prompt.answers == [] do
     game
     |> put_in([:current_prompt, :scored?], true)
+  end
+
+  def do_score_votes(
+        %{current_prompt: %{answers: [only_answer | []]} = _current_prompt} = game,
+        total_points
+      ) do
+    game
+    |> add_score_to_answer(total_points, 0)
+    |> update_player_score(total_points, only_answer.user_id)
   end
 
   def do_score_votes(%{current_prompt: current_prompt} = game, total_points) do
