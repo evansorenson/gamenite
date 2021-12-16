@@ -74,8 +74,8 @@ defmodule GameniteWeb.Components.Witbash do
 
     ~F"""
     <div class="flex flex-col justify-center items-center space-y-8">
-      <Timer time_remaining={@game.time_remaining_in_sec} />
       {#if @game.answering?}
+        <Timer time_remaining={@game.answering_timer.time_remaining} />
         {#case Enum.find(Enum.with_index(@game.prompts), fn {prompt, _i} -> @user_id in prompt.assigned_user_ids and @user_id not in Enum.map(prompt.answers, &(&1.user_id)) end)}
         {#match nil}
           <SubmittedUsers submitted_users={@game.submitted_user_ids} {=@roommates} />
@@ -106,6 +106,7 @@ defmodule GameniteWeb.Components.Witbash do
         </div>
         {/case}
       {#else}
+      <Timer time_remaining={@game.voting_timer.time_remaining} />
         {#if @game.current_prompt.scored?}
           <Answers prompt={@game.current_prompt} {=@roommates} {=@user_id} show_votes?={true} on_click={"vote", target: @myself}/>
         {#elseif @user_id not in @game.submitted_user_ids and (@user_id not in @game.current_prompt.assigned_user_ids or @game.final_round?)}
