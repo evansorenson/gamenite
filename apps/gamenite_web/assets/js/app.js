@@ -4,9 +4,9 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", info => topbar.show())
 window.addEventListener("phx:page-loading-stop", info => topbar.hide())
 
-// import Alpine from "alpinejs"
-// window.Alpine = Alpine
-// Alpine.start()
+import Alpine from "alpinejs"
+window.Alpine = Alpine
+Alpine.start()
 
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
@@ -18,13 +18,13 @@ let Hooks = {}
 let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken, user_token: userToken },
   hooks: Hooks,
-  // dom: {
-  //   onBeforeElUpdated(from, to){
-  //     if(from._x_dataStack){ 
-  //       window.Alpine.clone(from, to); 
-  //     }
-  //   }
-  // },
+  dom: {
+    onBeforeElUpdated(from, to){
+      if(from._x_dataStack){ 
+        window.Alpine.clone(from, to); 
+      }
+    }
+  },
 })
 
 
