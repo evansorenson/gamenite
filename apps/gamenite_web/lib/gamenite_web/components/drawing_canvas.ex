@@ -176,7 +176,7 @@ defmodule GameniteWeb.Components.DrawingCanvas do
       </script>
 
       <canvas id="canvas" class="h-full w-full bg-white" @mouseup="down = false; mouseUp()" @mousedown="if ($store.drawing_type != 'fill') { down = true; } mouseDown($event, $store.drawing_type, $store.color);" @mousemove="draw($event, down, $store.color, $store.brush_width)"/>
-      <div class="flex space-x-4 justify-center items-center">
+      <div class="flex space-x-4 md:space-x-8 justify-center items-center pt-4">
 
         <button :style="`background-color: ${color}`" class="h-14 w-14 border-0 rounded-none"/>
         <div class="grid grid-cols-6">
@@ -194,31 +194,58 @@ defmodule GameniteWeb.Components.DrawingCanvas do
             </div>
           </button>
           <button :class="drawing_type == 'fill' ? 'bg-blurple' : 'bg-white'" class="h-16 w-16 border-0 shadow-md" @click="drawing_type = 'fill'; $store.drawing_type = 'fill';">
-            <div class="flex justify-center items-center pt-2">
-              <svg class="h-14 w-14" version="1.1" viewBox="0 0 700 700" :stroke="drawing_type == 'fill' ? '#FFFFFF' : '#000000'" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                <g>
-                  <path  d="m292.32 41.441v101.92l-159.04 159.04c-8.8906 8.9219-13.887 21.004-13.887 33.602s4.9961 24.68 13.887 33.602l116.48 116.48c8.9219 8.8945 21.004 13.887 33.598 13.887 12.598 0 24.68-4.9922 33.602-13.887l190.96-190.96-182-182.56v-71.117zm30.801 231.28v-0.003906c0 5.6641-3.4102 10.77-8.6445 12.938-5.2305 2.1641-11.254 0.96875-15.258-3.0352s-5.1992-10.027-3.0312-15.258c2.1641-5.2305 7.2695-8.6445 12.934-8.6445 3.7109 0 7.2734 1.4766 9.8984 4.1016s4.1016 6.1875 4.1016 9.8984zm137.76 21.84-167.44 167.44c-2.7109 2.6016-6.3242 4.0547-10.082 4.0547s-7.3672-1.4531-10.078-4.0547l-116.48-116.48c-2.7383-2.6367-4.2852-6.2773-4.2852-10.078 0-3.8047 1.5469-7.4414 4.2852-10.082l135.52-134.4v37.52c-14.012 5.2852-24.723 16.859-28.906 31.238-4.1836 14.383-1.3555 29.891 7.6367 41.871 8.9883 11.977 23.094 19.027 38.07 19.027 14.977 0 29.078-7.0508 38.07-19.027 8.9883-11.98 11.816-27.488 7.6328-41.871-4.1836-14.379-14.891-25.953-28.902-31.238v-68.32z"/>
-                  <path  stroke-width="2" d="m564.48 404.32v-1.1211l-1.6797-2.2383-45.922-58.801-45.359 58.801-1.6797 2.2383v1.1211c-10.777 13.32-16.473 30.039-16.062 47.172 0.41016 17.129 6.8984 33.559 18.301 46.348 11.594 13.234 28.328 20.824 45.922 20.824s34.328-7.5898 45.922-20.824c11.164-12.992 17.352-29.527 17.453-46.656s-5.8867-33.738-16.895-46.863zm-26.879 70.559c-5.2148 6.1992-12.902 9.7773-21 9.7773-8.1016 0-15.789-3.5781-21-9.7773-5.8984-6.7969-9.2344-15.441-9.4414-24.438-0.20312-8.9961 2.7383-17.781 8.3203-24.84h1.1211l2.8008-3.3594 18.477-24.641 18.48 24.078 2.8008 3.3594v0.5625c5.6562 6.9922 8.6992 15.742 8.5977 24.738-0.10547 8.9961-3.3438 17.676-9.1562 24.539z"/>
-                </g>
+            <div class="flex justify-center items-center">
+              <svg class="h-14 w-14" viewBox="0 0 32 32" :stroke="drawing_type == 'fill' ? '#FFFFFF' : '#000000'" xmlns="http://www.w3.org/2000/svg">
+                <style type="text/css">
+                .st0{fill:none;stroke-width:2;stroke-miterlimit:10;}
+                .st1{fill:none;stroke-width:2;stroke-linejoin:round;stroke-miterlimit:10;}
+                .st2{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
+                .st3{fill:none;stroke-width:2;stroke-linecap:round;stroke-miterlimit:10;}
+                .st4{fill:none;stroke-width:2;stroke-linejoin:round;stroke-miterlimit:10;stroke-dasharray:3;}
+                </style>
+                <path class="st1" d="M19.1,17.9c-0.7,0.7-1.9,0.7-2.6,0c-0.7-0.7-0.7-1.9,0-2.6c0.7-0.7,1.9-0.7,2.6,0c4.7-4.7,7.4-9.8,5.9-11.2
+                  c-0.6-0.6-2-0.5-3.7,0.3"/>
+                <path class="st1" d="M7,27c0,1.1-0.9,2-2,2s-2-0.9-2-2s2-3,2-3S7,25.9,7,27z"/>
+                <path class="st1" d="M3.6,19.6L3.6,19.6c0.9,0.9,2.3,0.9,3.2,0L19.8,6.7l0,0c-1.1-1.1-2.9-1.1-4,0l-4,4c-2.2,2.2-4.7,4-7.6,5.2l0,0
+                  C2.8,16.6,2.5,18.5,3.6,19.6z"/>
+                <path class="st1" d="M19.8,6.7L28,16c1.3,1.5,1.2,3.7-0.2,5.1l-5.6,5.6c-1.4,1.4-3.6,1.5-5.1,0.2l-9.3-8.2"/>
               </svg>
-              <!-- Bucket by juli from NounProject.com -->
+              <!-- Icon by www.wishforge.games on freeicons.io -->
             </div>
           </button>
           <button :class="drawing_type == 'eraser' ? 'bg-blurple' : 'bg-white'" class="h-16 w-16 border-0 shadow-md" @click="drawing_type = 'eraser'; $store.drawing_type = 'eraser';">
-            <svg class="h-14 w-14"  version="1.1" viewBox="0 0 700 700" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-            <g>
-              <path d="m480.44 234.52-84.965-84.965c-6.5508-6.5508-17.203-6.5508-23.754 0l-149.84 149.84c-10.914 10.902-10.977 28.629 0 39.602l69.121 69.121c10.902 10.914 28.629 10.977 39.602 0l149.84-149.84c6.5469-6.5508 6.5469-17.211-0.003906-23.758zm-157.76 165.68c-6.5508 6.5508-17.207 6.5508-23.762 0l-69.121-69.117c-6.5508-6.5508-6.5508-17.207 0-23.762l19.398-19.402 92.883 92.883zm149.84-149.84-122.52 122.52-92.883-92.883 122.52-122.52c2.1992-2.1836 5.7188-2.1836 7.918 0l84.965 84.965c2.1836 2.1992 2.1836 5.7188 0 7.918z"/>
-            </g>
-            </svg>
-          <!-- Eraser by Setyo Ari Wibowo from NounProject.com -->
+            <div class="flex justify-center">
+              <svg class="h-14 w-14" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" :stroke="drawing_type == 'eraser' ? '#FFFFFF' : '#000000'">
+                <style type="text/css">.st0{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}</style>
+                <path class="st0" d="M28,12.5c0.8-0.8,0.8-2,0-2.8L22.4,4c-0.8-0.8-2-0.8-2.8,0L5,18.5c-0.8,0.8-0.8,2,0,2.8l3.8,3.8h6.6L28,12.5z"/>
+                <line class="st0" x1="12.5" y1="11.1" x2="20.9" y2="19.5"/>
+              </svg>
+            </div>
+          <!-- Icon by Gayrat Muminov on freeicons.io -->
           </button>
         </div>
 
-        <div class="flex">
-          <button :class="brush_width == 1 ? 'bg-blurple' : 'bg-white'" @click="brush_width = 1; $store.brush_width = 1;">1</button>
-          <button :class="brush_width == 2 ? 'bg-blurple' : 'bg-white'" @click="brush_width = 2; $store.brush_width = 2;">2</button>
-          <button :class="brush_width == 4 ? 'bg-blurple' : 'bg-white'" @click="brush_width = 4; $store.brush_width = 4;">4</button>
-          <button :class="brush_width == 8 ? 'bg-blurple' : 'bg-white'" @click="brush_width = 8; $store.brush_width = 8;">8</button>
+        <div class="flex space-x-1">
+          <button class="h-16 w-16 border-0 shadow-md content-center" :class="brush_width == 1 ? 'bg-blurple' : 'bg-white'" @click="brush_width = 1; $store.brush_width = 1;">
+          <div class="flex justify-center">
+            <span class="h-2 w-2 bg-black rounded-full inline-block"></span>
+            </div>
+          </button>
+          <button class="h-16 w-16 border-0 shadow-md" :class="brush_width == 2 ? 'bg-blurple' : 'bg-white'" @click="brush_width = 2; $store.brush_width = 2;">
+            <div class="flex justify-center">
+              <span class="h-4 w-4 bg-black rounded-full inline-block"></span>
+            </div>
+          </button>
+          <button class="h-16 w-16 border-0 shadow-md" :class="brush_width == 4 ? 'bg-blurple' : 'bg-white'" @click="brush_width = 4; $store.brush_width = 4;">
+            <div class="flex justify-center">
+              <span class="h-8 w-8 bg-black rounded-full inline-block"></span>
+            </div>
+          </button>
+          <button class="h-16 w-16 border-0 shadow-md" :class="brush_width == 8 ? 'bg-blurple' : 'bg-white'" @click="brush_width = 8; $store.brush_width = 8;">
+            <div class="flex justify-center">
+              <span class="h-12 w-12 bg-black rounded-full inline-block"></span>
+            </div>
+          </button>
         </div>
 
         <button class="h-16 w-16 bg-white border-0 shadow-md" @click="clear()">
