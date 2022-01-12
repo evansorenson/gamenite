@@ -97,7 +97,7 @@ defmodule GameniteWeb.Components.SaladBowl do
       {/if}
     {#else}
     <h1 class="text-center font-bold text-5xl text-gray-darkest pb-2 border-b-2">{"Round #{Enum.find_index(@game.rounds, &(&1 == @game.current_round)) + 1} - #{@game.current_round}"}</h1>
-    <GameniteWeb.Components.DrawingCanvas id="drawing_canvas" {=@user_id} drawing_user_id={@game.current_team.current_player.id} phrase_to_draw={@game.current_turn.card}/>
+    <GameniteWeb.Components.DrawingCanvas id="drawing_canvas" {=@slug} {=@user_id} drawing_user_id={@game.current_team.current_player.id} phrase_to_draw={@game.current_turn.card}/>
     <div class="flex py-8 space-y-4 items-center justify-center flex-col">
       <div class="flex justify-evenly w-full">
         <PlayerName roommate={Map.fetch!(@roommates, @game.current_team.current_player.id)} {=@user_id} color={@game.current_team.color} font_size={"text-3xl"} />

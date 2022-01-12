@@ -1,6 +1,9 @@
 defmodule GameniteWeb.Components.DrawingCanvas do
   use Surface.LiveComponent
 
+  alias Phoenix.PubSub
+
+  prop slug, :string, required: true
   prop user_id, :any, required: true
   prop drawing_user_id, :any, required: true
   prop phrase_to_draw, :string, required: true
@@ -21,10 +24,29 @@ defmodule GameniteWeb.Components.DrawingCanvas do
       "#FF00FF"
     ]
 
+  def handle_event("update_canvas", canvas_data_url, socket) do
+    Gamenite.SaladBowl.API.update_canvas(socket.assigns.slug, canvas_data_url)
+    {:noreply, socket}
+  end
+
+  def preload([assigns] = list_of_assigns) do
+    PubSub.subscribe(Gamenite.PubSub, "canvas_updated:" <> assigns.slug)
+    list_of_assigns
+  end
+
   def render(assigns) do
     ~F"""
-    <div x-data="{ down: false, color: '#000000', brush_width: 1, drawing_type: 'pen' }">
+    <div x-init="initCanvas()" x-data="{ down: false, color: '#000000', brush_width: 1, drawing_type: 'pen' }" phx-hook="UpdateCanvas" phx-hook="CanvasUpdated">
       <script>
+
+        function initCanvas() {
+          var canvas= document.getElementById('canvas');
+
+          canvas.addEventListener("CANVAS_UPDATED", e => {
+            console.log(e);
+          })
+        }
+
         function get_canvas_ref() {
           var canvas= document.getElementById('canvas');
           var ctx = canvas.getContext('2d');
@@ -41,6 +63,14 @@ defmodule GameniteWeb.Components.DrawingCanvas do
           return {x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY}
         }
 
+        function updateCanvas() {
+          var canvas = document.getElementById('canvas');
+          var ctx = get_canvas_ref();
+
+          imageData =  ctx.getImageData(0, 0, canvas.width, canvas.height);
+          window.dispatchEvent(new CustomEvent('UPDATE_CANVAS', { detail: canvas.toDataURL()}));
+        }
+
         function mouseDown(e, drawing_type, color) {
           var canvas = document.getElementById('canvas');
           var ctx = get_canvas_ref();
@@ -50,6 +80,7 @@ defmodule GameniteWeb.Components.DrawingCanvas do
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             floodFill(imageData, hexToRGB(color), Math.round(x), Math.round(y));
             ctx.putImageData(imageData, 0, 0);
+            updateCanvas();
             return;
           }
           else if (drawing_type == 'eraser') {
@@ -79,11 +110,14 @@ defmodule GameniteWeb.Components.DrawingCanvas do
           ctx.lineCap = 'round';
           ctx.strokeStyle = color;
           ctx.stroke();
+
+          updateCanvas(ctx);
         }
 
         function clear() {
           ctx = get_canvas_ref();
           ctx.clearRect(0, 0, canvas.width, canvas.height);
+          updateCanvas();
         }
 
         // Canvas flood fill, taken from: https://codepen.io/Geeyoam/pen/vLGZzG
@@ -96,6 +130,15 @@ defmodule GameniteWeb.Components.DrawingCanvas do
             b: data[4 * (width * y + x) + 2],
             a: data[4 * (width * y + x) + 3]
           };
+        }
+
+        function loadCanvas(strDataURI) {
+          ctx = get_canvas_ref();
+          var img = new Image;
+          img.onload = function(){
+          ctx.drawImage(img,0,0); // Or at whatever offset you like
+          };
+          img.src = strDataURI;
         }
 
         function setColorAtPixel(imageData, color, x, y) {
@@ -175,7 +218,7 @@ defmodule GameniteWeb.Components.DrawingCanvas do
         };
       </script>
 
-      <canvas id="canvas" class="h-full w-full bg-white" @mouseup="down = false; mouseUp()" @mousedown="if ($store.drawing_type != 'fill') { down = true; } mouseDown($event, $store.drawing_type, $store.color);" @mousemove="draw($event, down, $store.color, $store.brush_width)"/>
+      <canvas id="canvas" x-init="$store.color = '#000000';" class="h-full w-full bg-white" @mouseup="down = false; mouseUp()" @mousedown="if ($store.drawing_type != 'fill') { down = true; } mouseDown($event, $store.drawing_type, $store.color);" @mousemove="draw($event, down, $store.color, $store.brush_width)"/>
       <div class="flex space-x-4 md:space-x-8 justify-center items-center pt-4">
 
         <button :style="`background-color: ${color}`" class="h-14 w-14 border-0 rounded-none"/>

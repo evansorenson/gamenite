@@ -1,4 +1,4 @@
-<div class="flex flex-col justify-center items-center">
+<div id="room" class="flex flex-col justify-center items-center" phx-hook="UpdateCanvas">
   {#if not @joined?}
     <h1 class="block text-center pb-10 text-bold text-6xl">Enter Room</h1>
     <div class="flex flex-col items-center w-1/2 bg-white rounded-xl shadow-xl">

@@ -9,8 +9,6 @@ defmodule GameniteWeb.Auth do
   def call(conn, _opts) do
     case get_session(conn, :user_id) do
       nil ->
-        IO.puts("no user_id yet")
-
         user_id = Ecto.UUID.generate()
 
         conn
