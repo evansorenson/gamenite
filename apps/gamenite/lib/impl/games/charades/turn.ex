@@ -3,8 +3,8 @@ defmodule Gamenite.Charades.Turn do
 
   defstruct card: nil,
             completed_cards: [],
-            player_name: nil,
-            time_remaining_in_sec: nil,
+            player_id: nil,
+            turn_length: 0,
             review?: false,
             started?: false
 

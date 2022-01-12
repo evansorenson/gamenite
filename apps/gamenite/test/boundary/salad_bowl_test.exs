@@ -18,7 +18,7 @@ defmodule SaladBowlTest do
         deck: ["1", "2", "3"],
         skip_limit: 1,
         rounds: ["Catchphrase", "Password", "Charades"],
-        current_turn: Turn.new(%{card: "0", time_remaining_in_sec: 1})
+        current_turn: Turn.new(%{card: "0"})
       })
       |> elem(1)
 
@@ -134,7 +134,7 @@ defmodule SaladBowlTest do
       assert_receive {:game_update, game}
 
       assert_receive {:game_update, game}
-      assert game.current_turn.time_remaining_in_sec == 0
+      assert game.timer.time_remaining == 0
       assert game.current_turn.review?
     end
   end
@@ -219,14 +219,13 @@ defmodule SaladBowlTest do
       assert_receive {:game_update, game}
 
       assert game.current_turn != salad_bowl.current_turn
-      assert game.current_turn.time_remaining_in_sec == salad_bowl.turn_length
+      assert game.timer.time_remaining == salad_bowl.turn_length
     end
 
     test "finished round", %{finished_turn: salad_bowl} do
       finished_round_turn =
         Turn.new(%{
           card: nil,
-          time_remaining_in_sec: 15,
           completed_cards: [{:correct, "1"}, {:correct, "2"}]
         })
 
@@ -239,7 +238,7 @@ defmodule SaladBowlTest do
 
       assert game.current_round == "Password"
       assert game.deck == ["1", "2", "3"]
-      assert game.current_turn.time_remaining_in_sec == 15
+      assert game.timer.time_remaining == 15
       refute game.finished?
     end
 
@@ -247,7 +246,6 @@ defmodule SaladBowlTest do
       finished_round_turn =
         Turn.new(%{
           card: nil,
-          time_remaining_in_sec: 15,
           completed_cards: [{:correct, "1"}, {:correct, "2"}]
         })
 

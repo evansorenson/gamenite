@@ -6,7 +6,6 @@ defmodule GameniteWeb.Components.SaladBowl do
   alias GameniteWeb.Components.{TeamsScoreboard, PlayerName, SubmittedUsers, Timer}
 
   alias Gamenite.SaladBowl.API
-  alias Gamenite.TeamGame
 
   data game, :map
   data user_id, :any
@@ -108,7 +107,11 @@ defmodule GameniteWeb.Components.SaladBowl do
           </svg>
           <h1 class="text-center text-5xl">{"#{length(@game.deck)}"}</h1>
         </div>
-        <Timer time_remaining={@game.current_turn.time_remaining_in_sec} />
+        {#if is_nil(@game.timer)}
+        <Timer time_remaining={@game.turn_length} />
+        {#else}
+        <Timer time_remaining={@game.timer.time_remaining} />
+        {/if}
       </div>
       {#if Gamenite.TeamGame.current_player?(@game.current_team, @user_id)}
         {#case @game.current_turn}

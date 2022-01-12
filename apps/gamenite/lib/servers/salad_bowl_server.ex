@@ -22,7 +22,7 @@ defmodule Gamenite.SaladBowl.Server do
   def handle_call(:start_turn, _from, game) do
     game
     |> Charades.start_turn()
-    |> Timing.start_timer(:timer, &turn_timer_ends/1)
+    |> Timing.start_timer(:timer, &turn_timer_ends/1, game.current_turn.turn_length)
     |> game_response(game)
   end
 

@@ -56,9 +56,7 @@ defmodule Gamenite.Charades do
 
   def new_turn(game, turn_length) do
     new_turn =
-      Turn.new(%{
-        time_remaining_in_sec: turn_length
-      })
+      Turn.new(%{turn_length: turn_length, player_id: game.current_team.current_player.id})
 
     %{game | current_turn: new_turn}
   end
@@ -261,17 +259,17 @@ defmodule Gamenite.Charades do
     |> do_end_turn
   end
 
-  defp do_end_turn(%{current_turn: current_turn, deck: []} = game)
-       when current_turn.time_remaining_in_sec != 0 do
+  defp do_end_turn(%{deck: [], timer: timer} = game)
+       when timer.time_remaining != 0 do
     game
     |> maybe_end_round
-    |> new_turn(current_turn.time_remaining_in_sec)
+    |> new_turn(timer.time_remaining)
   end
 
-  defp do_end_turn(%{turn_length: turn_length} = game) do
+  defp do_end_turn(game) do
     game
     |> TeamGame.end_turn()
-    |> new_turn(turn_length)
+    |> new_turn(game.turn_length)
   end
 
   defp increment_score_if_correct(game, :correct) do
