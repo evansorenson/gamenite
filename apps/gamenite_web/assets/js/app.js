@@ -17,11 +17,25 @@ let Hooks = {}
 
 Hooks.UpdateCanvas = {
   mounted() {
-    window.addEventListener("UPDATE_CANVAS", e => {
+
+    this.pushEventTo("canvas", "mounted_canvas");
+    window.addEventListener("update_canvas", e => {
       this.pushEventTo("canvas", "update_canvas", e.detail);
     });
 
-    this.handleEvent("CANVAS_UPDATED", (payload) => console.log("data received: " + payload));
+    function drawCanvas(imageData) {
+      console.log(imageData);
+      var canvas= document.getElementById('canvas');
+      var ctx = canvas.getContext('2d');
+
+      var img = new window.Image();
+      img.addEventListener("load", function () {
+        canvas.getContext("2d").drawImage(img, 0, 0);
+      });
+      img.setAttribute("src", imageData);
+    }
+
+    this.handleEvent("canvas_updated", (payload) => drawCanvas(payload.canvas_data))
   }
 }
 

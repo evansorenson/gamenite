@@ -86,7 +86,7 @@ defmodule GameniteWeb.Components.SaladBowl do
             <form phx-target={@myself} phx-submit="submit_words">
               <div class="flex-wrap">
                 {#for i <- 1..@game.cards_per_player}
-                    <input class="mx-2 my-2 shadow-md h-48 text-center" name={"word-#{i}"}/>
+                    <input class="mx-2 my-2 shadow-md h-48 text-center ring-blurple focus:ring-2 focus:ring-blurple " name={"word-#{i}"}/>
                 {/for}
               </div>
               <button class="my-8 px-4 rounded-md bg-blurple text-white border-0">Submit</button>
@@ -97,7 +97,7 @@ defmodule GameniteWeb.Components.SaladBowl do
       {/if}
     {#else}
     <h1 class="text-center font-bold text-5xl text-gray-darkest pb-2 border-b-2">{"Round #{Enum.find_index(@game.rounds, &(&1 == @game.current_round)) + 1} - #{@game.current_round}"}</h1>
-    <GameniteWeb.Components.DrawingCanvas id="drawing_canvas" {=@slug} {=@user_id} drawing_user_id={@game.current_team.current_player.id} phrase_to_draw={@game.current_turn.card}/>
+    <GameniteWeb.Components.DrawingCanvas id="drawing_canvas" canvas={@game.canvas} {=@slug} {=@user_id} drawing_user_id={@game.current_team.current_player.id} phrase_to_draw={@game.current_turn.card}/>
     <div class="flex py-8 space-y-4 items-center justify-center flex-col">
       <div class="flex justify-evenly w-full">
         <PlayerName roommate={Map.fetch!(@roommates, @game.current_team.current_player.id)} {=@user_id} color={@game.current_team.color} font_size={"text-3xl"} />
@@ -107,10 +107,10 @@ defmodule GameniteWeb.Components.SaladBowl do
           </svg>
           <h1 class="text-center text-5xl">{"#{length(@game.deck)}"}</h1>
         </div>
-        {#if is_nil(@game.timer)}
-        <Timer time_remaining={@game.turn_length} />
-        {#else}
+        {#if @game.current_turn.started?}
         <Timer time_remaining={@game.timer.time_remaining} />
+        {#else}
+        <Timer time_remaining={@game.current_turn.turn_length} />
         {/if}
       </div>
       {#if Gamenite.TeamGame.current_player?(@game.current_team, @user_id)}

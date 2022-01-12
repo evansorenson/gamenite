@@ -245,10 +245,10 @@ defmodule Gamenite.Charades do
   def start_turn(game) do
     game
     |> draw_card
-    |> set_turn_started?(true)
+    |> set_turn_started(true)
   end
 
-  defp set_turn_started?(game, bool) do
+  defp set_turn_started(game, bool) do
     game
     |> put_in([:current_turn, :started?], bool)
   end
@@ -310,7 +310,7 @@ defmodule Gamenite.Charades do
     game
     |> inc_round
     |> update_deck(starting_deck)
-    |> set_turn_started?(false)
+    |> set_turn_started(false)
     |> put_in([:current_turn, :review?], false)
   end
 

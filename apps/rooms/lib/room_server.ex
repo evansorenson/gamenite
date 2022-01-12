@@ -53,6 +53,7 @@ defmodule Rooms.Room.Server do
     PubSub.broadcast(Rooms.PubSub, "room:" <> room.slug, {:room_update, room})
   end
 
+  @impl GenServer
   def handle_call(:state, _from, room) do
     {:reply, room, room}
   end
@@ -120,6 +121,7 @@ defmodule Rooms.Room.Server do
     |> response(room)
   end
 
+  @impl GenServer
   def handle_info(:timeout, room) do
     Logger.info("Room inactive. Shutting down.")
     {:stop, :normal, room}

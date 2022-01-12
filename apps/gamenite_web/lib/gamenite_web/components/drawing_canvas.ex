@@ -7,6 +7,7 @@ defmodule GameniteWeb.Components.DrawingCanvas do
   prop user_id, :any, required: true
   prop drawing_user_id, :any, required: true
   prop phrase_to_draw, :string, required: true
+  prop canvas, :string
 
   prop canvas_hex_colors, :list,
     default: [
@@ -29,6 +30,10 @@ defmodule GameniteWeb.Components.DrawingCanvas do
     {:noreply, socket}
   end
 
+  def handle_event("mounted_canvas", _params, socket) do
+    {:noreply, push_event(socket, "canvas_updated", %{canvas_data: socket.assigns.canvas})}
+  end
+
   def preload([assigns] = list_of_assigns) do
     PubSub.subscribe(Gamenite.PubSub, "canvas_updated:" <> assigns.slug)
     list_of_assigns
@@ -36,14 +41,14 @@ defmodule GameniteWeb.Components.DrawingCanvas do
 
   def render(assigns) do
     ~F"""
-    <div x-init="initCanvas()" x-data="{ down: false, color: '#000000', brush_width: 1, drawing_type: 'pen' }" phx-hook="UpdateCanvas" phx-hook="CanvasUpdated">
+    <div x-init="initCanvas()" x-data="{ down: false, color: '#000000', brush_width: 1, drawing_type: 'pen' }" phx-hook="UpdateCanvas">
       <script>
 
         function initCanvas() {
           var canvas= document.getElementById('canvas');
 
-          canvas.addEventListener("CANVAS_UPDATED", e => {
-            console.log(e);
+          canvas.addEventListener("canvas_updated", e => {
+            console.log("hallelujah");
           })
         }
 
@@ -63,12 +68,30 @@ defmodule GameniteWeb.Components.DrawingCanvas do
           return {x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY}
         }
 
+        // Throttle function: Input as function which needs to be throttled and delay is the time interval in milliseconds
+        function throttle(func, delay) {
+          // If setTimeout is already scheduled, no need to do anything
+          if (timerId) {
+            return
+          }
+
+          // Schedule a setTimeout after delay seconds
+          timerId  =  setTimeout(function () {
+            func()
+
+            // Once setTimeout function execution is finished, timerId = undefined so that in <br>
+            // the next scroll event function execution can be scheduled by the setTimeout
+            timerId  =  undefined;
+          }, delay)
+        }
+
+
         function updateCanvas() {
           var canvas = document.getElementById('canvas');
           var ctx = get_canvas_ref();
 
           imageData =  ctx.getImageData(0, 0, canvas.width, canvas.height);
-          window.dispatchEvent(new CustomEvent('UPDATE_CANVAS', { detail: canvas.toDataURL()}));
+          window.dispatchEvent(new CustomEvent('update_canvas', { detail: canvas.toDataURL()}));
         }
 
         function mouseDown(e, drawing_type, color) {
@@ -111,6 +134,7 @@ defmodule GameniteWeb.Components.DrawingCanvas do
           ctx.strokeStyle = color;
           ctx.stroke();
 
+
           updateCanvas(ctx);
         }
 
@@ -136,7 +160,7 @@ defmodule GameniteWeb.Components.DrawingCanvas do
           ctx = get_canvas_ref();
           var img = new Image;
           img.onload = function(){
-          ctx.drawImage(img,0,0); // Or at whatever offset you like
+            ctx.drawImage(img,0,0); // Or at whatever offset you like
           };
           img.src = strDataURI;
         }
