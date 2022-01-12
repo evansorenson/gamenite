@@ -24,6 +24,7 @@ defmodule Gamenite.SaladBowl do
     field(:deck, {:array, :string}, default: [])
     field(:submitted_users, {:array, :binary_id}, default: [])
     field(:finished?, :boolean, default: false)
+    field(:canvas, :map)
     field(:timer)
   end
 

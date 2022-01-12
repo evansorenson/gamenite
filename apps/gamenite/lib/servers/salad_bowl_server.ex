@@ -3,6 +3,7 @@ defmodule Gamenite.SaladBowl.Server do
 
   alias Gamenite.TeamGame
   alias Gamenite.Charades
+  alias Phoenix.PubSub
 
   use Gamenite.Timing
 
@@ -55,6 +56,17 @@ defmodule Gamenite.SaladBowl.Server do
   def handle_call({:change_card_outcome, card_index, outcome}, _from, game) do
     game
     |> Charades.change_card_outcome(card_index, outcome)
+    |> game_response(game)
+  end
+
+  def handle_call({:update_canvas, canvas_data}, _from, game) do
+    PubSub.broadcast(
+      Gamenite.PubSub,
+      "canvas_updated:" <> game.room_slug,
+      {:canvas_updated, canvas_data}
+    )
+
+    %{game | canvas: canvas_data}
     |> game_response(game)
   end
 

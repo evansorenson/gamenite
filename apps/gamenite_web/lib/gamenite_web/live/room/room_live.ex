@@ -213,4 +213,10 @@ defmodule GameniteWeb.RoomLive do
      socket
      |> assign(game: game)}
   end
+
+  def handle_info({:canvas_updated, canvas_data}, socket) do
+    # push event to client
+    push_event(socket, "CANVAS_UPDATED", %{canvas_data: canvas_data})
+    {:noreply, socket}
+  end
 end

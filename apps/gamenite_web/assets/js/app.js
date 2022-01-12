@@ -15,6 +15,17 @@ let userToken = document.querySelector('meta[name="channel_token"]').getAttribut
 
 let Hooks = {}
 
+Hooks.UpdateCanvas = {
+  mounted() {
+    window.addEventListener("UPDATE_CANVAS", e => {
+      this.pushEventTo("canvas", "update_canvas", e.detail);
+    });
+
+    this.handleEvent("CANVAS_UPDATED", (payload) => console.log("data received: " + payload));
+  }
+}
+
+
 let liveSocket = new LiveSocket("/live", Socket, {
   params: { _csrf_token: csrfToken, user_token: userToken },
   hooks: Hooks,
