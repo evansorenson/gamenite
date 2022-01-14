@@ -33,7 +33,7 @@ defmodule Gamenite.SaladBowl.API do
     GenServer.call(via(room_slug), {:change_card_outcome, card_index, outcome})
   end
 
-  def update_canvas(room_slug, canvas_data) do
-    GenServer.call(via(room_slug), {:update_canvas, canvas_data})
+  def update_canvas(room_slug, canvas_data, user_id) do
+    GenServer.call(via(room_slug), {:update_canvas, canvas_data, user_id})
   end
 end

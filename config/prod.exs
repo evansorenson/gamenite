@@ -19,8 +19,8 @@ config :gamenite,
   max_teams: 4,
   min_players: 2,
   team_colors: ["#C0392B", "#2980B9", "#27AE60", "#884EA0", "#D35400", "#FF33B8", "#F1C40F"],
-  salad_bowl_default_rounds: ["Catchphrase", "Password", "Charades"],
-  salad_bowl_all_rounds: ["Catchphrase", "Password", "Charades", "Pictionary"]
+  salad_bowl_default_rounds: ["Catchphrase", "Password", "Pictionary"],
+  salad_bowl_all_rounds: ["Catchphrase", "Password", "Pictionary", "Charades"]
 
 config :rooms,
   room_timeout: 900_000,

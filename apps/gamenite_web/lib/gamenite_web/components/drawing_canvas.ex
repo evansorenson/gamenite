@@ -25,8 +25,13 @@ defmodule GameniteWeb.Components.DrawingCanvas do
       "#FF00FF"
     ]
 
-  def handle_event("update_canvas", canvas_data_url, socket) do
-    Gamenite.SaladBowl.API.update_canvas(socket.assigns.slug, canvas_data_url)
+  def handle_event("update_canvas", canvas_data, socket) do
+    Gamenite.SaladBowl.API.update_canvas(
+      socket.assigns.slug,
+      canvas_data,
+      socket.assigns.user_id
+    )
+
     {:noreply, socket}
   end
 
@@ -41,16 +46,8 @@ defmodule GameniteWeb.Components.DrawingCanvas do
 
   def render(assigns) do
     ~F"""
-    <div x-init="initCanvas()" x-data="{ down: false, color: '#000000', brush_width: 1, drawing_type: 'pen' }" phx-hook="UpdateCanvas">
+    <div x-data="{ down: false, color: '#000000', brush_width: 1, drawing_type: 'pen' }" phx-hook="UpdateCanvas">
       <script>
-
-        function initCanvas() {
-          var canvas= document.getElementById('canvas');
-
-          canvas.addEventListener("canvas_updated", e => {
-            console.log("hallelujah");
-          })
-        }
 
         function get_canvas_ref() {
           var canvas= document.getElementById('canvas');
@@ -68,6 +65,7 @@ defmodule GameniteWeb.Components.DrawingCanvas do
           return {x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY}
         }
 
+        var timerId;
         // Throttle function: Input as function which needs to be throttled and delay is the time interval in milliseconds
         function throttle(func, delay) {
           // If setTimeout is already scheduled, no need to do anything
@@ -134,8 +132,7 @@ defmodule GameniteWeb.Components.DrawingCanvas do
           ctx.strokeStyle = color;
           ctx.stroke();
 
-
-          updateCanvas(ctx);
+          throttle(updateCanvas, 250);
         }
 
         function clear() {
@@ -242,6 +239,7 @@ defmodule GameniteWeb.Components.DrawingCanvas do
         };
       </script>
 
+      {#if @drawing_user_id == @user_id}
       <canvas id="canvas" x-init="$store.color = '#000000';" class="h-full w-full bg-white" @mouseup="down = false; mouseUp()" @mousedown="if ($store.drawing_type != 'fill') { down = true; } mouseDown($event, $store.drawing_type, $store.color);" @mousemove="draw($event, down, $store.color, $store.brush_width)"/>
       <div class="flex space-x-4 md:space-x-8 justify-center items-center pt-4">
 
@@ -323,6 +321,10 @@ defmodule GameniteWeb.Components.DrawingCanvas do
           </div>
         </button>
       </div>
+      {#else}
+        <canvas id="canvas" class="h-full w-full bg-white"/>
+      {/if}
+
     </div>
     """
   end

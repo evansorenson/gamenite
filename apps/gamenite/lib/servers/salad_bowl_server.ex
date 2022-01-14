@@ -29,6 +29,7 @@ defmodule Gamenite.SaladBowl.Server do
 
   def handle_call(:end_turn, _from, game) do
     game
+    |> clear_canvas()
     |> Charades.end_turn()
     |> game_response(game)
   end
@@ -43,6 +44,7 @@ defmodule Gamenite.SaladBowl.Server do
 
       new_game ->
         new_game
+        |> clear_canvas()
         |> game_response(game)
     end
   end
@@ -59,19 +61,29 @@ defmodule Gamenite.SaladBowl.Server do
     |> game_response(game)
   end
 
-  def handle_call({:update_canvas, canvas_data}, _from, game) do
-    PubSub.broadcast(
-      Gamenite.PubSub,
-      "canvas_updated:" <> game.room_slug,
-      {:canvas_updated, canvas_data}
-    )
-
-    %{game | canvas: canvas_data}
+  def handle_call({:update_canvas, canvas_data, user_id}, _from, game) do
+    game
+    |> update_canvas(canvas_data, user_id)
     |> game_response(game)
   end
 
   def turn_timer_ends(game) do
     game
     |> Charades.needs_review()
+  end
+
+  defp clear_canvas(game) do
+    game
+    |> update_canvas("", nil)
+  end
+
+  defp update_canvas(game, canvas_data, user_id) do
+    PubSub.broadcast(
+      Gamenite.PubSub,
+      "canvas_updated:" <> game.room_slug,
+      {:canvas_updated, canvas_data, user_id}
+    )
+
+    %{game | canvas: canvas_data}
   end
 end

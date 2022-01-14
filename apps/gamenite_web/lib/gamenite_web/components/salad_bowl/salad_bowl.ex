@@ -77,7 +77,11 @@ defmodule GameniteWeb.Components.SaladBowl do
     <p class="alert alert-info" role="alert">{live_flash(@flash, :info)}</p>
     <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
     {#if @game.finished?}
-      <h1>Game Finished</h1>
+      {#if Enum.max_by(@game.teams, & &1.score).color == "#C0392B"}
+      <h1 class="pt-10 text-8xl text-center font-bold">Blue wins!</h1>
+      {#else}
+      <h1 class="pt-10 text-8xl text-center font-bold">Red wins!</h1>
+      {/if}
       <TeamsScoreboard {=@game} {=@user_id} {=@roommates} bg={"gray-light"} shadow={"none"}/>
     {#elseif length(@game.submitted_users) < map_size(@roommates)}
       {#if @user_id not in @game.submitted_users}
@@ -97,7 +101,6 @@ defmodule GameniteWeb.Components.SaladBowl do
       {/if}
     {#else}
     <h1 class="text-center font-bold text-5xl text-gray-darkest pb-2 border-b-2">{"Round #{Enum.find_index(@game.rounds, &(&1 == @game.current_round)) + 1} - #{@game.current_round}"}</h1>
-    <GameniteWeb.Components.DrawingCanvas id="drawing_canvas" canvas={@game.canvas} {=@slug} {=@user_id} drawing_user_id={@game.current_team.current_player.id} phrase_to_draw={@game.current_turn.card}/>
     <div class="flex py-8 space-y-4 items-center justify-center flex-col">
       <div class="flex justify-evenly w-full">
         <PlayerName roommate={Map.fetch!(@roommates, @game.current_team.current_player.id)} {=@user_id} color={@game.current_team.color} font_size={"text-3xl"} />
@@ -113,14 +116,8 @@ defmodule GameniteWeb.Components.SaladBowl do
         <Timer time_remaining={@game.current_turn.turn_length} />
         {/if}
       </div>
-      {#if Gamenite.TeamGame.current_player?(@game.current_team, @user_id)}
-        {#case @game.current_turn}
-        {#match %{started?: false}}
-          <h1 class="text-4xl text-center py-2">{"It's your time to shine. Click the button to begin turn."}</h1>
-          <div class="flex justify-center items-center">
-            <button class="bg-black text-white  border-0 px-12" phx-click="start_turn" phx-target={@myself}>Start Turn</button>
-          </div>
-        {#match %{review?: true}}
+      {#if @game.current_team.current_player.id == @user_id}
+        {#if @game.current_turn.review?}
           <h1 class="text-4xl text-center py-2">{"Review and change any contested cards. Click button to end turn."}</h1>
           <div class="flex justify-center items-center">
             <button class="bg-black text-white  border-0 px-12" phx-click="end_turn" phx-target={@myself}>End Turn</button>
@@ -148,21 +145,52 @@ defmodule GameniteWeb.Components.SaladBowl do
               </div>
             {/case}
           {/for}
-          {#match _}
-          <Card word={@game.current_turn.card}/>
-          <div class="flex justify-center items-center space-x-4">
-            <button phx-target={@myself} phx-click="incorrect" class="bg-red-600 px-4">Incorrect</button>
-            <button phx-target={@myself} phx-click="skip" class="bg-yellow-600 px-4">Skip</button>
-            <button phx-target={@myself} phx-click="correct" class="bg-green-600 px-4">Correct</button>
+          {#elseif @game.current_turn.started?}
+            {#if @game.current_round == "Pictionary"}
+            <div class="flex justify-center items-center space-x-8 pt-16">
+              <h1 class="text-5xl font-semibold">{@game.current_turn.card}</h1>
+
+              <button phx-target={@myself} phx-click="incorrect" class="btn-red hover:opacity-70">Incorrect</button>
+              <button phx-target={@myself} phx-click="skip" class="btn-yellow hover:opacity-70">Skip</button>
+              <button phx-target={@myself} phx-click="correct" class="btn-green hover:opacity-70">Correct</button>
+            </div>
+            <div class="w-full">
+              <GameniteWeb.Components.DrawingCanvas id="drawing_canvas" canvas={@game.canvas} {=@slug} {=@user_id} drawing_user_id={@game.current_team.current_player.id} phrase_to_draw={@game.current_turn.card}/>
+            </div>
+
+            {#else}
+            <div class="flex py-4 w-full justify-center">
+              <Card word={@game.current_turn.card}/>
+            </div>
+            <div class="flex justify-center items-center space-x-8">
+              <button phx-target={@myself} phx-click="incorrect" class="btn-red hover:opacity-70">Incorrect</button>
+              <button phx-target={@myself} phx-click="skip" class="btn-yellow hover:opacity-70">Skip</button>
+              <button phx-target={@myself} phx-click="correct" class="btn-green hover:opacity-70">Correct</button>
+            </div>
+            {/if}
+          {#else}
+          <h1 class="text-4xl text-center py-2">{"It's your time to shine. Click the button to begin turn."}</h1>
+          <div class="flex justify-center items-center">
+            <button class="bg-black text-white  border-0 px-12" phx-click="start_turn" phx-target={@myself}>Start Turn</button>
           </div>
-        {/case}
+        {/if}
       {#elseif Gamenite.TeamGame.on_team?(@game.current_team, @user_id)}
-        <h1 class="text-5xl py-10 text-center">{"Your team is up! You are guessing clues."}</h1>
+        {#if @game.current_round == "Pictionary"}
+          <div class="w-full pt-5">
+            <GameniteWeb.Components.DrawingCanvas id="drawing_canvas" canvas={@game.canvas} {=@slug} {=@user_id} drawing_user_id={@game.current_team.current_player.id} phrase_to_draw={@game.current_turn.card}/>
+          </div>
+        {/if}
+        <h1 class="text-5xl pt-5 text-center">{"Your team is up! You are guessing clues."}</h1>
       {#else}
-        <h1 class="text-5xl py-10 text-center">{"Your team is chilling. Sit back and relax."}</h1>
+        {#if @game.current_round == "Pictionary"}
+        <div class="w-full pt-5">
+          <GameniteWeb.Components.DrawingCanvas id="drawing_canvas" canvas={@game.canvas} {=@slug} {=@user_id} drawing_user_id={@game.current_team.current_player.id} phrase_to_draw={@game.current_turn.card}/>
+        </div>
+        {/if}
+        <h1 class="text-5xl pt-5 text-center">{"Your team is chilling. Sit back and relax."}</h1>
       {/if}
       <div class="pt-8">
-      <TeamsScoreboard {=@game} {=@user_id} {=@roommates} bg={"gray-light"} shadow={"none"}/>
+        <TeamsScoreboard {=@game} {=@user_id} {=@roommates} bg={"gray-light"} shadow={"none"}/>
       </div>
     </div>
     {/if}

@@ -24,13 +24,20 @@ Hooks.UpdateCanvas = {
     });
 
     function drawCanvas(imageData) {
-      console.log(imageData);
-      var canvas= document.getElementById('canvas');
-      var ctx = canvas.getContext('2d');
+      var canvas = document.getElementById('canvas');
+
+      if (imageData == "") {
+        console.log("cleared");
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        return;
+      }
 
       var img = new window.Image();
       img.addEventListener("load", function () {
-        canvas.getContext("2d").drawImage(img, 0, 0);
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0);
       });
       img.setAttribute("src", imageData);
     }

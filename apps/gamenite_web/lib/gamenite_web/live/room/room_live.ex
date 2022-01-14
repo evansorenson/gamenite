@@ -20,7 +20,7 @@ defmodule GameniteWeb.RoomLive do
 
   data game, :map, default: nil
   data game_info, :map, default: nil
-  data user, :map
+  data user_id, :map
   data slug, :string
   data roommates, :map
   data joined?, :boolean, default: false
@@ -214,7 +214,12 @@ defmodule GameniteWeb.RoomLive do
      |> assign(game: game)}
   end
 
-  def handle_info({:canvas_updated, canvas_data}, socket) do
+  def handle_info({:canvas_updated, _canvas_data, user_id}, socket)
+      when socket.assigns.user_id == user_id do
+    {:noreply, socket}
+  end
+
+  def handle_info({:canvas_updated, canvas_data, _user_id}, socket) do
     {:noreply, push_event(socket, "canvas_updated", %{canvas_data: canvas_data})}
   end
 end
