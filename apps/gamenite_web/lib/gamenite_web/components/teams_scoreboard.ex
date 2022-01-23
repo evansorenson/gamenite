@@ -10,15 +10,13 @@ defmodule GameniteWeb.Components.TeamsScoreboard do
 
   def render(assigns) do
     ~F"""
-    <div class={"flex items-center justify-evenly h-full divide-x-2 divide-gray-light bg-#{@bg} rounded-lg shadow-#{@shadow}"}>
+    <div class={"w-full flex flex-col py-4 space-y-8 bg-#{@bg} rounded-lg shadow-#{@shadow}"}>
       {#for team <- @game.teams}
-        <div class="px-2">
         {#if team.id == @game.current_team.id}
           <TeamScoreboard team={@game.current_team} {=@roommates} {=@user_id} current_team?={true}/>
         {#else}
           <TeamScoreboard team={team} {=@roommates} {=@user_id}/>
         {/if}
-        </div>
       {/for}
     </div>
     """

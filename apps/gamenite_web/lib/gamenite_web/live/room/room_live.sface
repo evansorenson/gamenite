@@ -46,7 +46,11 @@
     {/if}
     </div>
     <div class="col-span-1 flex flex-col space-y-8 justify-center items-center hidden lg:block lg:h-full pl-12">
-      <ConnectedUsers roommates={@room.roommates}  {=@user_id} />
+       {#if @room.game_in_progress?}
+        <TeamsScoreboard {=@game} {=@user_id} roommates={@room.roommates}/>
+       {#else}
+        <ConnectedUsers roommates={@room.roommates}  {=@user_id} />
+        {/if}
       <div class="h-1/2">
         <Chat {=@room} {=@user_id} {=@message} height={"h-full"} />
       </div>

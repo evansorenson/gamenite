@@ -3,7 +3,7 @@ defmodule GameniteWeb.Components.SaladBowl do
   import GameniteWeb.Components.Game
 
   alias GameniteWeb.Components.Charades.{Card}
-  alias GameniteWeb.Components.{TeamsScoreboard, PlayerName, SubmittedUsers, Timer}
+  alias GameniteWeb.Components.{PlayerName, SubmittedUsers, Timer}
 
   alias Gamenite.SaladBowl.API
 
@@ -78,11 +78,10 @@ defmodule GameniteWeb.Components.SaladBowl do
     <p class="alert alert-danger" role="alert">{live_flash(@flash, :error)}</p>
     {#if @game.finished?}
       {#if Enum.max_by(@game.teams, & &1.score).color == "#C0392B"}
-      <h1 class="pt-10 text-8xl text-center font-bold">Blue wins!</h1>
-      {#else}
       <h1 class="pt-10 text-8xl text-center font-bold">Red wins!</h1>
+      {#else}
+      <h1 class="pt-10 text-8xl text-center font-bold">Blue wins!</h1>
       {/if}
-      <TeamsScoreboard {=@game} {=@user_id} {=@roommates} bg={"gray-light"} shadow={"none"}/>
     {#elseif length(@game.submitted_users) < map_size(@roommates)}
       {#if @user_id not in @game.submitted_users}
         <div class="container items-center justify-center max-w-max py-10">
@@ -189,9 +188,6 @@ defmodule GameniteWeb.Components.SaladBowl do
         {/if}
         <h1 class="text-5xl pt-5 text-center">{"Your team is chilling. Sit back and relax."}</h1>
       {/if}
-      <div class="pt-8">
-        <TeamsScoreboard {=@game} {=@user_id} {=@roommates} bg={"gray-light"} shadow={"none"}/>
-      </div>
     </div>
     {/if}
     </div>

@@ -12,12 +12,13 @@ defmodule GameniteWeb.Components.PlayerName do
     ~F"""
     <div class="flex px-1 py-1">
       <div style={"border-color:#{@color}"} class="flex items-center justify-center rounded-lg shadow-md border-2 px-2">
+      {#if @roommate.id == @user_id}
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+        </svg>
+      {/if}
         <h1 style={"color:#{@color}"} class={"#{@font_size} font-semibold pl-1"}>
-          {#if @roommate.id == @user_id}
-            {@roommate.name} (You)
-          {#else}
             {@roommate.name}
-          {/if}
         </h1>
       </div>
     </div>

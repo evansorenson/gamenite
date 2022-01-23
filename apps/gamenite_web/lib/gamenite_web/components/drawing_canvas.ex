@@ -48,7 +48,6 @@ defmodule GameniteWeb.Components.DrawingCanvas do
     ~F"""
     <div x-data="{ down: false, color: '#000000', brush_width: 1, drawing_type: 'pen' }" phx-hook="UpdateCanvas">
       <script>
-
         function get_canvas_ref() {
           var canvas= document.getElementById('canvas');
           var ctx = canvas.getContext('2d');
@@ -236,7 +235,7 @@ defmodule GameniteWeb.Components.DrawingCanvas do
           const b = parseInt(hex.slice(5, 7), 16);
 
           return { r, g, b, a: 0xff };
-        };
+        }
       </script>
 
       {#if @drawing_user_id == @user_id}

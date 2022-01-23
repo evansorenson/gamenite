@@ -16,7 +16,7 @@ defmodule GameniteWeb.RoomLive do
   alias Surface.Components.Dynamic
   alias Surface.Components.Form
   alias Surface.Components.Form.{Field, TextInput, Submit, Label, ErrorTag}
-  alias GameniteWeb.Components.{Game, OptionsTable, Chat, ConnectedUsers}
+  alias GameniteWeb.Components.{Game, OptionsTable, Chat, ConnectedUsers, TeamsScoreboard}
 
   data game, :map, default: nil
   data game_info, :map, default: nil

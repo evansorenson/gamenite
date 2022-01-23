@@ -40,6 +40,7 @@ defmodule Gamenite.SaladBowl.Server do
         new_game
         |> Timing.stop_timer(:timer)
         |> Charades.needs_review()
+        |> clear_canvas()
         |> game_response(game)
 
       new_game ->
@@ -72,10 +73,14 @@ defmodule Gamenite.SaladBowl.Server do
     |> Charades.needs_review()
   end
 
-  defp clear_canvas(game) do
+  defp clear_canvas({:error, reason}), do: {:error, reason}
+
+  defp clear_canvas(game) when game.current_round == "Pictionary" do
     game
     |> update_canvas("", nil)
   end
+
+  defp clear_canvas(game), do: game
 
   defp update_canvas(game, canvas_data, user_id) do
     PubSub.broadcast(
