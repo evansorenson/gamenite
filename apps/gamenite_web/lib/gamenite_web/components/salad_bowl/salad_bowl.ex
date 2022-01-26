@@ -146,7 +146,7 @@ defmodule GameniteWeb.Components.SaladBowl do
           {/for}
           {#elseif @game.current_turn.started?}
             {#if @game.current_round == "Pictionary"}
-            <div class="flex justify-center items-center space-x-8 pt-16">
+            <div class="flex justify-center items-center space-x-8 pt-8">
               <h1 class="text-5xl font-semibold">{@game.current_turn.card}</h1>
 
               <button phx-target={@myself} phx-click="incorrect" class="btn-red hover:opacity-70">Incorrect</button>
