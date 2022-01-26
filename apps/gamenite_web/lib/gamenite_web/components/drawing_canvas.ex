@@ -1,6 +1,8 @@
 defmodule GameniteWeb.Components.DrawingCanvas do
   use Surface.LiveComponent
 
+  alias GameniteWeb.Router.Helpers, as: Routes
+
   alias Phoenix.PubSub
 
   prop slug, :string, required: true
@@ -46,220 +48,29 @@ defmodule GameniteWeb.Components.DrawingCanvas do
 
   def render(assigns) do
     ~F"""
-    <div x-data="{ down: false, color: '#000000', brush_width: 1, drawing_type: 'pen' }" phx-hook="UpdateCanvas">
-      <script>
-        function get_canvas_ref() {
-          var canvas= document.getElementById('canvas');
-          var ctx = canvas.getContext('2d');
-
-          return ctx;
-        }
-
-        function  getMousePos(event) {
-          var canvas = document.getElementById('canvas');
-          var rect = canvas.getBoundingClientRect(); // abs. size of element
-          var scaleX = canvas.width / rect.width; // relationship bitmap vs. element for X
-          var scaleY = canvas.height / rect.height;  // relationship bitmap vs. element for Y
-
-          return {x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY}
-        }
-
-        var timerId;
-        // Throttle function: Input as function which needs to be throttled and delay is the time interval in milliseconds
-        function throttle(func, delay) {
-          // If setTimeout is already scheduled, no need to do anything
-          if (timerId) {
-            return
-          }
-
-          // Schedule a setTimeout after delay seconds
-          timerId  =  setTimeout(function () {
-            func()
-
-            // Once setTimeout function execution is finished, timerId = undefined so that in <br>
-            // the next scroll event function execution can be scheduled by the setTimeout
-            timerId  =  undefined;
-          }, delay)
-        }
-
-
-        function updateCanvas() {
-          var canvas = document.getElementById('canvas');
-          var ctx = get_canvas_ref();
-
-          imageData =  ctx.getImageData(0, 0, canvas.width, canvas.height);
-          window.dispatchEvent(new CustomEvent('update_canvas', { detail: canvas.toDataURL()}));
-        }
-
-        function mouseDown(e, drawing_type, color) {
-          var canvas = document.getElementById('canvas');
-          var ctx = get_canvas_ref();
-          let {x, y} = getMousePos(e);
-
-          if (drawing_type == 'fill') {
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            floodFill(imageData, hexToRGB(color), Math.round(x), Math.round(y));
-            ctx.putImageData(imageData, 0, 0);
-            updateCanvas();
-            return;
-          }
-          else if (drawing_type == 'eraser') {
-            ctx.globalCompositeOperation = 'destination-out';
-          }
-          else {
-            ctx.globalCompositeOperation = 'source-over';
-          }
-
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-        }
-
-        function mouseUp() {
-          ctx = get_canvas_ref();
-          ctx.closePath();
-        }
-
-        function draw(e, down, color, brushWidth) {
-          if (!down) return;
-
-          ctx = get_canvas_ref();
-
-          let {x, y} = getMousePos(e);
-          ctx.lineTo(x, y);
-          ctx.lineWidth = brushWidth;
-          ctx.lineCap = 'round';
-          ctx.strokeStyle = color;
-          ctx.stroke();
-
-          throttle(updateCanvas, 250);
-        }
-
-        function clear() {
-          ctx = get_canvas_ref();
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          updateCanvas();
-        }
-
-        // Canvas flood fill, taken from: https://codepen.io/Geeyoam/pen/vLGZzG
-        function getColorAtPixel(imageData, x, y) {
-          const { width, data } = imageData;
-
-          return {
-            r: data[4 * (width * y + x) + 0],
-            g: data[4 * (width * y + x) + 1],
-            b: data[4 * (width * y + x) + 2],
-            a: data[4 * (width * y + x) + 3]
-          };
-        }
-
-        function loadCanvas(strDataURI) {
-          ctx = get_canvas_ref();
-          var img = new Image;
-          img.onload = function(){
-            ctx.drawImage(img,0,0); // Or at whatever offset you like
-          };
-          img.src = strDataURI;
-        }
-
-        function setColorAtPixel(imageData, color, x, y) {
-          const { width, data } = imageData;
-
-          data[4 * (width * y + x) + 0] = color.r & 0xff;
-          data[4 * (width * y + x) + 1] = color.g & 0xff;
-          data[4 * (width * y + x) + 2] = color.b & 0xff;
-          data[4 * (width * y + x) + 3] = color.a & 0xff;
-        }
-
-        function colorMatch(a, b) {
-          return a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
-        }
-
-        function floodFill(imageData, newColor, x, y) {
-          const { width, height } = imageData;
-
-          const stack = [];
-          const baseColor = getColorAtPixel(imageData, x, y);
-          let operator = { x, y };
-          // Check if base color and new color are the same
-          if (colorMatch(baseColor, newColor)) return;
-
-          // Add the clicked location to stack
-          stack.push({ x: operator.x, y: operator.y });
-
-          while (stack.length) {
-            operator = stack.pop();
-            let contiguousDown = true; // Vertical is assumed to be true
-            let contiguousUp = true; // Vertical is assumed to be true
-            let contiguousLeft = false;
-            let contiguousRight = false;
-
-            // Move to top most contiguousDown pixel
-            while (contiguousUp && operator.y >= 0) {
-              operator.y--;
-              contiguousUp = colorMatch(getColorAtPixel(imageData, operator.x, operator.y), baseColor);
-            }
-
-            // Move downward
-            while (contiguousDown && operator.y < height) {
-              setColorAtPixel(imageData, newColor, operator.x, operator.y);
-
-              // Check left
-              if (operator.x - 1 >= 0 && colorMatch(getColorAtPixel(imageData, operator.x - 1, operator.y), baseColor)) {
-                if (!contiguousLeft) {
-                  contiguousLeft = true;
-                  stack.push({ x: operator.x - 1, y: operator.y });
-                }
-              } else {
-                contiguousLeft = false;
-              }
-
-              // Check right
-              if (operator.x + 1 < width && colorMatch(getColorAtPixel(imageData, operator.x + 1, operator.y), baseColor)) {
-                if (!contiguousRight) {
-                  stack.push({ x: operator.x + 1, y: operator.y });
-                  contiguousRight = true;
-                }
-              } else {
-                contiguousRight = false;
-              }
-
-              operator.y++;
-              contiguousDown = colorMatch(getColorAtPixel(imageData, operator.x, operator.y), baseColor);
-            }
-          }
-        }
-
-        const hexToRGB = (hex) => {
-          const r = parseInt(hex.slice(1, 3), 16);
-          const g = parseInt(hex.slice(3, 5), 16);
-          const b = parseInt(hex.slice(5, 7), 16);
-
-          return { r, g, b, a: 0xff };
-        }
-      </script>
-
+    <div x-data="window.drawingCanvas" phx-hook="UpdateCanvas">
       {#if @drawing_user_id == @user_id}
-      <canvas id="canvas" x-init="$store.color = '#000000';" class="h-full w-full bg-white" @mouseup="down = false; mouseUp()" @mousedown="if ($store.drawing_type != 'fill') { down = true; } mouseDown($event, $store.drawing_type, $store.color);" @mousemove="draw($event, down, $store.color, $store.brush_width)"/>
+      <canvas id="canvas" class="h-full w-full bg-white" @mouseup="window.drawingCanvas.mouseUp()" @mousedown="window.drawingCanvas.mouseDown($event)" @mousemove="window.drawingCanvas.draw($event)"/>
       <div class="flex space-x-4 md:space-x-8 justify-center items-center pt-4">
 
         <button :style="`background-color: ${color}`" class="h-14 w-14 border-0 rounded-none"/>
         <div class="grid grid-cols-6">
         {#for color <- @canvas_hex_colors}
-          <button style={"background-color: #{color}"} class="h-7 w-7 border-0 rounded-none" @click={"color = '#{color}'; $store.color = '#{color}';"}/>
+          <button style={"background-color: #{color}"} class="h-7 w-7 border-0 rounded-none" @click={"color = '#{color}'"}/>
         {/for}
         </div>
 
         <div class="flex space-x-1">
-          <button :class="drawing_type == 'pen' ? 'bg-blurple' : 'bg-white'" class="h-16 w-16 border-0 shadow-md" @click="drawing_type = 'pen'; $store.drawing_type = 'pen';">
+          <button :class="drawingType == 'pen' ? 'bg-blurple' : 'bg-white'" class="h-16 w-16 border-0 shadow-md" @click="drawingType = 'pen';">
             <div class="flex justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14" fill="none" viewBox="0 0 24 24" :stroke="drawing_type == 'pen' ? '#FFFFFF' : '#000000'">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-14 w-14" fill="none" viewBox="0 0 24 24" :stroke="drawingType == 'pen' ? '#FFFFFF' : '#000000'">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
             </div>
           </button>
-          <button :class="drawing_type == 'fill' ? 'bg-blurple' : 'bg-white'" class="h-16 w-16 border-0 shadow-md" @click="drawing_type = 'fill'; $store.drawing_type = 'fill';">
+          <button :class="drawingType == 'fill' ? 'bg-blurple' : 'bg-white'" class="h-16 w-16 border-0 shadow-md" @click="drawingType = 'fill'">
             <div class="flex justify-center items-center">
-              <svg class="h-14 w-14" viewBox="0 0 32 32" :stroke="drawing_type == 'fill' ? '#FFFFFF' : '#000000'" xmlns="http://www.w3.org/2000/svg">
+              <svg class="h-14 w-14" viewBox="0 0 32 32" :stroke="drawingType == 'fill' ? '#FFFFFF' : '#000000'" xmlns="http://www.w3.org/2000/svg">
                 <style type="text/css">
                 .st0{fill:none;stroke-width:2;stroke-miterlimit:10;}
                 .st1{fill:none;stroke-width:2;stroke-linejoin:round;stroke-miterlimit:10;}
@@ -277,9 +88,9 @@ defmodule GameniteWeb.Components.DrawingCanvas do
               <!-- Icon by www.wishforge.games on freeicons.io -->
             </div>
           </button>
-          <button :class="drawing_type == 'eraser' ? 'bg-blurple' : 'bg-white'" class="h-16 w-16 border-0 shadow-md" @click="drawing_type = 'eraser'; $store.drawing_type = 'eraser';">
+          <button :class="drawingType == 'eraser' ? 'bg-blurple' : 'bg-white'" class="h-16 w-16 border-0 shadow-md" @click="drawingType = 'eraser'">
             <div class="flex justify-center">
-              <svg class="h-14 w-14" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" :stroke="drawing_type == 'eraser' ? '#FFFFFF' : '#000000'">
+              <svg class="h-14 w-14" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" :stroke="drawingType == 'eraser' ? '#FFFFFF' : '#000000'">
                 <style type="text/css">.st0{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}</style>
                 <path class="st0" d="M28,12.5c0.8-0.8,0.8-2,0-2.8L22.4,4c-0.8-0.8-2-0.8-2.8,0L5,18.5c-0.8,0.8-0.8,2,0,2.8l3.8,3.8h6.6L28,12.5z"/>
                 <line class="st0" x1="12.5" y1="11.1" x2="20.9" y2="19.5"/>
@@ -290,22 +101,22 @@ defmodule GameniteWeb.Components.DrawingCanvas do
         </div>
 
         <div class="flex space-x-1">
-          <button class="h-16 w-16 border-0 shadow-md content-center" :class="brush_width == 1 ? 'bg-blurple' : 'bg-white'" @click="brush_width = 1; $store.brush_width = 1;">
+          <button class="h-16 w-16 border-0 shadow-md content-center" :class="brushWidth == 1 ? 'bg-blurple' : 'bg-white'" @click="brushWidth = 1">
           <div class="flex justify-center">
             <span class="h-2 w-2 bg-black rounded-full inline-block"></span>
             </div>
           </button>
-          <button class="h-16 w-16 border-0 shadow-md" :class="brush_width == 2 ? 'bg-blurple' : 'bg-white'" @click="brush_width = 2; $store.brush_width = 2;">
+          <button class="h-16 w-16 border-0 shadow-md" :class="brushWidth == 2 ? 'bg-blurple' : 'bg-white'" @click="brushWidth = 2">
             <div class="flex justify-center">
               <span class="h-4 w-4 bg-black rounded-full inline-block"></span>
             </div>
           </button>
-          <button class="h-16 w-16 border-0 shadow-md" :class="brush_width == 4 ? 'bg-blurple' : 'bg-white'" @click="brush_width = 4; $store.brush_width = 4;">
+          <button class="h-16 w-16 border-0 shadow-md" :class="brushWidth == 4 ? 'bg-blurple' : 'bg-white'" @click="brushWidth = 4">
             <div class="flex justify-center">
               <span class="h-8 w-8 bg-black rounded-full inline-block"></span>
             </div>
           </button>
-          <button class="h-16 w-16 border-0 shadow-md" :class="brush_width == 8 ? 'bg-blurple' : 'bg-white'" @click="brush_width = 8; $store.brush_width = 8;">
+          <button class="h-16 w-16 border-0 shadow-md" :class="brushWidth == 8 ? 'bg-blurple' : 'bg-white'" @click="brushWidth = 8">
             <div class="flex justify-center">
               <span class="h-12 w-12 bg-black rounded-full inline-block"></span>
             </div>
@@ -323,7 +134,6 @@ defmodule GameniteWeb.Components.DrawingCanvas do
       {#else}
         <canvas id="canvas" class="h-full w-full bg-white"/>
       {/if}
-
     </div>
     """
   end

@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <%= csrf_meta_tag() %>
-    <%= live_title_tag assigns[:page_title] || "Gamenite", suffix: " · Online Party Games" %>
+    <%= live_title_tag assigns[:page_title] || "gamenite", suffix: " · online party games" %>
     <link phx-track-static rel="stylesheet" href="<%= Routes.static_path(@conn, "/assets/app.css") %>"/>
     <%= tag :meta, name: "channel_token", content: GameniteWeb.Auth.sign(@conn, @user_id) %>
     <script defer phx-track-static type="text/javascript" src="<%= Routes.static_path(@conn, "/assets/app.js") %>"></script>
@@ -15,7 +15,7 @@
       <section class="container">
         <nav role="navigation">
         </nav>
-        <a href="http://gamenite.fly.dev">
+        <a href="http://gamenite.xyz">
           <img src="<%= Routes.static_url(@conn, "/images/logo_cropped.png") %>"
               alt="All your favorite party games"/>
         </a>

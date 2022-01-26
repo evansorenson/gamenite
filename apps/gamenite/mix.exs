@@ -25,8 +25,7 @@ defmodule Gamenite.MixProject do
       {:gamenite_persistance, in_umbrella: true},
       {:phoenix_pubsub, "~> 2.0"},
       {:accessible, "~> 0.3.0"},
-      {:poison, "~> 5.0"},
-      {:gen_state_machine, "~> 3.0"}
+      {:poison, "~> 5.0"}
       # {:dep_from_hexpm, "~> 0.3.0"},
       # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
     ]
