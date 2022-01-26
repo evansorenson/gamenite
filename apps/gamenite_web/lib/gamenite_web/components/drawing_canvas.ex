@@ -11,7 +11,7 @@ defmodule GameniteWeb.Components.DrawingCanvas do
   prop phrase_to_draw, :string, required: true
   prop canvas, :string
 
-  prop canvas_hex_colors, :list,
+  data canvas_hex_colors, :list,
     default: [
       "#000000",
       "#964B00",
@@ -27,7 +27,23 @@ defmodule GameniteWeb.Components.DrawingCanvas do
       "#FF00FF"
     ]
 
+  data subscribed?, :boolean, default: false
+
+  def update(assigns, socket) do
+    socket =
+      if connected?(socket) and not socket.assigns.subscribed? do
+        PubSub.subscribe(Gamenite.PubSub, "canvas_updated:" <> assigns.slug)
+        assign(socket, subscribed?: true)
+      else
+        socket
+      end
+
+    {:ok, assign(socket, assigns)}
+  end
+
   def handle_event("update_canvas", canvas_data, socket) do
+    IO.puts("canvas component updated #{socket.assigns.user_id}")
+
     Gamenite.SaladBowl.API.update_canvas(
       socket.assigns.slug,
       canvas_data,
@@ -41,16 +57,11 @@ defmodule GameniteWeb.Components.DrawingCanvas do
     {:noreply, push_event(socket, "canvas_updated", %{canvas_data: socket.assigns.canvas})}
   end
 
-  def preload([assigns] = list_of_assigns) do
-    PubSub.subscribe(Gamenite.PubSub, "canvas_updated:" <> assigns.slug)
-    list_of_assigns
-  end
-
   def render(assigns) do
     ~F"""
-    <div x-data="window.drawingCanvas" phx-hook="UpdateCanvas">
+    <div x-data="drawingCanvas()" phx-hook="UpdateCanvas">
       {#if @drawing_user_id == @user_id}
-      <canvas id="canvas" class="h-full w-full bg-white" @mouseup="window.drawingCanvas.mouseUp()" @mousedown="window.drawingCanvas.mouseDown($event)" @mousemove="window.drawingCanvas.draw($event)"/>
+      <canvas id="canvas" class="h-full w-full bg-white" @mouseup="mouseUp()" @mousedown="mouseDown($event)" @mousemove="draw($event)"/>
       <div class="flex space-x-4 md:space-x-8 justify-center items-center pt-4">
 
         <button :style="`background-color: ${color}`" class="h-14 w-14 border-0 rounded-none"/>
@@ -134,6 +145,203 @@ defmodule GameniteWeb.Components.DrawingCanvas do
       {#else}
         <canvas id="canvas" class="h-full w-full bg-white"/>
       {/if}
+      <script>
+      function getCanvasRef() {
+        var canvas= document.getElementById('canvas');
+        var ctx = canvas.getContext('2d');
+
+        return ctx;
+      }
+
+      function getMousePos(event) {
+        var canvas = document.getElementById('canvas');
+        var rect = canvas.getBoundingClientRect(); // abs. size of element
+        var scaleX = canvas.width / rect.width; // relationship bitmap vs. element for X
+        var scaleY = canvas.height / rect.height;  // relationship bitmap vs. element for Y
+
+        return {x: (event.clientX - rect.left) * scaleX, y: (event.clientY - rect.top) * scaleY}
+      }
+
+
+      // Throttle function: Input as function which needs to be throttled and delay is the time interval in milliseconds
+      var timerId;
+      function throttle(func, delay) {
+        // If setTimeout is already scheduled, no need to do anything
+        if (timerId) {
+          return
+        }
+
+        // Schedule a setTimeout after delay seconds
+        timerId  =  setTimeout(function () {
+          func()
+
+          // Once setTimeout function execution is finished, timerId = undefined so that in <br>
+          // the next scroll event function execution can be scheduled by the setTimeout
+          timerId  =  undefined;
+        }, delay)
+      }
+
+        // Canvas flood fill, taken from: https://codepen.io/Geeyoam/pen/vLGZzG
+        function getColorAtPixel(imageData, x, y) {
+          const { width, data } = imageData;
+
+          return {
+            r: data[4 * (width * y + x) + 0],
+            g: data[4 * (width * y + x) + 1],
+            b: data[4 * (width * y + x) + 2],
+            a: data[4 * (width * y + x) + 3]
+          };
+        }
+
+
+
+        function setColorAtPixel(imageData, color, x, y) {
+          const { width, data } = imageData;
+
+          data[4 * (width * y + x) + 0] = color.r & 0xff;
+          data[4 * (width * y + x) + 1] = color.g & 0xff;
+          data[4 * (width * y + x) + 2] = color.b & 0xff;
+          data[4 * (width * y + x) + 3] = color.a & 0xff;
+        }
+
+        function colorMatch(a, b) {
+          return a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
+        }
+
+        function floodFill(imageData, newColor, x, y) {
+          const { width, height } = imageData;
+
+          const stack = [];
+          const baseColor = getColorAtPixel(imageData, x, y);
+          let operator = { x, y };
+          // Check if base color and new color are the same
+          if (colorMatch(baseColor, newColor)) return;
+
+          // Add the clicked location to stack
+          stack.push({ x: operator.x, y: operator.y });
+
+          while (stack.length) {
+            operator = stack.pop();
+            let contiguousDown = true; // Vertical is assumed to be true
+            let contiguousUp = true; // Vertical is assumed to be true
+            let contiguousLeft = false;
+            let contiguousRight = false;
+
+            // Move to top most contiguousDown pixel
+            while (contiguousUp && operator.y >= 0) {
+              operator.y--;
+              contiguousUp = colorMatch(getColorAtPixel(imageData, operator.x, operator.y), baseColor);
+            }
+
+            // Move downward
+            while (contiguousDown && operator.y < height) {
+              setColorAtPixel(imageData, newColor, operator.x, operator.y);
+
+              // Check left
+              if (operator.x - 1 >= 0 && colorMatch(getColorAtPixel(imageData, operator.x - 1, operator.y), baseColor)) {
+                if (!contiguousLeft) {
+                  contiguousLeft = true;
+                  stack.push({ x: operator.x - 1, y: operator.y });
+                }
+              } else {
+                contiguousLeft = false;
+              }
+
+              // Check right
+              if (operator.x + 1 < width && colorMatch(getColorAtPixel(imageData, operator.x + 1, operator.y), baseColor)) {
+                if (!contiguousRight) {
+                  stack.push({ x: operator.x + 1, y: operator.y });
+                  contiguousRight = true;
+                }
+              } else {
+                contiguousRight = false;
+              }
+
+              operator.y++;
+              contiguousDown = colorMatch(getColorAtPixel(imageData, operator.x, operator.y), baseColor);
+            }
+          }
+        }
+
+      let drawingCanvas = () => {
+        return {
+          down: false,
+          color: '#000000',
+          brushWidth: 1,
+          drawingType: 'pen',
+          event: null,
+
+          updateCanvas() {
+            console.log("updated!!!")
+            var canvas = document.getElementById('canvas');
+            var ctx = getCanvasRef();
+
+            imageData =  ctx.getImageData(0, 0, canvas.width, canvas.height);
+            canvas.dispatchEvent(new CustomEvent('update_canvas', { detail: canvas.toDataURL(), bubbles: true}));
+          },
+
+          mouseDown(e) {
+            var canvas = document.getElementById('canvas');
+            var ctx = getCanvasRef();
+            let {x, y} = getMousePos(e);
+
+            if (this.drawingType == 'fill') {
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              floodFill(imageData, hexToRGB(this.color), Math.round(x), Math.round(y));
+              ctx.putImageData(imageData, 0, 0);
+              this.updateCanvas();
+              return;
+            }
+            else if (this.drawingType == 'eraser') {
+              ctx.globalCompositeOperation = 'destination-out';
+            }
+            else {
+              ctx.globalCompositeOperation = 'source-over';
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            this.down = true;
+          },
+
+          mouseUp() {
+            this.down = false;
+            ctx = getCanvasRef();
+            ctx.closePath();
+          },
+
+          draw(e) {
+            if (!this.down) return;
+
+            ctx = getCanvasRef();
+
+            let {x, y} = getMousePos(e);
+            ctx.lineTo(x, y);
+            ctx.lineWidth = this.brushWidth;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = this.color;
+            ctx.stroke();
+
+            throttle(this.updateCanvas, 250);
+          },
+
+          clear() {
+            ctx = getCanvasRef();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            this.updateCanvas();
+            console.log("this works!!!");
+          },
+        }
+      }
+
+      const hexToRGB = (hex) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+
+        return { r, g, b, a: 0xff };
+      }
+      </script>
     </div>
     """
   end

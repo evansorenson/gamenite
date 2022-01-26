@@ -31,8 +31,10 @@ defmodule GameniteWeb.RoomLive do
 
     with true <- Rooms.slug_exists?(slug),
          room <- Rooms.state(slug) do
-      PubSub.subscribe(Rooms.PubSub, "room:" <> slug)
-      PubSub.subscribe(Gamenite.PubSub, "game:" <> slug)
+      if connected?(socket) do
+        PubSub.subscribe(Rooms.PubSub, "room:" <> slug)
+        PubSub.subscribe(Gamenite.PubSub, "game:" <> slug)
+      end
 
       {:ok,
        socket
@@ -220,6 +222,8 @@ defmodule GameniteWeb.RoomLive do
   end
 
   def handle_info({:canvas_updated, canvas_data, _user_id}, socket) do
+    IO.puts("room live canvas updated #{socket.assigns.user_id}")
+
     {:noreply, push_event(socket, "canvas_updated", %{canvas_data: canvas_data})}
   end
 end

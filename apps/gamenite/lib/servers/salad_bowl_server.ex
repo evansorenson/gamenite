@@ -83,6 +83,8 @@ defmodule Gamenite.SaladBowl.Server do
   defp clear_canvas(game), do: game
 
   defp update_canvas(game, canvas_data, user_id) do
+    IO.puts("broadcasting canvas change")
+
     PubSub.broadcast(
       Gamenite.PubSub,
       "canvas_updated:" <> game.room_slug,
