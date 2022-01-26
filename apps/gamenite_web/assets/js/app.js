@@ -129,7 +129,8 @@ function getMousePos(event) {
 
 
 // Throttle function: Input as function which needs to be throttled and delay is the time interval in milliseconds
-function throttle(func, delay, timerId) {
+var timerId;
+function throttle(func, delay) {
   // If setTimeout is already scheduled, no need to do anything
   if (timerId) {
     return
@@ -229,7 +230,6 @@ function throttle(func, delay, timerId) {
 
 let drawingCanvas = () => {
   return {
-    timerId: undefined,
     down: false,
     color: '#000000',
     brushWidth: 1,
@@ -237,6 +237,7 @@ let drawingCanvas = () => {
     event: null,
 
     updateCanvas() {
+      console.log("updated!!!")
       var canvas = document.getElementById('canvas');
       var ctx = getCanvasRef();
   
@@ -286,7 +287,7 @@ let drawingCanvas = () => {
       ctx.strokeStyle = this.color;
       ctx.stroke();
   
-      throttle(this.updateCanvas, 250, this.timerId);
+      throttle(this.updateCanvas, 250);
     },
   
     clear() {
