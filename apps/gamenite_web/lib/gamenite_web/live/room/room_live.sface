@@ -23,7 +23,7 @@
   <div class="grid grid-cols-1 lg:grid-cols-3 lg:h-full w-full px-8">
     <div class="lg:col-span-2">
     {#if @room.game_in_progress?}
-      <button phx-click="exit_game" class="bg-red-500 border-0 rounded-lg px-8 text-gray-light shadow-lg hover:opacity-70">Exit Game</button>
+      <button phx-click="exit_game" class="absolute top-0 left-0 bg-red-500 border-0 rounded-xl text-gray-light px-4 shadow-lg hover:opacity-70">X</button>
       <Dynamic.LiveComponent id="game" module={@room.game_config.components.game} {=@game} {=@slug} roommates={@room.roommates} game_config={@room.game_config} {=@user_id} />
     {#else}
       <div class="pb-8">

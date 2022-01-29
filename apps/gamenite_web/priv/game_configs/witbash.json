@@ -1,6 +1,6 @@
 {
     "title": "Witbash",
-    "description": "Basically quiplash.",
+    "description": "Basically quiplash. (IN BETA)",
     "category": "Party Game",
     "team_game?": false,
     "server": "Elixir.Gamenite.Witbash.Server",

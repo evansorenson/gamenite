@@ -4,7 +4,7 @@ defmodule GameniteWeb.Components.Kodenames do
 
   alias Gamenite.TeamGame
   alias GameniteWeb.Components.Kodenames.{Board}
-  alias GameniteWeb.Components.{PlayerName, TeamsScoreboard}
+  alias GameniteWeb.Components.{PlayerName}
   alias Gamenite.Kodenames.API
   alias Gamenite.Kodenames
 
@@ -51,10 +51,8 @@ defmodule GameniteWeb.Components.Kodenames do
       {#if @game.finished?}
       <h2> Game finished </h2>
       {/if}
-    <div class="grid grid-cols-2 space-x-4 w-full h-20 items-center">
-      <TeamsScoreboard game={@game} user_id={@user_id} roommates={@roommates} />
-
-      <div class="justify-center items-center bg-white rounded-lg shadow-md h-full">
+    <div class="flex space-x-4 w-full h-20 items-center justify-center">
+      <div class="bg-white rounded-lg shadow-md h-full w-1/2">
       {#if TeamGame.current_player?(@game.current_team, @user_id) and is_nil(@game.current_turn.clue)}
         <form phx-target={@myself} phx-submit="submit_clue" class="flex w-full h-full items-center justify-center space-x-4 px-0">
           <input class="text-center ring-1 ring-gray w-1/3 h-10 rounded-md" name="clue">
@@ -92,7 +90,7 @@ defmodule GameniteWeb.Components.Kodenames do
           <button phx-click="end_turn" phx-target={@myself} class="btn-blurple">End Turn</button>
         </div>
       {#else}
-        <h2> J chillin </h2>
+        <h2 class="text-center text-3xl"> J chillin </h2>
       {/if}
       </div>
     </div>
