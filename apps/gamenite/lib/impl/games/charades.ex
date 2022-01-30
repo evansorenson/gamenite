@@ -244,8 +244,13 @@ defmodule Gamenite.Charades do
 
   def start_turn(game) do
     game
+    |> shuffle_deck
     |> draw_card
     |> set_turn_started(true)
+  end
+
+  defp shuffle_deck(%{deck: deck} = game) do
+    %{game | deck: Enum.shuffle(deck)}
   end
 
   defp set_turn_started(game, bool) do
